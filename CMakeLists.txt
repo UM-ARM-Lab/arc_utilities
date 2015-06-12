@@ -56,9 +56,7 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/zlib_helpers.hpp
     include/${PROJECT_NAME}/voxel_grid.hpp
     include/${PROJECT_NAME}/eigen_helpers.hpp
-    include/${PROJECT_NAME}/eigen_pinv.hpp
-    src/${PROJECT_NAME}/zlib_helpers.cpp
-    src/${PROJECT_NAME}/eigen_pinv.cpp)
+    src/${PROJECT_NAME}/zlib_helpers.cpp)
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 

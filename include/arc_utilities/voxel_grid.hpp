@@ -10,7 +10,7 @@
 #ifndef VOXEL_GRID_HPP
 #define VOXEL_GRID_HPP
 
-namespace VOXEL_GRID
+namespace VoxelGrid
 {
     struct GRID_INDEX
     {
@@ -440,7 +440,7 @@ namespace VOXEL_GRID
             }
         }
 
-        inline std::vector<double> GridIndexToLocation(const VOXEL_GRID::GRID_INDEX& index) const
+        inline std::vector<double> GridIndexToLocation(const GRID_INDEX& index) const
         {
             return GridIndexToLocation(index.x, index.y, index.z);
         }
@@ -494,9 +494,9 @@ namespace VOXEL_GRID
 namespace std
 {
     template <>
-    struct hash<VOXEL_GRID::GRID_INDEX>
+    struct hash<VoxelGrid::GRID_INDEX>
     {
-        std::size_t operator()(const VOXEL_GRID::GRID_INDEX& index) const
+        std::size_t operator()(const VoxelGrid::GRID_INDEX& index) const
         {
             using std::size_t;
             using std::hash;
