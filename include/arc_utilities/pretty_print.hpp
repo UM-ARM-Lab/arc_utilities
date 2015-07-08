@@ -1,8 +1,13 @@
 #include <iostream>
+#include <array>
 #include <vector>
+#include <deque>
+#include <forward_list>
 #include <list>
 #include <map>
+#include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <Eigen/Geometry>
 
@@ -69,6 +74,33 @@ namespace PrettyPrint
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///// Template functions for printing containers - if you want to add a new container, add your function below /////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    template <typename T, size_t N>
+    inline std::string PrettyPrint(const std::array<T, N>& arraytoprint, const bool add_delimiters=false)
+    {
+        std::ostringstream strm;
+        if (arraytoprint.size() > 0)
+        {
+            if (add_delimiters)
+            {
+                strm << "[" << PrettyPrint(arraytoprint[0], add_delimiters);
+                for (size_t idx = 1; idx < arraytoprint.size(); idx++)
+                {
+                    strm << ", " << PrettyPrint(arraytoprint[idx], add_delimiters);
+                }
+                strm << "]";
+            }
+            else
+            {
+                strm << PrettyPrint(arraytoprint[0], add_delimiters);
+                for (size_t idx = 1; idx < arraytoprint.size(); idx++)
+                {
+                    strm << ", " << PrettyPrint(arraytoprint[idx], add_delimiters);
+                }
+            }
+        }
+        return strm.str();
+    }
 
     template <typename T>
     inline std::string PrettyPrint(const std::vector<T>& vectoprint, const bool add_delimiters=false)
@@ -139,6 +171,89 @@ namespace PrettyPrint
         return strm.str();
     }
 
+    template <typename T>
+    inline std::string PrettyPrint(const std::forward_list<T>& listtoprint, const bool add_delimiters=false)
+    {
+        std::ostringstream strm;
+        if (listtoprint.size() > 0)
+        {
+            if (add_delimiters)
+            {
+                strm << "[";
+                typename std::forward_list<T>::const_iterator itr;
+                for (itr = listtoprint.begin(); itr != listtoprint.end(); ++itr)
+                {
+                    if (itr != listtoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+                strm << "]";
+            }
+            else
+            {
+                typename std::forward_list<T>::const_iterator itr;
+                for (itr = listtoprint.begin(); itr != listtoprint.end(); ++itr)
+                {
+                    if (itr != listtoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+            }
+        }
+        return strm.str();
+    }
+
+    template <typename T>
+    inline std::string PrettyPrint(const std::deque<T>& dequetoprint, const bool add_delimiters=false)
+    {
+        std::ostringstream strm;
+        if (dequetoprint.size() > 0)
+        {
+            if (add_delimiters)
+            {
+                strm << "[";
+                typename std::deque<T>::const_iterator itr;
+                for (itr = dequetoprint.begin(); itr != dequetoprint.end(); ++itr)
+                {
+                    if (itr != dequetoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+                strm << "]";
+            }
+            else
+            {
+                typename std::deque<T>::const_iterator itr;
+                for (itr = dequetoprint.begin(); itr != dequetoprint.end(); ++itr)
+                {
+                    if (itr != dequetoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+            }
+        }
+        return strm.str();
+    }
 
     template <typename A, typename B>
     inline std::string PrettyPrint(const std::pair<A, B>& pairtoprint, const bool add_delimiters=false)
@@ -200,6 +315,134 @@ namespace PrettyPrint
     }
 
     template <typename A, typename B>
+    inline std::string PrettyPrint(const std::multimap<A, B>& maptoprint, const bool add_delimiters=false)
+    {
+        std::ostringstream strm;
+        if (maptoprint.size() > 0)
+        {
+            if (add_delimiters)
+            {
+                strm << "{";
+                typename std::multimap<A, B>::const_iterator itr;
+                for (itr = maptoprint.begin(); itr != maptoprint.end(); ++itr)
+                {
+                    std::pair<A, B> cur_pair(itr->first, itr->second);
+                    if (itr != maptoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(cur_pair, add_delimiters);
+                    }
+                }
+                strm << "}";
+            }
+            else
+            {
+                typename std::multimap<A, B>::const_iterator itr;
+                for (itr = maptoprint.begin(); itr != maptoprint.end(); ++itr)
+                {
+                    std::pair<A, B> cur_pair(itr->first, itr->second);
+                    if (itr != maptoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(cur_pair, add_delimiters);
+                    }
+                }
+            }
+        }
+        return strm.str();
+    }
+
+    template <typename T>
+    inline std::string PrettyPrint(const std::set<T>& settoprint, const bool add_delimiters=false)
+    {
+        std::ostringstream strm;
+        if (settoprint.size() > 0)
+        {
+            if (add_delimiters)
+            {
+                strm << "(";
+                typename std::set<T>::const_iterator itr;
+                for (itr = settoprint.begin(); itr != settoprint.end(); ++itr)
+                {
+                    if (itr != settoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+                strm << ")";
+            }
+            else
+            {
+                typename std::set<T>::const_iterator itr;
+                for (itr = settoprint.begin(); itr != settoprint.end(); ++itr)
+                {
+                    if (itr != settoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+            }
+        }
+        return strm.str();
+    }
+
+    template <typename T>
+    inline std::string PrettyPrint(const std::multiset<T>& settoprint, const bool add_delimiters=false)
+    {
+        std::ostringstream strm;
+        if (settoprint.size() > 0)
+        {
+            if (add_delimiters)
+            {
+                strm << "(";
+                typename std::multiset<T>::const_iterator itr;
+                for (itr = settoprint.begin(); itr != settoprint.end(); ++itr)
+                {
+                    if (itr != settoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+                strm << ")";
+            }
+            else
+            {
+                typename std::multiset<T>::const_iterator itr;
+                for (itr = settoprint.begin(); itr != settoprint.end(); ++itr)
+                {
+                    if (itr != settoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+            }
+        }
+        return strm.str();
+    }
+
+    template <typename A, typename B>
     inline std::string PrettyPrint(const std::unordered_map<A, B>& maptoprint, const bool add_delimiters=false)
     {
         std::ostringstream strm;
@@ -236,6 +479,134 @@ namespace PrettyPrint
                     else
                     {
                         strm << PrettyPrint(cur_pair, add_delimiters);
+                    }
+                }
+            }
+        }
+        return strm.str();
+    }
+
+    template <typename A, typename B>
+    inline std::string PrettyPrint(const std::unordered_multimap<A, B>& maptoprint, const bool add_delimiters=false)
+    {
+        std::ostringstream strm;
+        if (maptoprint.size() > 0)
+        {
+            if (add_delimiters)
+            {
+                strm << "{";
+                typename std::unordered_multimap<A, B>::const_iterator itr;
+                for (itr = maptoprint.begin(); itr != maptoprint.end(); ++itr)
+                {
+                    std::pair<A, B> cur_pair(itr->first, itr->second);
+                    if (itr != maptoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(cur_pair, add_delimiters);
+                    }
+                }
+                strm << "}";
+            }
+            else
+            {
+                typename std::unordered_multimap<A, B>::const_iterator itr;
+                for (itr = maptoprint.begin(); itr != maptoprint.end(); ++itr)
+                {
+                    std::pair<A, B> cur_pair(itr->first, itr->second);
+                    if (itr != maptoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(cur_pair, add_delimiters);
+                    }
+                }
+            }
+        }
+        return strm.str();
+    }
+
+    template <typename T>
+    inline std::string PrettyPrint(const std::unordered_set<T>& settoprint, const bool add_delimiters=false)
+    {
+        std::ostringstream strm;
+        if (settoprint.size() > 0)
+        {
+            if (add_delimiters)
+            {
+                strm << "(";
+                typename std::unordered_set<T>::const_iterator itr;
+                for (itr = settoprint.begin(); itr != settoprint.end(); ++itr)
+                {
+                    if (itr != settoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+                strm << ")";
+            }
+            else
+            {
+                typename std::unordered_set<T>::const_iterator itr;
+                for (itr = settoprint.begin(); itr != settoprint.end(); ++itr)
+                {
+                    if (itr != settoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+            }
+        }
+        return strm.str();
+    }
+
+    template <typename T>
+    inline std::string PrettyPrint(const std::unordered_multiset<T>& settoprint, const bool add_delimiters=false)
+    {
+        std::ostringstream strm;
+        if (settoprint.size() > 0)
+        {
+            if (add_delimiters)
+            {
+                strm << "(";
+                typename std::unordered_multiset<T>::const_iterator itr;
+                for (itr = settoprint.begin(); itr != settoprint.end(); ++itr)
+                {
+                    if (itr != settoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
+                    }
+                }
+                strm << ")";
+            }
+            else
+            {
+                typename std::unordered_multiset<T>::const_iterator itr;
+                for (itr = settoprint.begin(); itr != settoprint.end(); ++itr)
+                {
+                    if (itr != settoprint.begin())
+                    {
+                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                    }
+                    else
+                    {
+                        strm << PrettyPrint(*itr, add_delimiters);
                     }
                 }
             }
