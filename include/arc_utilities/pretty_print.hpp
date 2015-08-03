@@ -25,6 +25,7 @@ namespace PrettyPrint
     template <typename T>
     inline std::string PrettyPrint(const T& toprint, const bool add_delimiters=false)
     {
+        UNUSED(add_delimiters);
         std::ostringstream strm;
         strm << toprint;
         return strm.str();
