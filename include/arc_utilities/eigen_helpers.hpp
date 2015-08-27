@@ -6,9 +6,24 @@
 #include <stdio.h>
 #include <iostream>
 #include <arc_utilities/pretty_print.hpp>
+#include <functional>
 
 #ifndef EIGEN_HELPERS_HPP
 #define EIGEN_HELPERS_HPP
+
+namespace std
+{
+    template <>
+    struct hash<Eigen::Vector3d>
+    {
+        std::size_t operator()(const Eigen::Vector3d& vector) const
+        {
+            using std::size_t;
+            using std::hash;
+            return ((std::hash<double>()(vector.x()) ^ (std::hash<double>()(vector.y()) << 1) >> 1) ^ (std::hash<double>()(vector.z()) << 1));
+        }
+    };
+}
 
 namespace EigenHelpers
 {
@@ -29,6 +44,36 @@ namespace EigenHelpers
     typedef std::map<std::string, Eigen::Quaterniond, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Quaterniond>>> MapStringQuaterniond;
     typedef std::map<std::string, Eigen::Affine3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3f>>> MapStringAffine3f;
     typedef std::map<std::string, Eigen::Affine3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3d>>> MapStringAffine3d;
+
+    bool Equal(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
+    {
+        if (v1.x() == v2.x() && v1.y() == v2.y() && v1.z() == v2.z())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool CloseEnough(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double threshold)
+    {
+        double real_threshold = fabs(threshold);
+        if (fabs(v1.x() - v2.x()) > real_threshold)
+        {
+            return false;
+        }
+        if (fabs(v1.y() - v2.y()) > real_threshold)
+        {
+            return false;
+        }
+        if (fabs(v1.z() - v2.z()) > real_threshold)
+        {
+            return false;
+        }
+        return true;
+    }
 
     inline double Interpolate(const double p1, const double p2, const double ratio)
     {

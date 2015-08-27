@@ -52,9 +52,11 @@ set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Werror")
 
 # SDF library
 add_library(${PROJECT_NAME}
+    include/${PROJECT_NAME}/arc_helpers.hpp
     include/${PROJECT_NAME}/pretty_print.hpp
     include/${PROJECT_NAME}/zlib_helpers.hpp
     include/${PROJECT_NAME}/voxel_grid.hpp
+    include/${PROJECT_NAME}/dynamic_spatial_hashed_voxel_grid.hpp
     include/${PROJECT_NAME}/eigen_helpers.hpp
     src/${PROJECT_NAME}/zlib_helpers.cpp)
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
