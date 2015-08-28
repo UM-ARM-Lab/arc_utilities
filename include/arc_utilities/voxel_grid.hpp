@@ -191,382 +191,105 @@ namespace VoxelGrid
             }
         }
 
+        inline void CoreInitialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
+        {
+            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
+            cell_x_size_ = fabs(cell_x_size);
+            cell_y_size_ = fabs(cell_y_size);
+            cell_z_size_ = fabs(cell_z_size);
+            num_x_cells_ = num_x_cells;
+            num_y_cells_ = num_y_cells;
+            num_z_cells_ = num_z_cells;
+            x_size_ = (double)num_x_cells_ * cell_x_size_;
+            y_size_ = (double)num_y_cells_ * cell_y_size_;
+            z_size_ = (double)num_z_cells_ * cell_z_size_;
+            default_value_ = default_value;
+            oob_value_ = oob_value;
+            stride1_ = num_y_cells_ * num_z_cells_;
+            stride2_ = num_z_cells_;
+            SetContents(default_value_);
+        }
+
     public:
 
         VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_size, const double x_size, const double y_size, double const z_size, const T default_value)
         {
-            SafetyCheckSizes(cell_size, cell_size, cell_size, x_size, y_size, z_size);
-            origin_transform_ = origin_transform;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_size);
-            cell_y_size_ = fabs(cell_size);
-            cell_z_size_ = fabs(cell_size);
-            default_value_ = default_value;
-            oob_value_ = default_value;
-            num_x_cells_ = (int64_t)(ceil(fabs(x_size) / cell_x_size_));
-            num_y_cells_ = (int64_t)(ceil(fabs(y_size) / cell_y_size_));
-            num_z_cells_ = (int64_t)(ceil(fabs(z_size) / cell_z_size_));
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(origin_transform, cell_size, cell_size, cell_size, x_size, y_size, z_size, default_value, default_value);
         }
 
         VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_size, const double x_size, const double y_size, const double z_size, const T default_value, const T oob_value)
         {
-            SafetyCheckSizes(cell_size, cell_size, cell_size, x_size, y_size, z_size);
-            origin_transform_ = origin_transform;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_size);
-            cell_y_size_ = fabs(cell_size);
-            cell_z_size_ = fabs(cell_size);
-            default_value_ = default_value;
-            oob_value_ = oob_value;
-            num_x_cells_ = (int64_t)(ceil(fabs(x_size) / cell_x_size_));
-            num_y_cells_ = (int64_t)(ceil(fabs(y_size) / cell_y_size_));
-            num_z_cells_ = (int64_t)(ceil(fabs(z_size) / cell_z_size_));
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(origin_transform, cell_size, cell_size, cell_size, x_size, y_size, z_size, default_value, oob_value);
         }
 
         VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T default_value)
         {
-            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size);
-            origin_transform_ = origin_transform;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_x_size);
-            cell_y_size_ = fabs(cell_y_size);
-            cell_z_size_ = fabs(cell_z_size);
-            default_value_ = default_value;
-            oob_value_ = default_value;
-            num_x_cells_ = (int64_t)(ceil(fabs(x_size) / cell_x_size_));
-            num_y_cells_ = (int64_t)(ceil(fabs(y_size) / cell_y_size_));
-            num_z_cells_ = (int64_t)(ceil(fabs(z_size) / cell_z_size_));
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size, default_value, default_value);
         }
 
         VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T default_value, const T oob_value)
         {
-            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size);
-            origin_transform_ = origin_transform;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_x_size);
-            cell_y_size_ = fabs(cell_y_size);
-            cell_z_size_ = fabs(cell_z_size);
-            default_value_ = default_value;
-            oob_value_ = oob_value;
-            num_x_cells_ = (int64_t)(ceil(fabs(x_size) / cell_x_size_));
-            num_y_cells_ = (int64_t)(ceil(fabs(y_size) / cell_y_size_));
-            num_z_cells_ = (int64_t)(ceil(fabs(z_size) / cell_z_size_));
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size, default_value, oob_value);
         }
 
         VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value)
         {
-            SafetyCheckSizes(cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells);
-            origin_transform_ = origin_transform;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_size);
-            cell_y_size_ = fabs(cell_size);
-            cell_z_size_ = fabs(cell_size);
-            num_x_cells_ = num_x_cells;
-            num_y_cells_ = num_y_cells;
-            num_z_cells_ = num_z_cells;
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            default_value_ = default_value;
-            oob_value_ = default_value;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(origin_transform, cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells, default_value, default_value);
         }
 
         VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
         {
-            SafetyCheckSizes(cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells);
-            origin_transform_ = origin_transform;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_size);
-            cell_y_size_ = fabs(cell_size);
-            cell_z_size_ = fabs(cell_size);
-            num_x_cells_ = num_x_cells;
-            num_y_cells_ = num_y_cells;
-            num_z_cells_ = num_z_cells;
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            default_value_ = default_value;
-            oob_value_ = oob_value;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(origin_transform, cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
         VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value)
         {
-            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
-            origin_transform_ = origin_transform;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_x_size);
-            cell_y_size_ = fabs(cell_y_size);
-            cell_z_size_ = fabs(cell_z_size);
-            num_x_cells_ = num_x_cells;
-            num_y_cells_ = num_y_cells;
-            num_z_cells_ = num_z_cells;
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            default_value_ = default_value;
-            oob_value_ = default_value;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, default_value);
         }
 
         VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
         {
-            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
-            origin_transform_ = origin_transform;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_x_size);
-            cell_y_size_ = fabs(cell_y_size);
-            cell_z_size_ = fabs(cell_z_size);
-            num_x_cells_ = num_x_cells;
-            num_y_cells_ = num_y_cells;
-            num_z_cells_ = num_z_cells;
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            default_value_ = default_value;
-            oob_value_ = oob_value;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
         VoxelGrid(const double cell_size, const double x_size, const double y_size, const double z_size, const T default_value)
         {
-            SafetyCheckSizes(cell_size, cell_size, cell_size, x_size, y_size, z_size);
-            cell_x_size_ = fabs(cell_size);
-            cell_y_size_ = fabs(cell_size);
-            cell_z_size_ = fabs(cell_size);
-            default_value_ = default_value;
-            oob_value_ = default_value;
-            num_x_cells_ = (int64_t)(ceil(fabs(x_size) / cell_x_size_));
-            num_y_cells_ = (int64_t)(ceil(fabs(y_size) / cell_y_size_));
-            num_z_cells_ = (int64_t)(ceil(fabs(z_size) / cell_z_size_));
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
-            Eigen::Quaterniond origin_rotation;
-            origin_rotation.setIdentity();
-            origin_transform_ = origin_translation * origin_rotation;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(cell_size, cell_size, cell_size, x_size, y_size, z_size, default_value, default_value);
         }
 
         VoxelGrid(const double cell_size, const double x_size, const double y_size, const double z_size, const T default_value, const T oob_value)
         {
-            SafetyCheckSizes(cell_size, cell_size, cell_size, x_size, y_size, z_size);
-            cell_x_size_ = fabs(cell_size);
-            cell_y_size_ = fabs(cell_size);
-            cell_z_size_ = fabs(cell_size);
-            default_value_ = default_value;
-            oob_value_ = oob_value;
-            num_x_cells_ = (int64_t)(ceil(fabs(x_size) / cell_x_size_));
-            num_y_cells_ = (int64_t)(ceil(fabs(y_size) / cell_y_size_));
-            num_z_cells_ = (int64_t)(ceil(fabs(z_size) / cell_z_size_));
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
-            Eigen::Quaterniond origin_rotation;
-            origin_rotation.setIdentity();
-            origin_transform_ = origin_translation * origin_rotation;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(cell_size, cell_size, cell_size, x_size, y_size, z_size, default_value, oob_value);
         }
 
         VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T default_value)
         {
-            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size);
-            cell_x_size_ = fabs(cell_x_size);
-            cell_y_size_ = fabs(cell_y_size);
-            cell_z_size_ = fabs(cell_z_size);
-            default_value_ = default_value;
-            oob_value_ = default_value;
-            num_x_cells_ = (int64_t)(ceil(fabs(x_size) / cell_x_size_));
-            num_y_cells_ = (int64_t)(ceil(fabs(y_size) / cell_y_size_));
-            num_z_cells_ = (int64_t)(ceil(fabs(z_size) / cell_z_size_));
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
-            Eigen::Quaterniond origin_rotation;
-            origin_rotation.setIdentity();
-            origin_transform_ = origin_translation * origin_rotation;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size, default_value, default_value);
         }
 
         VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T default_value, const T oob_value)
         {
-            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size);
-            cell_x_size_ = fabs(cell_x_size);
-            cell_y_size_ = fabs(cell_y_size);
-            cell_z_size_ = fabs(cell_z_size);
-            default_value_ = default_value;
-            oob_value_ = oob_value;
-            num_x_cells_ = (int64_t)(ceil(fabs(x_size) / cell_x_size_));
-            num_y_cells_ = (int64_t)(ceil(fabs(y_size) / cell_y_size_));
-            num_z_cells_ = (int64_t)(ceil(fabs(z_size) / cell_z_size_));
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
-            Eigen::Quaterniond origin_rotation;
-            origin_rotation.setIdentity();
-            origin_transform_ = origin_translation * origin_rotation;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size, default_value, oob_value);
         }
 
         VoxelGrid(const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value)
         {
-            SafetyCheckSizes(cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells);
-            cell_x_size_ = fabs(cell_size);
-            cell_y_size_ = fabs(cell_size);
-            cell_z_size_ = fabs(cell_size);
-            num_x_cells_ = num_x_cells;
-            num_y_cells_ = num_y_cells;
-            num_z_cells_ = num_z_cells;
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
-            Eigen::Quaterniond origin_rotation;
-            origin_rotation.setIdentity();
-            origin_transform_ = origin_translation * origin_rotation;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            default_value_ = default_value;
-            oob_value_ = default_value;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells, default_value, default_value);
         }
 
         VoxelGrid(const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
         {
-            SafetyCheckSizes(cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells);
-            cell_x_size_ = fabs(cell_size);
-            cell_y_size_ = fabs(cell_size);
-            cell_z_size_ = fabs(cell_size);
-            num_x_cells_ = num_x_cells;
-            num_y_cells_ = num_y_cells;
-            num_z_cells_ = num_z_cells;
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
-            Eigen::Quaterniond origin_rotation;
-            origin_rotation.setIdentity();
-            origin_transform_ = origin_translation * origin_rotation;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            default_value_ = default_value;
-            oob_value_ = oob_value;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
         VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value)
         {
-            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
-            cell_x_size_ = fabs(cell_x_size);
-            cell_y_size_ = fabs(cell_y_size);
-            cell_z_size_ = fabs(cell_z_size);
-            num_x_cells_ = num_x_cells;
-            num_y_cells_ = num_y_cells;
-            num_z_cells_ = num_z_cells;
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
-            Eigen::Quaterniond origin_rotation;
-            origin_rotation.setIdentity();
-            origin_transform_ = origin_translation * origin_rotation;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            default_value_ = default_value;
-            oob_value_ = default_value;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, default_value);
         }
 
         VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
         {
-            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
-            cell_x_size_ = fabs(cell_x_size);
-            cell_y_size_ = fabs(cell_y_size);
-            cell_z_size_ = fabs(cell_z_size);
-            num_x_cells_ = num_x_cells;
-            num_y_cells_ = num_y_cells;
-            num_z_cells_ = num_z_cells;
-            x_size_ = (double)num_x_cells_ * cell_x_size_;
-            y_size_ = (double)num_y_cells_ * cell_y_size_;
-            z_size_ = (double)num_z_cells_ * cell_z_size_;
-            Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
-            Eigen::Quaterniond origin_rotation;
-            origin_rotation.setIdentity();
-            origin_transform_ = origin_translation * origin_rotation;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            default_value_ = default_value;
-            oob_value_ = oob_value;
-            stride1_ = num_y_cells_ * num_z_cells_;
-            stride2_ = num_z_cells_;
-            SetContents(default_value_);
-            initialized_ = true;
+            Initialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
         VoxelGrid()
@@ -585,6 +308,45 @@ namespace VoxelGrid
             stride1_ = num_y_cells_ * num_z_cells_;
             stride2_ = num_z_cells_;
             initialized_ = false;
+        }
+
+        inline void Initialize(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T default_value, const T oob_value)
+        {
+            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size);
+            int64_t num_x_cells = (int64_t)(ceil(fabs(x_size) / fabs(cell_x_size)));
+            int64_t num_y_cells = (int64_t)(ceil(fabs(y_size) / fabs(cell_y_size)));
+            int64_t num_z_cells = (int64_t)(ceil(fabs(z_size) / fabs(cell_z_size)));
+            Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
+        }
+
+        inline void Initialize(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
+        {
+            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
+            CoreInitialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
+            origin_transform_ = origin_transform;
+            inverse_origin_transform_ = origin_transform_.inverse();
+            initialized_ = true;
+        }
+
+        inline void Initialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T default_value, const T oob_value)
+        {
+            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size);
+            int64_t num_x_cells = (int64_t)(ceil(fabs(x_size) / fabs(cell_x_size)));
+            int64_t num_y_cells = (int64_t)(ceil(fabs(y_size) / fabs(cell_y_size)));
+            int64_t num_z_cells = (int64_t)(ceil(fabs(z_size) / fabs(cell_z_size)));
+            Initialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
+        }
+
+        inline void Initialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
+        {
+            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
+            CoreInitialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
+            Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
+            Eigen::Quaterniond origin_rotation;
+            origin_rotation.setIdentity();
+            origin_transform_ = origin_translation * origin_rotation;
+            inverse_origin_transform_ = origin_transform_.inverse();
+            initialized_ = true;
         }
 
         inline bool IsInitialized() const
