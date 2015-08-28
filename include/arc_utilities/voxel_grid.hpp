@@ -57,13 +57,13 @@ namespace VoxelGrid
             return (x_index * stride1_) + (y_index * stride2_) + z_index;
         }
 
-        void SetContents(T value)
+        inline void SetContents(T value)
         {
             data_.clear();
             data_.resize(num_x_cells_ * num_y_cells_ * num_z_cells_, value);
         }
 
-        void SafetyCheckSizes(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size,const double y_size, const double z_size) const
+        inline void SafetyCheckSizes(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size,const double y_size, const double z_size) const
         {
             if (cell_x_size <= 0.0)
             {
@@ -139,7 +139,7 @@ namespace VoxelGrid
             }
         }
 
-        void SafetyCheckSizes(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells,const int64_t num_y_cells, const int64_t num_z_cells) const
+        inline void SafetyCheckSizes(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells,const int64_t num_y_cells, const int64_t num_z_cells) const
         {
             if (cell_x_size <= 0.0)
             {
@@ -592,33 +592,45 @@ namespace VoxelGrid
             return initialized_;
         }
 
-        void ResetWithDefault()
+        inline void ResetWithDefault()
         {
             SetContents(default_value_);
         }
 
-        void ResetWithNewValue(T new_value)
+        inline void ResetWithNewValue(T new_value)
         {
             SetContents(new_value);
         }
 
-        void ResetWithNewDefault(T new_default)
+        inline void ResetWithNewDefault(T new_default)
         {
             default_value_ = new_default;
             SetContents(default_value_);
+        }
+
+        inline bool IndexInBounds(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
+        {
+            if (x_index >= 0 && y_index >= 0 && z_index >= 0 && x_index < num_x_cells_ && y_index < num_y_cells_ && z_index < num_z_cells_)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         inline std::pair<const T&, bool> GetImmutable(const Eigen::Vector3d& location) const
         {
             assert(initialized_);
             std::vector<int64_t> indices = LocationToGridIndex(location);
-            if (indices.size() != 3)
+            if (indices.size() == 3)
             {
-                return std::pair<const T&, bool>(oob_value_, false);
+                return GetImmutable(indices[0], indices[1], indices[2]);
             }
             else
             {
-                return GetImmutable(indices[0], indices[1], indices[2]);
+                return std::pair<const T&, bool>(oob_value_, false);
             }
         }
 
@@ -636,15 +648,15 @@ namespace VoxelGrid
         inline std::pair<const T&, bool> GetImmutable(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
         {
             assert(initialized_);
-            if (x_index < 0 || y_index < 0 || z_index < 0 || x_index >= num_x_cells_ || y_index >= num_y_cells_ || z_index >= num_z_cells_)
-            {
-                return std::pair<const T&, bool>(oob_value_, false);
-            }
-            else
+            if (IndexInBounds(x_index, y_index, z_index))
             {
                 int64_t data_index = GetDataIndex(x_index, y_index, z_index);
                 assert(data_index >= 0 && data_index < data_.size());
                 return std::pair<const T&, bool>(data_[data_index], true);
+            }
+            else
+            {
+                return std::pair<const T&, bool>(oob_value_, false);
             }
         }
 
@@ -652,13 +664,13 @@ namespace VoxelGrid
         {
             assert(initialized_);
             std::vector<int64_t> indices = LocationToGridIndex(location);
-            if (indices.size() != 3)
+            if (indices.size() == 3)
             {
-                return std::pair<T, bool>(oob_value_, false);
+                return GetCopy(indices[0], indices[1], indices[2]);
             }
             else
             {
-                return GetCopy(indices[0], indices[1], indices[2]);
+                return std::pair<T, bool>(oob_value_, false);
             }
         }
 
@@ -676,15 +688,15 @@ namespace VoxelGrid
         inline std::pair<T, bool> GetCopy(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
         {
             assert(initialized_);
-            if (x_index < 0 || y_index < 0 || z_index < 0 || x_index >= num_x_cells_ || y_index >= num_y_cells_ || z_index >= num_z_cells_)
-            {
-                return std::pair<T, bool>(oob_value_, false);
-            }
-            else
+            if (IndexInBounds(x_index, y_index, z_index))
             {
                 int64_t data_index = GetDataIndex(x_index, y_index, z_index);
                 assert(data_index >= 0 && data_index < data_.size());
                 return std::pair<T, bool>(data_[data_index], true);
+            }
+            else
+            {
+                return std::pair<T, bool>(oob_value_, false);
             }
         }
 
@@ -692,13 +704,13 @@ namespace VoxelGrid
         {
             assert(initialized_);
             std::vector<int64_t> indices = LocationToGridIndex(location);
-            if (indices.size() != 3)
+            if (indices.size() == 3)
             {
-                return std::pair<T&, bool>(oob_value_, false);
+                return GetMutable(indices[0], indices[1], indices[2]);
             }
             else
             {
-                return GetMutable(indices[0], indices[1], indices[2]);
+                return std::pair<T&, bool>(oob_value_, false);
             }
         }
 
@@ -716,15 +728,15 @@ namespace VoxelGrid
         inline std::pair<T&, bool> GetMutable(const int64_t x_index, const int64_t y_index, const int64_t z_index)
         {
             assert(initialized_);
-            if (x_index < 0 || y_index < 0 || z_index < 0 || x_index >= num_x_cells_ || y_index >= num_y_cells_ || z_index >= num_z_cells_)
-            {
-                return std::pair<T&, bool>(oob_value_, false);
-            }
-            else
+            if (IndexInBounds(x_index, y_index, z_index))
             {
                 int64_t data_index = GetDataIndex(x_index, y_index, z_index);
                 assert(data_index >= 0 && data_index < data_.size());
                 return std::pair<T&, bool>(data_[data_index], true);
+            }
+            else
+            {
+                return std::pair<T&, bool>(oob_value_, false);
             }
         }
 
@@ -732,13 +744,13 @@ namespace VoxelGrid
         {
             assert(initialized_);
             std::vector<int64_t> indices = LocationToGridIndex(location);
-            if (indices.size() != 3)
+            if (indices.size() == 3)
             {
-                return false;
+                return SetWithReference(indices[0], indices[1], indices[2], value);
             }
             else
             {
-                return SetWithReference(indices[0], indices[1], indices[2], value);
+                return false;
             }
         }
 
@@ -756,16 +768,16 @@ namespace VoxelGrid
         inline bool SetWithReference(const int64_t x_index, const int64_t y_index, const int64_t z_index, T& value)
         {
             assert(initialized_);
-            if (x_index < 0 || y_index < 0 || z_index < 0 || x_index >= num_x_cells_ || y_index >= num_y_cells_ || z_index >= num_z_cells_)
-            {
-                return false;
-            }
-            else
+            if (IndexInBounds(x_index, y_index, z_index))
             {
                 int64_t data_index = GetDataIndex(x_index, y_index, z_index);
                 assert(data_index >= 0 && data_index < data_.size());
                 data_[data_index] = value;
                 return true;
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -773,13 +785,13 @@ namespace VoxelGrid
         {
             assert(initialized_);
             std::vector<int64_t> indices = LocationToGridIndex(location);
-            if (indices.size() != 3)
+            if (indices.size() == 3)
             {
-                return false;
+                return SetWithValue(indices[0], indices[1], indices[2], value);
             }
             else
             {
-                return SetWithValue(indices[0], indices[1], indices[2], value);
+                return false;
             }
         }
 
@@ -797,16 +809,16 @@ namespace VoxelGrid
         inline bool SetWithValue(const int64_t x_index, const int64_t y_index, const int64_t z_index, T value)
         {
             assert(initialized_);
-            if (x_index < 0 || y_index < 0 || z_index < 0 || x_index >= num_x_cells_ || y_index >= num_y_cells_ || z_index >= num_z_cells_)
-            {
-                return false;
-            }
-            else
+            if (IndexInBounds(x_index, y_index, z_index))
             {
                 int64_t data_index = GetDataIndex(x_index, y_index, z_index);
                 assert(data_index >= 0 && data_index < data_.size());
                 data_[data_index] = value;
                 return true;
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -883,13 +895,13 @@ namespace VoxelGrid
             int64_t x_cell = (int64_t)(point_in_grid_frame.x() / cell_x_size_);
             int64_t y_cell = (int64_t)(point_in_grid_frame.y() / cell_y_size_);
             int64_t z_cell = (int64_t)(point_in_grid_frame.z() / cell_z_size_);
-            if (x_cell < 0 || y_cell < 0 || z_cell < 0 || x_cell >= num_x_cells_ || y_cell >= num_y_cells_ || z_cell >= num_z_cells_)
+            if (IndexInBounds(x_cell, y_cell, z_cell))
             {
-                return std::vector<int64_t>();
+                return std::vector<int64_t>{x_cell, y_cell, z_cell};
             }
             else
             {
-                return std::vector<int64_t>{x_cell, y_cell, z_cell};
+                return std::vector<int64_t>();
             }
         }
 
@@ -901,41 +913,41 @@ namespace VoxelGrid
         inline std::vector<double> GridIndexToLocation(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
         {
             assert(initialized_);
-            if (x_index < 0 || y_index < 0 || z_index < 0 || x_index >= num_x_cells_ || y_index >= num_y_cells_ || z_index >= num_z_cells_)
-            {
-                return std::vector<double>();
-            }
-            else
+            if (IndexInBounds(x_index, y_index, z_index))
             {
                 Eigen::Vector3d point_in_grid_frame(cell_x_size_ * ((double)x_index + 0.5), cell_y_size_ * ((double)y_index + 0.5), cell_z_size_ * ((double)z_index + 0.5));
                 Eigen::Vector3d point = origin_transform_ * point_in_grid_frame;
                 return std::vector<double>{point.x(), point.y(), point.z()};
             }
+            else
+            {
+                return std::vector<double>();
+            }
         }
 
-        const std::vector<T>& GetRawData() const
+        inline const std::vector<T>& GetRawData() const
         {
             return data_;
         }
 
-        std::vector<T> CopyRawData() const
+        inline std::vector<T> CopyRawData() const
         {
             return data_;
         }
 
-        bool SetRawData(std::vector<T>& data)
+        inline bool SetRawData(std::vector<T>& data)
         {
             assert(initialized_);
             int64_t expected_length = num_x_cells_ * num_y_cells_ * num_z_cells_;
-            if ((int64_t)data.size() != expected_length)
-            {
-                std::cerr << "Failed to load internal data - expected " << expected_length << " got " << data.size() << std::endl;
-                return false;
-            }
-            else
+            if ((int64_t)data.size() == expected_length)
             {
                 data_ = data;
                 return true;
+            }
+            else
+            {
+                std::cerr << "Failed to load internal data - expected " << expected_length << " got " << data.size() << std::endl;
+                return false;
             }
         }
 

@@ -61,7 +61,47 @@ namespace VoxelGrid
         std::vector<T> data_;
         T initial_value_;
 
-        void SafetyCheckSizes(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells,const int64_t num_y_cells, const int64_t num_z_cells) const
+        inline void SafetyCheckSizes(const double chunk_x_size, const double chunk_y_size, const double chunk_z_size) const
+        {
+            if (chunk_x_size <= 0.0)
+            {
+                throw std::invalid_argument("chunk_x_size must be positive and non-zero");
+            }
+            if (isnan(chunk_x_size))
+            {
+                throw std::invalid_argument("chunk_x_size must not be NaN");
+            }
+            if (isinf(chunk_x_size) != 0)
+            {
+                throw std::invalid_argument("chunk_x_size must not be INF");
+            }
+            if (chunk_y_size <= 0.0)
+            {
+                throw std::invalid_argument("chunk_y_size must be positive and non-zero");
+            }
+            if (isnan(chunk_y_size))
+            {
+                throw std::invalid_argument("chunk_y_size must not be NaN");
+            }
+            if (isinf(chunk_y_size) != 0)
+            {
+                throw std::invalid_argument("chunk_y_size must not be INF");
+            }
+            if (chunk_z_size <= 0.0)
+            {
+                throw std::invalid_argument("chunk_z_size must be positive and non-zero");
+            }
+            if (isnan(chunk_z_size))
+            {
+                throw std::invalid_argument("chunk_z_size must not be NaN");
+            }
+            if (isinf(chunk_z_size) != 0)
+            {
+                throw std::invalid_argument("chunk_z_size must not be INF");
+            }
+        }
+
+        inline void SafetyCheckSizes(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells,const int64_t num_y_cells, const int64_t num_z_cells) const
         {
             if (cell_x_size <= 0.0)
             {
@@ -113,7 +153,12 @@ namespace VoxelGrid
             }
         }
 
-        int64_t GetLocationDataIndex(const Eigen::Vector3d& location) const
+        inline int64_t GetDataIndex(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
+        {
+            return (x_index * stride1_) + (y_index * stride2_) + z_index;
+        }
+
+        inline int64_t GetLocationDataIndex(const Eigen::Vector3d& location) const
         {
             Eigen::Vector3d location_in_chunk = location - region_.base;
             // First, make sure the location is in the range this chunk covers
@@ -137,7 +182,7 @@ namespace VoxelGrid
                 }
                 else
                 {
-                    return (x_cell * stride1_) + (y_cell * stride2_) + z_cell;
+                    return GetDataIndex(x_cell, y_cell, z_cell);
                 }
             }
         }
@@ -165,19 +210,20 @@ namespace VoxelGrid
             data_.resize(num_x_cells_ * num_y_cells_ * num_z_cells_, initial_value);
         }
 
-        DynamicSpatialHashedVoxelGridChunk(const CHUNK_REGION& region, const T initial_value)
+        DynamicSpatialHashedVoxelGridChunk(const CHUNK_REGION& region, const double chunk_x_size, const double chunk_y_size, const double chunk_z_size, const T initial_value)
         {
+            SafetyCheckSizes(chunk_x_size, chunk_y_size, chunk_z_size);
             cell_x_size_ = 0.0;
             cell_y_size_ = 0.0;
             cell_z_size_ = 0.0;
-            num_x_cells_ = 0;
-            num_y_cells_ = 0;
-            num_z_cells_ = 0;
-            chunk_x_size_ = 0.0;
-            chunk_y_size_ = 0.0;
-            chunk_z_size_ = 0.0;
-            stride1_ = 0;
-            stride2_ = 0;
+            num_x_cells_ = 1;
+            num_y_cells_ = 1;
+            num_z_cells_ = 1;
+            chunk_x_size_ = fabs(chunk_x_size);
+            chunk_y_size_ = fabs(chunk_y_size);
+            chunk_z_size_ = fabs(chunk_z_size);
+            stride1_ = num_y_cells_ * num_z_cells_;
+            stride2_ = num_z_cells_;
             region_ = region;
             initial_value_ = initial_value;
             data_.resize(1, initial_value);
@@ -212,7 +258,64 @@ namespace VoxelGrid
             return chunk_initialized_;
         }
 
-        std::pair<T&, bool> GetCellMutable(const Eigen::Vector3d& location)
+        inline bool IndexInBounds(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
+        {
+            if (x_index >= 0 && y_index >= 0 && z_index >= 0 && x_index < num_x_cells_ && y_index < num_y_cells_ && z_index < num_z_cells_)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        inline std::pair<const T&, bool> GetImmutableByIndex(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
+        {
+            assert(chunk_initialized_ || cell_initialized_);
+            if (IndexInBounds(x_index, y_index, z_index))
+            {
+                int64_t data_index = GetDataIndex(x_index, y_index, z_index);
+                assert(data_index >= 0 && data_index < data_.size());
+                return std::pair<const T&, bool>(data_[data_index], true);
+            }
+            else
+            {
+                return std::pair<const T&, bool>(initial_value_, false);
+            }
+        }
+
+        inline std::pair<T&, bool> GetMutableByIndex(const int64_t x_index, const int64_t y_index, const int64_t z_index)
+        {
+            assert(chunk_initialized_ || cell_initialized_);
+            if (IndexInBounds(x_index, y_index, z_index))
+            {
+                int64_t data_index = GetDataIndex(x_index, y_index, z_index);
+                assert(data_index >= 0 && data_index < data_.size());
+                return std::pair<T&, bool>(data_[data_index], true);
+            }
+            else
+            {
+                return std::pair<T&, bool>(initial_value_, false);
+            }
+        }
+
+        inline std::pair<T, bool> GetCopyByIndex(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
+        {
+            assert(chunk_initialized_ || cell_initialized_);
+            if (IndexInBounds(x_index, y_index, z_index))
+            {
+                int64_t data_index = GetDataIndex(x_index, y_index, z_index);
+                assert(data_index >= 0 && data_index < data_.size());
+                return std::pair<T, bool>(data_[data_index], true);
+            }
+            else
+            {
+                return std::pair<T, bool>(initial_value_, false);
+            }
+        }
+
+        inline std::pair<T&, bool> GetCellMutable(const Eigen::Vector3d& location)
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -227,7 +330,7 @@ namespace VoxelGrid
             }
         }
 
-        std::pair<const T&, bool> GetCellImmutable(const Eigen::Vector3d& location) const
+        inline std::pair<const T&, bool> GetCellImmutable(const Eigen::Vector3d& location) const
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -242,7 +345,7 @@ namespace VoxelGrid
             }
         }
 
-        std::pair<T, bool> GetCellCopy(const Eigen::Vector3d& location) const
+        inline std::pair<T, bool> GetCellCopy(const Eigen::Vector3d& location) const
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -257,28 +360,28 @@ namespace VoxelGrid
             }
         }
 
-        T& GetChunkMutable()
+        inline T& GetChunkMutable()
         {
             assert(chunk_initialized_);
             assert(data_.size() == 1);
             return data_[0];
         }
 
-        const T& GetChunkImmutable() const
+        inline const T& GetChunkImmutable() const
         {
             assert(chunk_initialized_);
             assert(data_.size() == 1);
             return data_[0];
         }
 
-        T GetChunkCopy() const
+        inline T GetChunkCopy() const
         {
             assert(chunk_initialized_);
             assert(data_.size() == 1);
             return data_[0];
         }
 
-        bool SetCellValue(const Eigen::Vector3d& location, T value)
+        inline bool SetCellValue(const Eigen::Vector3d& location, T value)
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -294,7 +397,7 @@ namespace VoxelGrid
             }
         }
 
-        bool SetCellReference(const Eigen::Vector3d& location, T& value)
+        inline bool SetCellReference(const Eigen::Vector3d& location, T& value)
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -310,7 +413,7 @@ namespace VoxelGrid
             }
         }
 
-        bool SetChunkValue(T value)
+        inline bool SetChunkValue(T value)
         {
             assert(chunk_initialized_);
             assert(data_.size() == 1);
@@ -318,15 +421,70 @@ namespace VoxelGrid
             return true;
         }
 
-        bool SetChunkReference(T& value)
+        inline bool SetChunkReference(T& value)
         {
             assert(chunk_initialized_);
             assert(data_.size() == 1);
             data_[0] = value;
             return true;
+        }
+
+        inline std::vector<double> GetIndexLocationInGrid(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
+        {
+            assert(chunk_initialized_ || cell_initialized_);
+            if (IndexInBounds(x_index, y_index, z_index))
+            {
+                if (chunk_initialized_)
+                {
+                    Eigen::Vector3d point_in_chunk_frame(chunk_x_size_ * 0.5, chunk_y_size_ * 0.5, chunk_z_size_ * 0.5);
+                    Eigen::Vector3d point_in_grid_frame = region_.base + point_in_chunk_frame;
+                    return std::vector<double>{point_in_grid_frame.x(), point_in_grid_frame.y(), point_in_grid_frame.z()};
+                }
+                else
+                {
+                    Eigen::Vector3d point_in_chunk_frame(cell_x_size_ * ((double)x_index + 0.5), cell_y_size_ * ((double)y_index + 0.5), cell_z_size_ * ((double)z_index + 0.5));
+                    Eigen::Vector3d point_in_grid_frame = region_.base + point_in_chunk_frame;
+                    return std::vector<double>{point_in_grid_frame.x(), point_in_grid_frame.y(), point_in_grid_frame.z()};
+                }
+            }
+            else
+            {
+                return std::vector<double>();
+            }
+        }
+
+        inline std::vector<double> GetElementSize() const
+        {
+            assert(chunk_initialized_ || cell_initialized_);
+            if (chunk_initialized_)
+            {
+                return std::vector<double>{chunk_x_size_, chunk_y_size_, chunk_z_size_};
+            }
+            else
+            {
+                return std::vector<double>{cell_x_size_, cell_y_size_, cell_z_size_};
+            }
+        }
+
+        inline int64_t GetNumXCells() const
+        {
+            return num_x_cells_;
+        }
+
+        inline int64_t GetNumYCells() const
+        {
+            return num_y_cells_;
+        }
+
+        inline int64_t GetNumZCells() const
+        {
+            return num_z_cells_;
         }
     };
 
+    enum FOUND_STATUS {NOT_FOUND, FOUND_IN_CHUNK, FOUND_IN_CELL};
+
+    enum SET_STATUS {NOT_SET, SET_CHUNK, SET_CELL};
 
     template <typename T>
     class DynamicSpatialHashedVoxelGrid
@@ -403,10 +561,6 @@ namespace VoxelGrid
         }
 
     public:
-
-        enum FOUND_STATUS {NOT_FOUND, FOUND_IN_CHUNK, FOUND_IN_CELL};
-
-        enum SET_STATUS {NOT_SET, SET_CHUNK, SET_CELL};
 
         DynamicSpatialHashedVoxelGrid(Eigen::Affine3d origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, T default_value)
         {
@@ -825,7 +979,7 @@ namespace VoxelGrid
                 if (chunk.IsCellInitialized())
                 {
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, value);
+                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                     chunks_[region] = new_chunk;
                     return SET_CHUNK;
                 }
@@ -843,7 +997,7 @@ namespace VoxelGrid
                 else
                 {
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, value);
+                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                     chunks_[region] = new_chunk;
                     return SET_CHUNK;
                 }
@@ -851,7 +1005,7 @@ namespace VoxelGrid
             else
             {
                 // Make a new chunk
-                DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, value);
+                DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                 chunks_[region] = new_chunk;
                 return SET_CHUNK;
             }
@@ -869,7 +1023,7 @@ namespace VoxelGrid
                 if (chunk.IsCellInitialized())
                 {
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, value);
+                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                     chunks_[region] = new_chunk;
                     return SET_CHUNK;
                 }
@@ -887,7 +1041,7 @@ namespace VoxelGrid
                 else
                 {
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, value);
+                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                     chunks_[region] = new_chunk;
                     return SET_CHUNK;
                 }
@@ -895,7 +1049,7 @@ namespace VoxelGrid
             else
             {
                 // Make a new chunk
-                DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, value);
+                DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                 chunks_[region] = new_chunk;
                 return SET_CHUNK;
             }
@@ -929,6 +1083,11 @@ namespace VoxelGrid
         inline Eigen::Affine3d GetOriginTransform() const
         {
             return origin_transform_;
+        }
+
+        inline const std::unordered_map<CHUNK_REGION, DynamicSpatialHashedVoxelGridChunk<T>>& GetInternalChunks() const
+        {
+            return chunks_;
         }
 
     };
