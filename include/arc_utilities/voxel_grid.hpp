@@ -29,7 +29,7 @@ namespace VoxelGrid
         }
     };
 
-    template <typename T>
+    template<typename T, typename Allocator=std::allocator<T>>
     class VoxelGrid
     {
     protected:
@@ -37,7 +37,7 @@ namespace VoxelGrid
         bool initialized_;
         Eigen::Affine3d origin_transform_;
         Eigen::Affine3d inverse_origin_transform_;
-        std::vector<T> data_;
+        std::vector<T, Allocator> data_;
         double cell_x_size_;
         double cell_y_size_;
         double cell_z_size_;
@@ -420,46 +420,6 @@ namespace VoxelGrid
             else
             {
                 return std::pair<const T&, bool>(oob_value_, false);
-            }
-        }
-
-        inline std::pair<T, bool> GetCopy(const Eigen::Vector3d& location) const
-        {
-            assert(initialized_);
-            std::vector<int64_t> indices = LocationToGridIndex(location);
-            if (indices.size() == 3)
-            {
-                return GetCopy(indices[0], indices[1], indices[2]);
-            }
-            else
-            {
-                return std::pair<T, bool>(oob_value_, false);
-            }
-        }
-
-        inline std::pair<T, bool> GetCopy(const double x, const double y, const double z) const
-        {
-            Eigen::Vector3d location(x, y, z);
-            return GetCopy(location);
-        }
-
-        inline std::pair<T, bool> GetCopy(const GRID_INDEX& index) const
-        {
-            return GetCopy(index.x, index.y, index.z);
-        }
-
-        inline std::pair<T, bool> GetCopy(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
-        {
-            assert(initialized_);
-            if (IndexInBounds(x_index, y_index, z_index))
-            {
-                int64_t data_index = GetDataIndex(x_index, y_index, z_index);
-                assert(data_index >= 0 && data_index < data_.size());
-                return std::pair<T, bool>(data_[data_index], true);
-            }
-            else
-            {
-                return std::pair<T, bool>(oob_value_, false);
             }
         }
 

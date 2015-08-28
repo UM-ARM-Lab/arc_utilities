@@ -39,7 +39,7 @@ namespace VoxelGrid
         }
     };
 
-    template <typename T>
+    template<typename T, typename Allocator=std::allocator<T>>
     class DynamicSpatialHashedVoxelGridChunk
     {
     protected:
@@ -58,7 +58,7 @@ namespace VoxelGrid
         int64_t stride2_;
         bool chunk_initialized_;
         bool cell_initialized_;
-        std::vector<T> data_;
+        std::vector<T, Allocator> data_;
         T initial_value_;
 
         inline void SafetyCheckSizes(const double chunk_x_size, const double chunk_y_size, const double chunk_z_size) const
@@ -300,21 +300,6 @@ namespace VoxelGrid
             }
         }
 
-        inline std::pair<T, bool> GetCopyByIndex(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
-        {
-            assert(chunk_initialized_ || cell_initialized_);
-            if (IndexInBounds(x_index, y_index, z_index))
-            {
-                int64_t data_index = GetDataIndex(x_index, y_index, z_index);
-                assert(data_index >= 0 && data_index < data_.size());
-                return std::pair<T, bool>(data_[data_index], true);
-            }
-            else
-            {
-                return std::pair<T, bool>(initial_value_, false);
-            }
-        }
-
         inline std::pair<T&, bool> GetCellMutable(const Eigen::Vector3d& location)
         {
             assert(cell_initialized_);
@@ -345,21 +330,6 @@ namespace VoxelGrid
             }
         }
 
-        inline std::pair<T, bool> GetCellCopy(const Eigen::Vector3d& location) const
-        {
-            assert(cell_initialized_);
-            int64_t data_index = GetLocationDataIndex(location);
-            if (data_index >= 0)
-            {
-                assert(data_index < data_.size());
-                return std::pair<T, bool>(data_[data_index], true);
-            }
-            else
-            {
-                return std::pair<T, bool>(initial_value_, false);
-            }
-        }
-
         inline T& GetChunkMutable()
         {
             assert(chunk_initialized_);
@@ -368,13 +338,6 @@ namespace VoxelGrid
         }
 
         inline const T& GetChunkImmutable() const
-        {
-            assert(chunk_initialized_);
-            assert(data_.size() == 1);
-            return data_[0];
-        }
-
-        inline T GetChunkCopy() const
         {
             assert(chunk_initialized_);
             assert(data_.size() == 1);
@@ -486,7 +449,7 @@ namespace VoxelGrid
 
     enum SET_STATUS {NOT_SET, SET_CHUNK, SET_CELL};
 
-    template <typename T>
+    template<typename T, typename Allocator=std::allocator<T>>
     class DynamicSpatialHashedVoxelGrid
     {
     protected:
@@ -494,7 +457,7 @@ namespace VoxelGrid
         bool initialized_;
         Eigen::Affine3d origin_transform_;
         Eigen::Affine3d inverse_origin_transform_;
-        std::unordered_map<CHUNK_REGION, DynamicSpatialHashedVoxelGridChunk<T>> chunks_;
+        std::unordered_map<CHUNK_REGION, DynamicSpatialHashedVoxelGridChunk<T, Allocator>> chunks_;
         double chunk_x_size_;
         double chunk_y_size_;
         double chunk_z_size_;
@@ -647,12 +610,6 @@ namespace VoxelGrid
             return GetImmutable(location);
         }
 
-        inline std::pair<T, FOUND_STATUS> GetCopy(const double x, const double y, const double z) const
-        {
-            Eigen::Vector3d location(x, y, z);
-            return GetCopy(location);
-        }
-
         inline std::pair<T&, FOUND_STATUS> GetMutable(const double x, const double y, const double z)
         {
             Eigen::Vector3d location(x, y, z);
@@ -737,43 +694,6 @@ namespace VoxelGrid
             }
         }
 
-        inline std::pair<T, FOUND_STATUS> GetCopy(const Eigen::Vector3d& location) const
-        {
-            assert(initialized_);
-            Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
-            CHUNK_REGION region = GetContainingChunkRegion(grid_location);
-            auto found_chunk_itr = chunks_.find(region);
-            if (found_chunk_itr != chunks_.end())
-            {
-                const DynamicSpatialHashedVoxelGridChunk<T>& chunk = found_chunk_itr->second;
-                if (chunk.IsCellInitialized())
-                {
-                    // Get the data
-                    std::pair<T, bool> found_in_cell = chunk.GetCellCopy(grid_location);
-                    if (found_in_cell.second)
-                    {
-                        return std::pair<T, FOUND_STATUS>(found_in_cell.first, FOUND_IN_CELL);
-                    }
-                    else
-                    {
-                        return std::pair<T, FOUND_STATUS>(default_value_, NOT_FOUND);
-                    }
-                }
-                else if (chunk.IsChunkInitialized())
-                {
-                    return std::pair<T, FOUND_STATUS>(chunk.GetChunkCopy(), FOUND_IN_CHUNK);
-                }
-                else
-                {
-                    return std::pair<T, FOUND_STATUS>(default_value_, NOT_FOUND);
-                }
-            }
-            else
-            {
-                return std::pair<T, FOUND_STATUS>(default_value_, NOT_FOUND);
-            }
-        }
-
         inline std::pair<T&, FOUND_STATUS> GetMutable(const Eigen::Vector3d& location)
         {
             assert(initialized_);
@@ -835,7 +755,7 @@ namespace VoxelGrid
                 {
                     T current_chunk_value = chunk.GetChunkMutable();
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, current_chunk_value);
+                    DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, current_chunk_value);
                     if (new_chunk.SetCellValue(grid_location, value))
                     {
                         chunks_[region] = new_chunk;
@@ -849,7 +769,7 @@ namespace VoxelGrid
                 else
                 {
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
+                    DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
                     if (new_chunk.SetCellValue(grid_location, value))
                     {
                         chunks_[region] = new_chunk;
@@ -864,7 +784,7 @@ namespace VoxelGrid
             else
             {
                 // Make a new chunk
-                DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
+                DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
                 if (new_chunk.SetCellValue(grid_location, value))
                 {
                     chunks_[region] = new_chunk;
@@ -885,7 +805,7 @@ namespace VoxelGrid
             auto found_chunk_itr = chunks_.find(region);
             if (found_chunk_itr != chunks_.end())
             {
-                DynamicSpatialHashedVoxelGridChunk<T>& chunk = found_chunk_itr->second;
+                DynamicSpatialHashedVoxelGridChunk<T, Allocator>& chunk = found_chunk_itr->second;
                 if (chunk.IsCellInitialized())
                 {
                     if (chunk.SetCellValue(grid_location, value))
@@ -901,7 +821,7 @@ namespace VoxelGrid
                 {
                     T current_chunk_value = chunk.GetChunkMutable();
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, current_chunk_value);
+                    DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, current_chunk_value);
                     if (new_chunk.SetCellValue(grid_location, value))
                     {
                         chunks_[region] = new_chunk;
@@ -915,7 +835,7 @@ namespace VoxelGrid
                 else
                 {
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
+                    DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
                     if (new_chunk.SetCellValue(grid_location, value))
                     {
                         chunks_[region] = new_chunk;
@@ -930,7 +850,7 @@ namespace VoxelGrid
             else
             {
                 // Make a new chunk
-                DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
+                DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
                 if (new_chunk.SetCellValue(grid_location, value))
                 {
                     chunks_[region] = new_chunk;
@@ -951,11 +871,11 @@ namespace VoxelGrid
             auto found_chunk_itr = chunks_.find(region);
             if (found_chunk_itr != chunks_.end())
             {
-                DynamicSpatialHashedVoxelGridChunk<T>& chunk = found_chunk_itr->second;
+                DynamicSpatialHashedVoxelGridChunk<T, Allocator>& chunk = found_chunk_itr->second;
                 if (chunk.IsCellInitialized())
                 {
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
+                    DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                     chunks_[region] = new_chunk;
                     return SET_CHUNK;
                 }
@@ -973,7 +893,7 @@ namespace VoxelGrid
                 else
                 {
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
+                    DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                     chunks_[region] = new_chunk;
                     return SET_CHUNK;
                 }
@@ -981,7 +901,7 @@ namespace VoxelGrid
             else
             {
                 // Make a new chunk
-                DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
+                DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                 chunks_[region] = new_chunk;
                 return SET_CHUNK;
             }
@@ -995,11 +915,11 @@ namespace VoxelGrid
             auto found_chunk_itr = chunks_.find(region);
             if (found_chunk_itr != chunks_.end())
             {
-                DynamicSpatialHashedVoxelGridChunk<T>& chunk = found_chunk_itr->second;
+                DynamicSpatialHashedVoxelGridChunk<T, Allocator>& chunk = found_chunk_itr->second;
                 if (chunk.IsCellInitialized())
                 {
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
+                    DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                     chunks_[region] = new_chunk;
                     return SET_CHUNK;
                 }
@@ -1017,7 +937,7 @@ namespace VoxelGrid
                 else
                 {
                     // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
+                    DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                     chunks_[region] = new_chunk;
                     return SET_CHUNK;
                 }
@@ -1025,7 +945,7 @@ namespace VoxelGrid
             else
             {
                 // Make a new chunk
-                DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
+                DynamicSpatialHashedVoxelGridChunk<T, Allocator> new_chunk(region, chunk_x_size_, chunk_y_size_, chunk_z_size_, value);
                 chunks_[region] = new_chunk;
                 return SET_CHUNK;
             }
