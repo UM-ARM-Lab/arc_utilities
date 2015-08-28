@@ -556,7 +556,6 @@ namespace VoxelGrid
         inline CHUNK_REGION GetContainingChunkRegion(const Eigen::Vector3d& grid_location) const
         {
             assert(initialized_);
-            std::cout << "Grid location - " << PrettyPrint::PrettyPrint(grid_location) << std::endl;
             // Given a location in the grid frame, figure out which chunk region it falls into
             double raw_x_chunk_num = grid_location.x() / chunk_x_size_;
             double raw_y_chunk_num = grid_location.y() / chunk_y_size_;
@@ -568,7 +567,6 @@ namespace VoxelGrid
             double region_base_y = (double)y_chunk_num * chunk_y_size_;
             double region_base_z = (double)z_chunk_num * chunk_z_size_;
             CHUNK_REGION region(region_base_x, region_base_y, region_base_z);
-            std::cout << "Region base - " << PrettyPrint::PrettyPrint(region.base) << std::endl;
             return region;
         }
 
