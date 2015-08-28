@@ -57,7 +57,7 @@ namespace VoxelGrid
             return (x_index * stride1_) + (y_index * stride2_) + z_index;
         }
 
-        inline void SetContents(T value)
+        inline void SetContents(const T& value)
         {
             data_.clear();
             data_.resize(num_x_cells_ * num_y_cells_ * num_z_cells_, value);
@@ -191,7 +191,7 @@ namespace VoxelGrid
             }
         }
 
-        inline void CoreInitialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
+        inline void CoreInitialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
         {
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
             cell_x_size_ = fabs(cell_x_size);
@@ -212,82 +212,82 @@ namespace VoxelGrid
 
     public:
 
-        VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_size, const double x_size, const double y_size, double const z_size, const T default_value)
+        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const double x_size, const double y_size, double const z_size, const T& default_value)
         {
             Initialize(origin_transform, cell_size, cell_size, cell_size, x_size, y_size, z_size, default_value, default_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_size, const double x_size, const double y_size, const double z_size, const T default_value, const T oob_value)
+        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const double x_size, const double y_size, const double z_size, const T& default_value, const T& oob_value)
         {
             Initialize(origin_transform, cell_size, cell_size, cell_size, x_size, y_size, z_size, default_value, oob_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T default_value)
+        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T& default_value)
         {
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size, default_value, default_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T default_value, const T oob_value)
+        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T& default_value, const T& oob_value)
         {
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size, default_value, oob_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value)
+        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value)
         {
             Initialize(origin_transform, cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells, default_value, default_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
+        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
         {
             Initialize(origin_transform, cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value)
+        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value)
         {
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, default_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
+        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
         {
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
-        VoxelGrid(const double cell_size, const double x_size, const double y_size, const double z_size, const T default_value)
+        VoxelGrid(const double cell_size, const double x_size, const double y_size, const double z_size, const T& default_value)
         {
             Initialize(cell_size, cell_size, cell_size, x_size, y_size, z_size, default_value, default_value);
         }
 
-        VoxelGrid(const double cell_size, const double x_size, const double y_size, const double z_size, const T default_value, const T oob_value)
+        VoxelGrid(const double cell_size, const double x_size, const double y_size, const double z_size, const T& default_value, const T& oob_value)
         {
             Initialize(cell_size, cell_size, cell_size, x_size, y_size, z_size, default_value, oob_value);
         }
 
-        VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T default_value)
+        VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T& default_value)
         {
             Initialize(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size, default_value, default_value);
         }
 
-        VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T default_value, const T oob_value)
+        VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T& default_value, const T& oob_value)
         {
             Initialize(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size, default_value, oob_value);
         }
 
-        VoxelGrid(const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value)
+        VoxelGrid(const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value)
         {
             Initialize(cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells, default_value, default_value);
         }
 
-        VoxelGrid(const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
+        VoxelGrid(const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
         {
             Initialize(cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
-        VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value)
+        VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value)
         {
             Initialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, default_value);
         }
 
-        VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
+        VoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
         {
             Initialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
@@ -307,10 +307,11 @@ namespace VoxelGrid
             num_z_cells_ = 0;
             stride1_ = num_y_cells_ * num_z_cells_;
             stride2_ = num_z_cells_;
+            data_.clear();
             initialized_ = false;
         }
 
-        inline void Initialize(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T default_value, const T oob_value)
+        inline void Initialize(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T& default_value, const T& oob_value)
         {
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size);
             int64_t num_x_cells = (int64_t)(ceil(fabs(x_size) / fabs(cell_x_size)));
@@ -319,7 +320,7 @@ namespace VoxelGrid
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
-        inline void Initialize(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
+        inline void Initialize(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
         {
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
             CoreInitialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
@@ -328,7 +329,7 @@ namespace VoxelGrid
             initialized_ = true;
         }
 
-        inline void Initialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T default_value, const T oob_value)
+        inline void Initialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T& default_value, const T& oob_value)
         {
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size);
             int64_t num_x_cells = (int64_t)(ceil(fabs(x_size) / fabs(cell_x_size)));
@@ -337,7 +338,7 @@ namespace VoxelGrid
             Initialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
-        inline void Initialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T default_value, const T oob_value)
+        inline void Initialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
         {
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
             CoreInitialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
@@ -359,12 +360,12 @@ namespace VoxelGrid
             SetContents(default_value_);
         }
 
-        inline void ResetWithNewValue(T new_value)
+        inline void ResetWithNewValue(const T& new_value)
         {
             SetContents(new_value);
         }
 
-        inline void ResetWithNewDefault(T new_default)
+        inline void ResetWithNewDefault(const T& new_default)
         {
             default_value_ = new_default;
             SetContents(default_value_);
@@ -502,13 +503,13 @@ namespace VoxelGrid
             }
         }
 
-        inline bool SetWithReference(const Eigen::Vector3d& location, T& value)
+        inline bool SetValue(const Eigen::Vector3d& location, const T& value)
         {
             assert(initialized_);
             std::vector<int64_t> indices = LocationToGridIndex(location);
             if (indices.size() == 3)
             {
-                return SetWithReference(indices[0], indices[1], indices[2], value);
+                return SetValue(indices[0], indices[1], indices[2], value);
             }
             else
             {
@@ -516,18 +517,18 @@ namespace VoxelGrid
             }
         }
 
-        inline bool SetWithReference(const double x, const double y, const double z, T& value)
+        inline bool SetValue(const double x, const double y, const double z, const T& value)
         {
             Eigen::Vector3d location(x, y, z);
-            return SetWithReference(location, value);
+            return SetValue(location, value);
         }
 
-        inline bool  SetWithReference(const GRID_INDEX& index, T& value)
+        inline bool  SetValue(const GRID_INDEX& index, const T& value)
         {
-            return SetWithReference(index.x, index.y, index.z, value);
+            return SetValue(index.x, index.y, index.z, value);
         }
 
-        inline bool SetWithReference(const int64_t x_index, const int64_t y_index, const int64_t z_index, T& value)
+        inline bool SetValue(const int64_t x_index, const int64_t y_index, const int64_t z_index, const T& value)
         {
             assert(initialized_);
             if (IndexInBounds(x_index, y_index, z_index))
@@ -543,13 +544,13 @@ namespace VoxelGrid
             }
         }
 
-        inline bool SetWithValue(const Eigen::Vector3d& location, T value)
+        inline bool SetValue(const Eigen::Vector3d& location, T&& value)
         {
             assert(initialized_);
             std::vector<int64_t> indices = LocationToGridIndex(location);
             if (indices.size() == 3)
             {
-                return SetWithValue(indices[0], indices[1], indices[2], value);
+                return SetValue(indices[0], indices[1], indices[2], value);
             }
             else
             {
@@ -557,18 +558,18 @@ namespace VoxelGrid
             }
         }
 
-        inline bool SetWithValue(const double x, const double y, const double z, T value)
+        inline bool SetValue(const double x, const double y, const double z, T&& value)
         {
             Eigen::Vector3d location(x, y, z);
-            return SetWithValue(location, value);
+            return SetValue(location, value);
         }
 
-        inline bool  SetWithValue(const GRID_INDEX& index, T value)
+        inline bool  SetValue(const GRID_INDEX& index, T&& value)
         {
-            return SetWithValue(index.x, index.y, index.z, value);
+            return SetValue(index.x, index.y, index.z, value);
         }
 
-        inline bool SetWithValue(const int64_t x_index, const int64_t y_index, const int64_t z_index, T value)
+        inline bool SetValue(const int64_t x_index, const int64_t y_index, const int64_t z_index, T&& value)
         {
             assert(initialized_);
             if (IndexInBounds(x_index, y_index, z_index))
@@ -614,12 +615,12 @@ namespace VoxelGrid
             return oob_value_;
         }
 
-        inline void SetDefaultValue(T default_value)
+        inline void SetDefaultValue(const T& default_value)
         {
             default_value_ = default_value;
         }
 
-        inline void SetOOBValue(T oob_value)
+        inline void SetOOBValue(const T& oob_value)
         {
             oob_value_ = oob_value;
         }

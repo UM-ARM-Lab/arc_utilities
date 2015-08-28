@@ -189,7 +189,7 @@ namespace VoxelGrid
 
     public:
 
-        DynamicSpatialHashedVoxelGridChunk(const CHUNK_REGION& region, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T initial_value)
+        DynamicSpatialHashedVoxelGridChunk(const CHUNK_REGION& region, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& initial_value)
         {
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
             cell_x_size_ = fabs(cell_x_size);
@@ -210,7 +210,7 @@ namespace VoxelGrid
             data_.resize(num_x_cells_ * num_y_cells_ * num_z_cells_, initial_value);
         }
 
-        DynamicSpatialHashedVoxelGridChunk(const CHUNK_REGION& region, const double chunk_x_size, const double chunk_y_size, const double chunk_z_size, const T initial_value)
+        DynamicSpatialHashedVoxelGridChunk(const CHUNK_REGION& region, const double chunk_x_size, const double chunk_y_size, const double chunk_z_size, const T& initial_value)
         {
             SafetyCheckSizes(chunk_x_size, chunk_y_size, chunk_z_size);
             cell_x_size_ = 0.0;
@@ -381,7 +381,7 @@ namespace VoxelGrid
             return data_[0];
         }
 
-        inline bool SetCellValue(const Eigen::Vector3d& location, T value)
+        inline bool SetCellValue(const Eigen::Vector3d& location, const T& value)
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -397,7 +397,7 @@ namespace VoxelGrid
             }
         }
 
-        inline bool SetCellReference(const Eigen::Vector3d& location, T& value)
+        inline bool SetCellValue(const Eigen::Vector3d& location, T&& value)
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -413,7 +413,7 @@ namespace VoxelGrid
             }
         }
 
-        inline bool SetChunkValue(T value)
+        inline bool SetChunkValue(const T& value)
         {
             assert(chunk_initialized_);
             assert(data_.size() == 1);
@@ -421,7 +421,7 @@ namespace VoxelGrid
             return true;
         }
 
-        inline bool SetChunkReference(T& value)
+        inline bool SetChunkValue(T&& value)
         {
             assert(chunk_initialized_);
             assert(data_.size() == 1);
@@ -508,7 +508,7 @@ namespace VoxelGrid
         double cell_z_size_;
         T default_value_;
 
-        void SafetyCheckSizes(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells,const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells) const
+        inline void SafetyCheckSizes(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells,const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells) const
         {
             if (cell_x_size <= 0.0)
             {
@@ -560,91 +560,49 @@ namespace VoxelGrid
             }
         }
 
+        inline void CoreInitialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
+        {
+            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells);
+            cell_x_size_ = fabs(cell_x_size);
+            cell_y_size_ = fabs(cell_y_size);
+            cell_z_size_ = fabs(cell_z_size);
+            chunk_num_x_cells_ = chunk_num_x_cells;
+            chunk_num_y_cells_ = chunk_num_y_cells;
+            chunk_num_z_cells_ = chunk_num_z_cells;
+            chunk_x_size_ = cell_x_size_ * (double)chunk_num_x_cells_;
+            chunk_y_size_ = cell_y_size_ * (double)chunk_num_y_cells_;
+            chunk_z_size_ = cell_z_size_ * (double)chunk_num_z_cells_;
+            default_value_ = default_value;
+            chunk_stride1_ = chunk_num_y_cells_ * chunk_num_z_cells_;
+            chunk_stride2_ = chunk_num_z_cells_;
+            chunks_.clear();
+        }
+
     public:
 
-        DynamicSpatialHashedVoxelGrid(Eigen::Affine3d origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, T default_value)
+        DynamicSpatialHashedVoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
         {
-            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells);
-            origin_transform_ = origin_transform;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_x_size);
-            cell_y_size_ = fabs(cell_y_size);
-            cell_z_size_ = fabs(cell_z_size);
-            chunk_num_x_cells_ = chunk_num_x_cells;
-            chunk_num_y_cells_ = chunk_num_y_cells;
-            chunk_num_z_cells_ = chunk_num_z_cells;
-            chunk_x_size_ = cell_x_size_ * (double)chunk_num_x_cells_;
-            chunk_y_size_ = cell_y_size_ * (double)chunk_num_y_cells_;
-            chunk_z_size_ = cell_z_size_ * (double)chunk_num_z_cells_;
-            default_value_ = default_value;
-            chunk_stride1_ = chunk_num_y_cells_ * chunk_num_z_cells_;
-            chunk_stride2_ = chunk_num_z_cells_;
-            initialized_ = true;
+            Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells, default_value);
         }
 
-        DynamicSpatialHashedVoxelGrid(Eigen::Affine3d origin_transform, const double cell_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, T default_value)
+        DynamicSpatialHashedVoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
         {
-            SafetyCheckSizes(cell_size, cell_size, cell_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells);
-            origin_transform_ = origin_transform;
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_size);
-            cell_y_size_ = fabs(cell_size);
-            cell_z_size_ = fabs(cell_size);
-            chunk_num_x_cells_ = chunk_num_x_cells;
-            chunk_num_y_cells_ = chunk_num_y_cells;
-            chunk_num_z_cells_ = chunk_num_z_cells;
-            chunk_x_size_ = cell_x_size_ * (double)chunk_num_x_cells_;
-            chunk_y_size_ = cell_y_size_ * (double)chunk_num_y_cells_;
-            chunk_z_size_ = cell_z_size_ * (double)chunk_num_z_cells_;
-            default_value_ = default_value;
-            chunk_stride1_ = chunk_num_y_cells_ * chunk_num_z_cells_;
-            chunk_stride2_ = chunk_num_z_cells_;
-            initialized_ = true;
+            Initialize(origin_transform, cell_size, cell_size, cell_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells, default_value);
         }
 
-        DynamicSpatialHashedVoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, T default_value)
+        DynamicSpatialHashedVoxelGrid(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
         {
-            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells);
-            origin_transform_.setIdentity();
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_x_size);
-            cell_y_size_ = fabs(cell_y_size);
-            cell_z_size_ = fabs(cell_z_size);
-            chunk_num_x_cells_ = chunk_num_x_cells;
-            chunk_num_y_cells_ = chunk_num_y_cells;
-            chunk_num_z_cells_ = chunk_num_z_cells;
-            chunk_x_size_ = cell_x_size_ * (double)chunk_num_x_cells_;
-            chunk_y_size_ = cell_y_size_ * (double)chunk_num_y_cells_;
-            chunk_z_size_ = cell_z_size_ * (double)chunk_num_z_cells_;
-            default_value_ = default_value;
-            chunk_stride1_ = chunk_num_y_cells_ * chunk_num_z_cells_;
-            chunk_stride2_ = chunk_num_z_cells_;
-            initialized_ = true;
+            Initialize(cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells, default_value);
         }
 
-        DynamicSpatialHashedVoxelGrid(const double cell_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, T default_value)
+        DynamicSpatialHashedVoxelGrid(const double cell_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
         {
-            SafetyCheckSizes(cell_size, cell_size, cell_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells);
-            origin_transform_.setIdentity();
-            inverse_origin_transform_ = origin_transform_.inverse();
-            cell_x_size_ = fabs(cell_size);
-            cell_y_size_ = fabs(cell_size);
-            cell_z_size_ = fabs(cell_size);
-            chunk_num_x_cells_ = chunk_num_x_cells;
-            chunk_num_y_cells_ = chunk_num_y_cells;
-            chunk_num_z_cells_ = chunk_num_z_cells;
-            chunk_x_size_ = cell_x_size_ * (double)chunk_num_x_cells_;
-            chunk_y_size_ = cell_y_size_ * (double)chunk_num_y_cells_;
-            chunk_z_size_ = cell_z_size_ * (double)chunk_num_z_cells_;
-            default_value_ = default_value;
-            chunk_stride1_ = chunk_num_y_cells_ * chunk_num_z_cells_;
-            chunk_stride2_ = chunk_num_z_cells_;
-            initialized_ = true;
+            Initialize(cell_size, cell_size, cell_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells, default_value);
         }
 
         DynamicSpatialHashedVoxelGrid()
         {
-            origin_transform_ = Eigen::Affine3d::Identity();
+            origin_transform_.setIdentity();
             inverse_origin_transform_ = origin_transform_.inverse();
             cell_x_size_ = 0.0;
             cell_y_size_ = 0.0;
@@ -657,6 +615,24 @@ namespace VoxelGrid
             chunk_z_size_ = cell_z_size_ * (double)chunk_num_z_cells_;
             chunk_stride1_ = chunk_num_y_cells_ * chunk_num_z_cells_;
             chunk_stride2_ = chunk_num_z_cells_;
+            initialized_ = true;
+        }
+
+        inline void Initialize(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
+        {
+            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells);
+            CoreInitialize(cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells, default_value);
+            origin_transform_ = origin_transform;
+            inverse_origin_transform_ = origin_transform_.inverse();
+            initialized_ = true;
+        }
+
+        inline void Initialize(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
+        {
+            SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells);
+            CoreInitialize(cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells, default_value);
+            origin_transform_.setIdentity();
+            inverse_origin_transform_ = origin_transform_.inverse();
             initialized_ = true;
         }
 
@@ -683,28 +659,28 @@ namespace VoxelGrid
             return GetMutable(location);
         }
 
-        inline SET_STATUS SetCellWithReference(const double x, const double y, const double z, T& value)
+        inline SET_STATUS SetCellValue(const double x, const double y, const double z, const T& value)
         {
             Eigen::Vector3d location(x, y, z);
-            return SetCellWithReference(location, value);
+            return SetCellValue(location, value);
         }
 
-        inline SET_STATUS SetCellWithValue(const double x, const double y, const double z, T value)
+        inline SET_STATUS SetCellValue(const double x, const double y, const double z, T&& value)
         {
             Eigen::Vector3d location(x, y, z);
-            return SetCellWithValue(location, value);
+            return SetCellValue(location, value);
         }
 
-        inline SET_STATUS SetChunkWithReference(const double x, const double y, const double z, T& value)
+        inline SET_STATUS SetChunkValue(const double x, const double y, const double z, const T& value)
         {
             Eigen::Vector3d location(x, y, z);
-            return SetChunkWithReference(location, value);
+            return SetCellValue(location, value);
         }
 
-        inline SET_STATUS SetChunkWithValue(const double x, const double y, const double z, T value)
+        inline SET_STATUS SetChunkValue(const double x, const double y, const double z, T&& value)
         {
             Eigen::Vector3d location(x, y, z);
-            return SetChunkWithValue(location, value);
+            return SetCellValue(location, value);
         }
 
         inline CHUNK_REGION GetContainingChunkRegion(const Eigen::Vector3d& grid_location) const
@@ -835,73 +811,7 @@ namespace VoxelGrid
             }
         }
 
-        inline SET_STATUS SetCellWithReference(const Eigen::Vector3d& location, T& value)
-        {
-            assert(initialized_);
-            Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
-            CHUNK_REGION region = GetContainingChunkRegion(grid_location);
-            auto found_chunk_itr = chunks_.find(region);
-            if (found_chunk_itr != chunks_.end())
-            {
-                DynamicSpatialHashedVoxelGridChunk<T>& chunk = found_chunk_itr->second;
-                if (chunk.IsCellInitialized())
-                {
-                    if (chunk.SetCellReference(grid_location, value))
-                    {
-                        return SET_CELL;
-                    }
-                    else
-                    {
-                        return NOT_SET;
-                    }
-                }
-                else if (chunk.IsChunkInitialized())
-                {
-                    T current_chunk_value = chunk.GetMutableChunkValue();
-                    // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, current_chunk_value);
-                    if (new_chunk.SetCellReference(grid_location, value))
-                    {
-                        chunks_[region] = new_chunk;
-                        return SET_CELL;
-                    }
-                    else
-                    {
-                        return NOT_SET;
-                    }
-                }
-                else
-                {
-                    // Make a new chunk
-                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
-                    if (new_chunk.SetCellReference(grid_location, value))
-                    {
-                        chunks_[region] = new_chunk;
-                        return SET_CELL;
-                    }
-                    else
-                    {
-                        return NOT_SET;
-                    }
-                }
-            }
-            else
-            {
-                // Make a new chunk
-                DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
-                if (new_chunk.SetCellReference(grid_location, value))
-                {
-                    chunks_[region] = new_chunk;
-                    return SET_CELL;
-                }
-                else
-                {
-                    return NOT_SET;
-                }
-            }
-        }
-
-        inline SET_STATUS SetCellWithValue(const Eigen::Vector3d& location, T value)
+        inline SET_STATUS SetCellValue(const Eigen::Vector3d& location, const T& value)
         {
             assert(initialized_);
             Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
@@ -967,7 +877,73 @@ namespace VoxelGrid
             }
         }
 
-        inline SET_STATUS SetChunkWithReference(const Eigen::Vector3d& location, T& value)
+        inline SET_STATUS SetCellValue(const Eigen::Vector3d& location, T&& value)
+        {
+            assert(initialized_);
+            Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
+            CHUNK_REGION region = GetContainingChunkRegion(grid_location);
+            auto found_chunk_itr = chunks_.find(region);
+            if (found_chunk_itr != chunks_.end())
+            {
+                DynamicSpatialHashedVoxelGridChunk<T>& chunk = found_chunk_itr->second;
+                if (chunk.IsCellInitialized())
+                {
+                    if (chunk.SetCellValue(grid_location, value))
+                    {
+                        return SET_CELL;
+                    }
+                    else
+                    {
+                        return NOT_SET;
+                    }
+                }
+                else if (chunk.IsChunkInitialized())
+                {
+                    T current_chunk_value = chunk.GetChunkMutable();
+                    // Make a new chunk
+                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, current_chunk_value);
+                    if (new_chunk.SetCellValue(grid_location, value))
+                    {
+                        chunks_[region] = new_chunk;
+                        return SET_CELL;
+                    }
+                    else
+                    {
+                        return NOT_SET;
+                    }
+                }
+                else
+                {
+                    // Make a new chunk
+                    DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
+                    if (new_chunk.SetCellValue(grid_location, value))
+                    {
+                        chunks_[region] = new_chunk;
+                        return SET_CELL;
+                    }
+                    else
+                    {
+                        return NOT_SET;
+                    }
+                }
+            }
+            else
+            {
+                // Make a new chunk
+                DynamicSpatialHashedVoxelGridChunk<T> new_chunk(region, cell_x_size_, cell_y_size_, cell_z_size_, chunk_num_x_cells_, chunk_num_y_cells_, chunk_num_z_cells_, default_value_);
+                if (new_chunk.SetCellValue(grid_location, value))
+                {
+                    chunks_[region] = new_chunk;
+                    return SET_CELL;
+                }
+                else
+                {
+                    return NOT_SET;
+                }
+            }
+        }
+
+        inline SET_STATUS SetChunkValue(const Eigen::Vector3d& location, const T& value)
         {
             assert(initialized_);
             Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
@@ -985,7 +961,7 @@ namespace VoxelGrid
                 }
                 else if (chunk.IsChunkInitialized())
                 {
-                    if (chunk.SetChunkReference(value))
+                    if (chunk.SetChunkValue(value))
                     {
                         return SET_CHUNK;
                     }
@@ -1011,7 +987,7 @@ namespace VoxelGrid
             }
         }
 
-        inline SET_STATUS SetChunkWithValue(const Eigen::Vector3d& location, T value)
+        inline SET_STATUS SetChunkValue(const Eigen::Vector3d& location, T&& value)
         {
             assert(initialized_);
             Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
@@ -1075,7 +1051,7 @@ namespace VoxelGrid
             return default_value_;
         }
 
-        inline void SetDefaultValue(T default_value)
+        inline void SetDefaultValue(const T& default_value)
         {
             default_value_ = default_value;
         }
