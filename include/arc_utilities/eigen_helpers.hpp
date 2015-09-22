@@ -90,7 +90,39 @@ namespace EigenHelpers
             std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
         }
         // Interpolate
-        return p1 + ((p2 - p1) * real_ratio);
+        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
+        return ((p1 * (1.0 - real_ratio)) + (p2 * real_ratio));
+    }
+
+    inline std::vector<double> Interpolate(const std::vector<double>& v1, const std::vector<double>& v2, const double ratio)
+    {
+        // Safety check ratio
+        double real_ratio = ratio;
+        if (real_ratio < 0.0)
+        {
+            real_ratio = 0.0;
+            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
+        }
+        else if (real_ratio > 1.0)
+        {
+            real_ratio = 1.0;
+            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
+        }
+        // Safety check inputs
+        size_t len = v1.size();
+        if (len == v2.size())
+        {
+            std::cerr << "Vectors to interpolate are different sizes" << std::endl;
+            return std::vector<double>();
+        }
+        // Interpolate
+        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
+        std::vector<double> interped(len, 0);
+        for (size_t idx = 0; idx < len; idx++)
+        {
+            interped[idx] = ((v1[idx] * (1.0 - real_ratio)) + (v2[idx] * real_ratio));
+        }
+        return interped;
     }
 
     inline Eigen::Quaterniond Interpolate(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2, const double ratio)
@@ -126,8 +158,8 @@ namespace EigenHelpers
             std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
         }
         // Interpolate
-        Eigen::Vector3d interp_vector = v2 - v1;
-        return v1 + (interp_vector * real_ratio);
+        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
+        return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
     }
 
     inline Eigen::Affine3d Interpolate(const Eigen::Affine3d& t1, const Eigen::Affine3d& t2, const double ratio)
@@ -199,6 +231,22 @@ namespace EigenHelpers
         {
             return INFINITY;
         }
+    }
+
+    inline Eigen::Vector3d StdVectorDoubleToEigenVector3d(const std::vector<double>& vector)
+    {
+        if (vector.size() != 3)
+        {
+            std::cerr << "Vector is not 3 elements in size" << std::endl;
+            assert(false);
+        }
+        Eigen::Vector3d eigen_vector(vector[0], vector[1], vector[2]);
+        return eigen_vector;
+    }
+
+    inline std::vector<double> EigenVector3dToStdVectorDouble(const Eigen::Vector3d& point)
+    {
+        return std::vector<double>{point.x(), point.y(), point.z()};
     }
 
     inline Eigen::Vector3d GeometryPointToEigenVector3d(const geometry_msgs::Point& point)
