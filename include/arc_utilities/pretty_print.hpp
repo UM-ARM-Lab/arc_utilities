@@ -23,9 +23,10 @@ namespace PrettyPrint
 
     // Base template function for printing types
     template <typename T>
-    inline std::string PrettyPrint(const T& toprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const T& toprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         UNUSED(add_delimiters);
+        UNUSED(separator);
         std::ostringstream strm;
         strm << toprint;
         return strm.str();
@@ -36,9 +37,10 @@ namespace PrettyPrint
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<>
-    inline std::string PrettyPrint(const bool& bool_to_print, const bool add_delimiters)
+    inline std::string PrettyPrint(const bool& bool_to_print, const bool add_delimiters, const std::string& separator)
     {
         UNUSED(add_delimiters);
+        UNUSED(separator);
         if (bool_to_print)
         {
             return "true";
@@ -50,23 +52,26 @@ namespace PrettyPrint
     }
 
     template<>
-    inline std::string PrettyPrint(const Eigen::Vector3d& vector_to_print, const bool add_delimiters)
+    inline std::string PrettyPrint(const Eigen::Vector3d& vector_to_print, const bool add_delimiters, const std::string& separator)
     {
         UNUSED(add_delimiters);
+        UNUSED(separator);
         return "Vector3d: <x: " + std::to_string(vector_to_print.x()) + " y: " + std::to_string(vector_to_print.y()) + " z: " + std::to_string(vector_to_print.z()) + ">";
     }
 
     template<>
-    inline std::string PrettyPrint(const Eigen::Quaterniond& quaternion_to_print, const bool add_delimiters)
+    inline std::string PrettyPrint(const Eigen::Quaterniond& quaternion_to_print, const bool add_delimiters, const std::string& separator)
     {
         UNUSED(add_delimiters);
+        UNUSED(separator);
         return "Quaterniond <x: " + std::to_string(quaternion_to_print.x()) + " y: " + std::to_string(quaternion_to_print.y()) + " z: " + std::to_string(quaternion_to_print.z()) + " w: " + std::to_string(quaternion_to_print.w()) + ">";
     }
 
     template<>
-    inline std::string PrettyPrint(const Eigen::Affine3d& transform_to_print, const bool add_delimiters)
+    inline std::string PrettyPrint(const Eigen::Affine3d& transform_to_print, const bool add_delimiters, const std::string& separator)
     {
         UNUSED(add_delimiters);
+        UNUSED(separator);
         Eigen::Vector3d vector_to_print = transform_to_print.translation();
         Eigen::Quaterniond quaternion_to_print(transform_to_print.rotation());
         return "Affine3d <x: " + std::to_string(vector_to_print.x()) + " y: " + std::to_string(vector_to_print.y()) + " z: " + std::to_string(vector_to_print.z()) + ">, <x: " + std::to_string(quaternion_to_print.x()) + " y: " + std::to_string(quaternion_to_print.y()) + " z: " + std::to_string(quaternion_to_print.z()) + " w: " + std::to_string(quaternion_to_print.w()) + ">";
@@ -77,26 +82,26 @@ namespace PrettyPrint
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     template <typename T, size_t N>
-    inline std::string PrettyPrint(const std::array<T, N>& arraytoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::array<T, N>& arraytoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (arraytoprint.size() > 0)
         {
             if (add_delimiters)
             {
-                strm << "[" << PrettyPrint(arraytoprint[0], add_delimiters);
+                strm << "[" << PrettyPrint(arraytoprint[0], add_delimiters, separator);
                 for (size_t idx = 1; idx < arraytoprint.size(); idx++)
                 {
-                    strm << ", " << PrettyPrint(arraytoprint[idx], add_delimiters);
+                    strm << separator << PrettyPrint(arraytoprint[idx], add_delimiters, separator);
                 }
                 strm << "]";
             }
             else
             {
-                strm << PrettyPrint(arraytoprint[0], add_delimiters);
+                strm << PrettyPrint(arraytoprint[0], add_delimiters, separator);
                 for (size_t idx = 1; idx < arraytoprint.size(); idx++)
                 {
-                    strm << ", " << PrettyPrint(arraytoprint[idx], add_delimiters);
+                    strm << separator << PrettyPrint(arraytoprint[idx], add_delimiters, separator);
                 }
             }
         }
@@ -104,26 +109,26 @@ namespace PrettyPrint
     }
 
     template <typename T>
-    inline std::string PrettyPrint(const std::vector<T>& vectoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::vector<T>& vectoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (vectoprint.size() > 0)
         {
             if (add_delimiters)
             {
-                strm << "[" << PrettyPrint(vectoprint[0], add_delimiters);
+                strm << "[" << PrettyPrint(vectoprint[0], add_delimiters, separator);
                 for (size_t idx = 1; idx < vectoprint.size(); idx++)
                 {
-                    strm << ", " << PrettyPrint(vectoprint[idx], add_delimiters);
+                    strm << separator << PrettyPrint(vectoprint[idx], add_delimiters, separator);
                 }
                 strm << "]";
             }
             else
             {
-                strm << PrettyPrint(vectoprint[0], add_delimiters);
+                strm << PrettyPrint(vectoprint[0], add_delimiters, separator);
                 for (size_t idx = 1; idx < vectoprint.size(); idx++)
                 {
-                    strm << ", " << PrettyPrint(vectoprint[idx], add_delimiters);
+                    strm << separator << PrettyPrint(vectoprint[idx], add_delimiters, separator);
                 }
             }
         }
@@ -131,7 +136,7 @@ namespace PrettyPrint
     }
 
     template <typename T>
-    inline std::string PrettyPrint(const std::list<T>& listtoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::list<T>& listtoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (listtoprint.size() > 0)
@@ -144,11 +149,11 @@ namespace PrettyPrint
                 {
                     if (itr != listtoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
                 strm << "]";
@@ -160,11 +165,11 @@ namespace PrettyPrint
                 {
                     if (itr != listtoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
             }
@@ -173,7 +178,7 @@ namespace PrettyPrint
     }
 
     template <typename T>
-    inline std::string PrettyPrint(const std::forward_list<T>& listtoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::forward_list<T>& listtoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (listtoprint.size() > 0)
@@ -186,11 +191,11 @@ namespace PrettyPrint
                 {
                     if (itr != listtoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
                 strm << "]";
@@ -202,11 +207,11 @@ namespace PrettyPrint
                 {
                     if (itr != listtoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
             }
@@ -215,7 +220,7 @@ namespace PrettyPrint
     }
 
     template <typename T>
-    inline std::string PrettyPrint(const std::deque<T>& dequetoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::deque<T>& dequetoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (dequetoprint.size() > 0)
@@ -228,11 +233,11 @@ namespace PrettyPrint
                 {
                     if (itr != dequetoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
                 strm << "]";
@@ -244,11 +249,11 @@ namespace PrettyPrint
                 {
                     if (itr != dequetoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
             }
@@ -257,22 +262,22 @@ namespace PrettyPrint
     }
 
     template <typename A, typename B>
-    inline std::string PrettyPrint(const std::pair<A, B>& pairtoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::pair<A, B>& pairtoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (add_delimiters)
         {
-            strm << "<" << PrettyPrint(pairtoprint.first, add_delimiters) << ": " << PrettyPrint(pairtoprint.second, add_delimiters) << ">";
+            strm << "<" << PrettyPrint(pairtoprint.first, add_delimiters, separator) << ": " << PrettyPrint(pairtoprint.second, add_delimiters, separator) << ">";
         }
         else
         {
-            strm << PrettyPrint(pairtoprint.first, add_delimiters) << ": " << PrettyPrint(pairtoprint.second, add_delimiters);
+            strm << PrettyPrint(pairtoprint.first, add_delimiters, separator) << ": " << PrettyPrint(pairtoprint.second, add_delimiters, separator);
         }
         return strm.str();
     }
 
     template <typename A, typename B>
-    inline std::string PrettyPrint(const std::map<A, B>& maptoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::map<A, B>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (maptoprint.size() > 0)
@@ -286,11 +291,11 @@ namespace PrettyPrint
                     std::pair<A, B> cur_pair(itr->first, itr->second);
                     if (itr != maptoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                        strm << separator << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(cur_pair, add_delimiters);
+                        strm << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                 }
                 strm << "}";
@@ -303,11 +308,11 @@ namespace PrettyPrint
                     std::pair<A, B> cur_pair(itr->first, itr->second);
                     if (itr != maptoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                        strm << separator << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(cur_pair, add_delimiters);
+                        strm << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                 }
             }
@@ -316,7 +321,7 @@ namespace PrettyPrint
     }
 
     template <typename A, typename B>
-    inline std::string PrettyPrint(const std::multimap<A, B>& maptoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::multimap<A, B>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (maptoprint.size() > 0)
@@ -330,11 +335,11 @@ namespace PrettyPrint
                     std::pair<A, B> cur_pair(itr->first, itr->second);
                     if (itr != maptoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                        strm << separator << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(cur_pair, add_delimiters);
+                        strm << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                 }
                 strm << "}";
@@ -347,11 +352,11 @@ namespace PrettyPrint
                     std::pair<A, B> cur_pair(itr->first, itr->second);
                     if (itr != maptoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                        strm << separator << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(cur_pair, add_delimiters);
+                        strm << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                 }
             }
@@ -360,7 +365,7 @@ namespace PrettyPrint
     }
 
     template <typename T>
-    inline std::string PrettyPrint(const std::set<T>& settoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::set<T>& settoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (settoprint.size() > 0)
@@ -373,11 +378,11 @@ namespace PrettyPrint
                 {
                     if (itr != settoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
                 strm << ")";
@@ -389,11 +394,11 @@ namespace PrettyPrint
                 {
                     if (itr != settoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
             }
@@ -402,7 +407,7 @@ namespace PrettyPrint
     }
 
     template <typename T>
-    inline std::string PrettyPrint(const std::multiset<T>& settoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::multiset<T>& settoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (settoprint.size() > 0)
@@ -415,11 +420,11 @@ namespace PrettyPrint
                 {
                     if (itr != settoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
                 strm << ")";
@@ -431,11 +436,11 @@ namespace PrettyPrint
                 {
                     if (itr != settoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
             }
@@ -444,7 +449,7 @@ namespace PrettyPrint
     }
 
     template <typename A, typename B>
-    inline std::string PrettyPrint(const std::unordered_map<A, B>& maptoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::unordered_map<A, B>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (maptoprint.size() > 0)
@@ -458,11 +463,11 @@ namespace PrettyPrint
                     std::pair<A, B> cur_pair(itr->first, itr->second);
                     if (itr != maptoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                        strm << separator << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(cur_pair, add_delimiters);
+                        strm << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                 }
                 strm << "}";
@@ -475,11 +480,11 @@ namespace PrettyPrint
                     std::pair<A, B> cur_pair(itr->first, itr->second);
                     if (itr != maptoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                        strm << separator << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(cur_pair, add_delimiters);
+                        strm << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                 }
             }
@@ -488,7 +493,7 @@ namespace PrettyPrint
     }
 
     template <typename A, typename B>
-    inline std::string PrettyPrint(const std::unordered_multimap<A, B>& maptoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::unordered_multimap<A, B>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (maptoprint.size() > 0)
@@ -502,11 +507,11 @@ namespace PrettyPrint
                     std::pair<A, B> cur_pair(itr->first, itr->second);
                     if (itr != maptoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                        strm << separator << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(cur_pair, add_delimiters);
+                        strm << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                 }
                 strm << "}";
@@ -519,11 +524,11 @@ namespace PrettyPrint
                     std::pair<A, B> cur_pair(itr->first, itr->second);
                     if (itr != maptoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(cur_pair, add_delimiters);
+                        strm << separator << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(cur_pair, add_delimiters);
+                        strm << PrettyPrint(cur_pair, add_delimiters, separator);
                     }
                 }
             }
@@ -532,7 +537,7 @@ namespace PrettyPrint
     }
 
     template <typename T>
-    inline std::string PrettyPrint(const std::unordered_set<T>& settoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::unordered_set<T>& settoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (settoprint.size() > 0)
@@ -545,11 +550,11 @@ namespace PrettyPrint
                 {
                     if (itr != settoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
                 strm << ")";
@@ -561,11 +566,11 @@ namespace PrettyPrint
                 {
                     if (itr != settoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
             }
@@ -574,7 +579,7 @@ namespace PrettyPrint
     }
 
     template <typename T>
-    inline std::string PrettyPrint(const std::unordered_multiset<T>& settoprint, const bool add_delimiters=false)
+    inline std::string PrettyPrint(const std::unordered_multiset<T>& settoprint, const bool add_delimiters=false, const std::string& separator=", ")
     {
         std::ostringstream strm;
         if (settoprint.size() > 0)
@@ -587,11 +592,11 @@ namespace PrettyPrint
                 {
                     if (itr != settoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
                 strm << ")";
@@ -603,11 +608,11 @@ namespace PrettyPrint
                 {
                     if (itr != settoprint.begin())
                     {
-                        strm << ", " << PrettyPrint(*itr, add_delimiters);
+                        strm << separator << PrettyPrint(*itr, add_delimiters, separator);
                     }
                     else
                     {
-                        strm << PrettyPrint(*itr, add_delimiters);
+                        strm << PrettyPrint(*itr, add_delimiters, separator);
                     }
                 }
             }
