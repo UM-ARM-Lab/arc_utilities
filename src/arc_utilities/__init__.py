@@ -1,0 +1,1 @@
+import fk_fast_generator

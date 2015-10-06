@@ -15,7 +15,7 @@ find_package(Eigen REQUIRED)
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/groovy/api/catkin/html/user_guide/setup_dot_py.html
-#catkin_python_setup()
+catkin_python_setup()
 
 #######################################
 ## Declare ROS messages and services ##
@@ -52,6 +52,7 @@ set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Werror")
 
 # SDF library
 add_library(${PROJECT_NAME}
+    include/${PROJECT_NAME}/abb_irb1600_145_fk_fast.hpp
     include/${PROJECT_NAME}/arc_helpers.hpp
     include/${PROJECT_NAME}/pretty_print.hpp
     include/${PROJECT_NAME}/zlib_helpers.hpp

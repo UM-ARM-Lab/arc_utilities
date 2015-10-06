@@ -45,7 +45,7 @@ namespace EigenHelpers
     typedef std::map<std::string, Eigen::Affine3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3f>>> MapStringAffine3f;
     typedef std::map<std::string, Eigen::Affine3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3d>>> MapStringAffine3d;
 
-    bool Equal(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
+    inline bool Equal(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
     {
         if (v1.x() == v2.x() && v1.y() == v2.y() && v1.z() == v2.z())
         {
@@ -57,7 +57,7 @@ namespace EigenHelpers
         }
     }
 
-    bool CloseEnough(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double threshold)
+    inline bool CloseEnough(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double threshold)
     {
         double real_threshold = fabs(threshold);
         if (fabs(v1.x() - v2.x()) > real_threshold)
