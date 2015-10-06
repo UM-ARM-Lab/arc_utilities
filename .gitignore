@@ -1,2 +1,6 @@
+# editor temporary files
 *.swp
 *~
+
+# Vim Ctags file
+tags
