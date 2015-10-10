@@ -225,6 +225,19 @@ namespace simple_rrt_planner
             statistics["failed_samples"] = 0.0;
             // Storage for the final planned path
             std::vector<T> planned_path;
+            // Safety check before doing real work
+            if (goal_reached_fn(start))
+            {
+                std::cerr << "Start state meets goal conditions, returning default path [start]" << std::endl;
+                // Put together the results
+                planned_path = std::vector<T>{start};
+                cur_time = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> planning_time(cur_time - start_time);
+                statistics["planning_time"] = planning_time.count();
+                statistics["total_states"] = nodes.size();
+                statistics["solution_path_length"] = (double)planned_path.size();
+                return std::pair<std::vector<T>, std::map<std::string, double>>(planned_path, statistics);
+            }
             // Update the start time & current time
             start_time = std::chrono::high_resolution_clock::now();
             cur_time = std::chrono::high_resolution_clock::now();
@@ -235,6 +248,7 @@ namespace simple_rrt_planner
                 T random_target = sampling_fn();
                 // Get the nearest neighbor
                 int64_t nearest_neighbor_index = nearest_neighbor_fn(nodes, random_target);
+                assert(nearest_neighbor_index >= 0);
                 const T& nearest_neighbor = nodes.at(nearest_neighbor_index).GetValueImmutable();
                 // Forward propagate towards the goal
                 std::vector<T> propagated = forward_propagation_fn(nearest_neighbor, random_target);
@@ -264,7 +278,7 @@ namespace simple_rrt_planner
                             std::chrono::duration<double> planning_time(cur_time - start_time);
                             statistics["planning_time"] = planning_time.count();
                             statistics["total_states"] = nodes.size();
-                            statistics["solution_path_length"] = planned_path.size();
+                            statistics["solution_path_length"] = (double)planned_path.size();
                             // Put together the results
                             return std::pair<std::vector<T>, std::map<std::string, double>>(planned_path, statistics);
                         }
@@ -291,7 +305,7 @@ namespace simple_rrt_planner
             std::chrono::duration<double> planning_time(cur_time - start_time);
             statistics["planning_time"] = planning_time.count();
             statistics["total_states"] = nodes.size();
-            statistics["solution_path_length"] = 0.0;
+            statistics["solution_path_length"] =(double)planned_path.size();
             return std::pair<std::vector<T>, std::map<std::string, double>>(planned_path, statistics);
         }
     };

@@ -237,7 +237,7 @@ namespace EigenHelpers
     {
         if (vector.size() != 3)
         {
-            std::cerr << "Vector is not 3 elements in size" << std::endl;
+            std::cerr << "Vector3d source vector is not 3 elements in size" << std::endl;
             assert(false);
         }
         Eigen::Vector3d eigen_vector(vector[0], vector[1], vector[2]);
@@ -247,6 +247,24 @@ namespace EigenHelpers
     inline std::vector<double> EigenVector3dToStdVectorDouble(const Eigen::Vector3d& point)
     {
         return std::vector<double>{point.x(), point.y(), point.z()};
+    }
+
+    // Takes <x, y, z, w> as is the ROS custom!
+    inline Eigen::Quaterniond StdVectorDoubleToEigenQuaterniond(const std::vector<double>& vector)
+    {
+        if (vector.size() != 4)
+        {
+            std::cerr << "Quaterniond source vector is not 4 elements in size" << std::endl;
+            assert(false);
+        }
+        Eigen::Quaterniond eigen_quaternion(vector[3], vector[0], vector[1], vector[2]);
+        return eigen_quaternion;
+    }
+
+    // Returns <x, y, z, w> as is the ROS custom!
+    inline std::vector<double> EigenQuaterniondToStdVectorDouble(const Eigen::Quaterniond& quat)
+    {
+        return std::vector<double>{quat.x(), quat.y(), quat.z(), quat.w()};
     }
 
     inline Eigen::Vector3d GeometryPointToEigenVector3d(const geometry_msgs::Point& point)
@@ -262,6 +280,37 @@ namespace EigenHelpers
         geom_point.y = point.y();
         geom_point.z = point.z();
         return geom_point;
+    }
+
+    inline Eigen::Vector3d GeometryVector3ToEigenVector3d(const geometry_msgs::Vector3& vector)
+    {
+        Eigen::Vector3d eigen_vector(vector.x, vector.y, vector.z);
+        return eigen_vector;
+    }
+
+    inline geometry_msgs::Vector3 EigenVector3dToGeometryVector3(const Eigen::Vector3d& vector)
+    {
+        geometry_msgs::Vector3 geom_vector;
+        geom_vector.x = vector.x();
+        geom_vector.y = vector.y();
+        geom_vector.z = vector.z();
+        return geom_vector;
+    }
+
+    inline Eigen::Quaterniond GeometryQuaternionToEigenQuaterniond(const geometry_msgs::Quaternion& quat)
+    {
+        Eigen::Quaterniond eigen_quaternion(quat.w, quat.x, quat.y, quat.z);
+        return eigen_quaternion;
+    }
+
+    inline geometry_msgs::Quaternion EigenQuaterniondToGeometryQuaternion(const Eigen::Quaterniond& quat)
+    {
+        geometry_msgs::Quaternion geom_quaternion;
+        geom_quaternion.w = quat.w();
+        geom_quaternion.x = quat.x();
+        geom_quaternion.y = quat.y();
+        geom_quaternion.z = quat.z();
+        return geom_quaternion;
     }
 
     inline Eigen::Affine3d GeometryPoseToEigenAffine3d(const geometry_msgs::Pose& pose)
