@@ -112,6 +112,57 @@ namespace simple_rrt_planner
     };
 
     template<typename T, typename Allocator=std::allocator<T>>
+    class SimpleRRTPlannerPointerState
+    {
+    protected:
+
+        bool initialized_;
+        std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>> parent_;
+        T value_;
+
+    public:
+
+        SimpleRRTPlannerPointerState() : initialized_(false)
+        {
+            parent_ = std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>>();
+        }
+
+        SimpleRRTPlannerPointerState(const T& value, const std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>>& parent)
+        {
+            parent_(parent);
+            value_ = value;
+            initialized_ = true;
+        }
+
+        SimpleRRTPlannerPointerState(const T& value)
+        {
+            parent_ = std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>>();
+            value_ = value;
+            initialized_ = true;
+        }
+
+        const T& GetValueImmutable() const
+        {
+            return value_;
+        }
+
+        T& GetValueMutable()
+        {
+            return value_;
+        }
+
+        const std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>>& GetParent() const
+        {
+            return parent_;
+        }
+
+        void SetParent(const std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>>& parent)
+        {
+            parent_(parent);
+        }
+    };
+
+    template<typename T, typename Allocator=std::allocator<T>>
     class SimpleHybridRRTPlanner
     {
     public:
@@ -210,9 +261,74 @@ namespace simple_rrt_planner
                                                                       std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
                                                                       const std::chrono::duration<double>& time_limit) const
         {
-            // Keep track of time
-            std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
-            std::chrono::time_point<std::chrono::high_resolution_clock> cur_time;
+            std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
+            std::function<bool(void)> termination_check_fn = [&](void) { return (((std::chrono::time_point<std::chrono::high_resolution_clock>)std::chrono::high_resolution_clock::now() - start_time) > time_limit); };
+            return Plan(start, nearest_neighbor_fn, goal_reached_fn, sampling_fn, forward_propagation_fn, termination_check_fn);
+        }
+
+        /* Template-based single-tree RRT planner
+         *
+         * Template type T is your state type (i.e. a configuration)
+         *
+         * Arguments:
+         * start - starting configuration
+         * nearest_neighbor_fn - given all nodes explored so far, and a new state, return the index of the "closest" node
+         * goal_reached_fn - return if a given state meets the goal conditions (for example, within a radius of a goal state)
+         * state_sampling_fn - returns a new state (randomly- or deterministically-sampled)
+         * forward_propagation_fn - given the nearest neighbor and a new target state, returns the states that would grow the tree towards the target
+         * termination_check_fn - returns if the planner should terminate (for example, if it has exceeded time/space limits)
+         *
+         * Returns:
+         * std::pair<path, statistics>
+         * path - vector of states corresponding to the planned path
+         * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
+         */
+        std::pair<std::vector<T>, std::map<std::string, double>> Plan(const T& start,
+                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<bool(const T&)>& goal_reached_fn,
+                                                                      std::function<T(void)>& sampling_fn,
+                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<bool(void)>& termination_check_fn) const
+        {
+            // Define a couple lambdas to let us use the generic multi-path planner as if it were a single-path planner
+            bool solution_found = false;
+            std::function<bool(const T&)> real_goal_found_fn = [&](const T& state) { if (goal_reached_fn(state)) { solution_found = true; return true; } else {return false;} };
+            std::function<bool(void)> real_termination_check_fn = [&](void) { if (!solution_found) { return termination_check_fn(); } else {return true;} };
+            // Call the planner
+            std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> planning_result = PlanMultiPath(start, nearest_neighbor_fn, real_goal_found_fn, sampling_fn, forward_propagation_fn, real_termination_check_fn);
+            // Put together the return
+            std::vector<T> planned_path;
+            if (planning_result.first.size() > 0)
+            {
+                planned_path = planning_result.first[0];
+            }
+            return std::pair<std::vector<T>, std::map<std::string, double>>(planned_path, planning_result.second);
+        }
+
+        /* Template-based single-tree RRT planner
+         *
+         * Template type T is your state type (i.e. a configuration)
+         *
+         * Arguments:
+         * start - starting configuration
+         * nearest_neighbor_fn - given all nodes explored so far, and a new state, return the index of the "closest" node
+         * goal_reached_fn - return if a given state meets the goal conditions (for example, within a radius of a goal state)
+         * state_sampling_fn - returns a new state (randomly- or deterministically-sampled)
+         * forward_propagation_fn - given the nearest neighbor and a new target state, returns the states that would grow the tree towards the target
+         * termination_check_fn - returns if the planner should terminate (for example, if it has exceeded time/space limits)
+         *
+         * Returns:
+         * std::pair<paths, statistics>
+         * paths - vecotr of vector of states corresponding to the planned path(s)
+         * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
+         */
+        std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> PlanMultiPath(const T& start,
+                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<bool(const T&)>& goal_reached_fn,
+                                                                      std::function<T(void)>& sampling_fn,
+                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<bool(void)>& termination_check_fn) const
+        {
             // Keep track of states
             std::vector<SimpleRRTPlannerState<T, Allocator>> nodes;
             // Add the start state
@@ -223,26 +339,24 @@ namespace simple_rrt_planner
             statistics["total_samples"] = 0.0;
             statistics["successful_samples"] = 0.0;
             statistics["failed_samples"] = 0.0;
-            // Storage for the final planned path
-            std::vector<T> planned_path;
+            // Storage for the goal states we reach
+            std::vector<SimpleRRTPlannerState<T, Allocator>> goal_states;
             // Safety check before doing real work
             if (goal_reached_fn(start))
             {
+                goal_states.push_back(start_state);
                 std::cerr << "Start state meets goal conditions, returning default path [start]" << std::endl;
                 // Put together the results
-                planned_path = std::vector<T>{start};
-                cur_time = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double> planning_time(cur_time - start_time);
-                statistics["planning_time"] = planning_time.count();
+                std::vector<std::vector<T>> planned_paths = ExtractSolutionPaths(nodes, goal_states);
+                statistics["planning_time"] = 0.0;
                 statistics["total_states"] = nodes.size();
-                statistics["solution_path_length"] = (double)planned_path.size();
-                return std::pair<std::vector<T>, std::map<std::string, double>>(planned_path, statistics);
+                statistics["solutions"] = (double)planned_paths.size();
+                return std::pair<std::vector<std::vector<T>>, std::map<std::string, double>>(planned_paths, statistics);
             }
-            // Update the start time & current time
-            start_time = std::chrono::high_resolution_clock::now();
-            cur_time = std::chrono::high_resolution_clock::now();
+            // Update the start time
+            std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
             // Plan
-            while (time_limit > (cur_time - start_time))
+            while (!termination_check_fn())
             {
                 // Sample a random goal
                 T random_target = sampling_fn();
@@ -260,32 +374,16 @@ namespace simple_rrt_planner
                     for (size_t idx = 0; idx < propagated.size(); idx++)
                     {
                         const T& current_propagated = propagated[idx];
+                        SimpleRRTPlannerState<T, Allocator> new_state(current_propagated, node_parent_index);
                         // Check if we've reached the goal
                         if (goal_reached_fn(current_propagated))
                         {
-                            planned_path.push_back(current_propagated);
-                            int64_t parent_index = node_parent_index;
-                            while (parent_index >= 0)
-                            {
-                                const SimpleRRTPlannerState<T, Allocator>& parent_state = nodes.at(parent_index);
-                                const T& parent = parent_state.GetValueImmutable();
-                                planned_path.push_back(parent);
-                                parent_index = parent_state.GetParentIndex();
-                            }
-                            std::reverse(planned_path.begin(), planned_path.end());
-                            // Update the statistics
-                            cur_time = std::chrono::high_resolution_clock::now();
-                            std::chrono::duration<double> planning_time(cur_time - start_time);
-                            statistics["planning_time"] = planning_time.count();
-                            statistics["total_states"] = nodes.size();
-                            statistics["solution_path_length"] = (double)planned_path.size();
-                            // Put together the results
-                            return std::pair<std::vector<T>, std::map<std::string, double>>(planned_path, statistics);
+                            goal_states.push_back(new_state);
+                            break;
                         }
                         // If not, add it to the tree
                         else
                         {
-                            SimpleRRTPlannerState<T, Allocator> new_state(current_propagated, node_parent_index);
                             nodes.push_back(new_state);
                             node_parent_index = (int64_t)nodes.size() - 1;
                         }
@@ -296,17 +394,137 @@ namespace simple_rrt_planner
                     statistics["total_samples"] += 1.0;
                     statistics["failed_samples"] += 1.0;
                 }
-                // Update the end time
-                cur_time = std::chrono::high_resolution_clock::now();
             }
-            std::cerr << "Planning time exceeded" << std::endl;
+            std::cout << "Planner termination condition met" << std::endl;
             // Put together the results
-            cur_time = std::chrono::high_resolution_clock::now();
+            std::vector<std::vector<T>> planned_paths = ExtractSolutionPaths(nodes, goal_states);
+            std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> planning_time(cur_time - start_time);
             statistics["planning_time"] = planning_time.count();
             statistics["total_states"] = nodes.size();
-            statistics["solution_path_length"] =(double)planned_path.size();
-            return std::pair<std::vector<T>, std::map<std::string, double>>(planned_path, statistics);
+            statistics["solutions"] = (double)planned_paths.size();
+            return std::pair<std::vector<std::vector<T>>, std::map<std::string, double>>(planned_paths, statistics);
+        }
+
+        /* Extracts all the solution paths corresponding to the provided goal states
+         */
+        std::vector<std::vector<T>> ExtractSolutionPaths(const std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes, const std::vector<SimpleRRTPlannerState<T, Allocator>>& goal_states) const
+        {
+            std::vector<std::vector<T>> solution_paths;
+            for (size_t idx = 0; idx < goal_states.size(); idx++)
+            {
+                std::vector<T> solution_path = ExtractSolutionPath(nodes, goal_states[idx]);
+                solution_paths.push_back(solution_path);
+            }
+            return solution_paths;
+        }
+
+        /* Extracts a single solution path corresponding to the provided goal state
+         */
+        std::vector<T> ExtractSolutionPath(const std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes, const SimpleRRTPlannerState<T, Allocator>& goal_state) const
+        {
+            std::vector<T> solution_path;
+            solution_path.push_back(goal_state.GetValueImmutable());
+            int64_t parent_index = goal_state.GetParentIndex();
+            while (parent_index >= 0)
+            {
+                assert(parent_index < nodes.size());
+                const SimpleRRTPlannerState<T, Allocator>& parent_state = nodes[parent_index];
+                const T& parent = parent_state.GetValueImmutable();
+                solution_path.push_back(parent);
+                parent_index = parent_state.GetParentIndex();
+            }
+            // Put it in the right order
+            std::reverse(solution_path.begin(), solution_path.end());
+            return solution_path;
+        }
+
+        /* Template-based single-tree RRT planner
+         *
+         * Template type T is your state type (i.e. a configuration)
+         *
+         * Arguments:
+         * start - starting configuration
+         * nearest_neighbor_fn - given all nodes explored so far, and a new state, return the index of the "closest" node
+         * goal_reached_fn - return if a given state meets the goal conditions (for example, within a radius of a goal state)
+         * state_sampling_fn - returns a new state (randomly- or deterministically-sampled)
+         * forward_propagation_fn - given the nearest neighbor and a new target state, returns the states that would grow the tree towards the target
+         * time_limit - limit, in seconds, for the runtime of the planner
+         *
+         * Returns:
+         * std::pair<path, statistics>
+         * path - vector of states corresponding to the planned path
+         * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
+         */
+        std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> PlanMultiPath(const T& start,
+                                                                      std::function<void(const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>&)>& register_nearest_neighbors_fn,
+                                                                      std::function<const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>&(const T&)>& get_nearest_neighbor_fn,
+                                                                      std::function<std::vector<std::vector<T>>(void)>& extract_solution_paths,
+                                                                      std::function<T(void)>& sampling_fn,
+                                                                      std::function<bool(const T&)>& goal_reached_fn,
+                                                                      std::function<void(const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>&)>& register_goal_state_fn,
+                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<bool(void)>& termination_check_fn) const
+        {
+            // Keep track of statistics
+            std::map<std::string, double> statistics;
+            statistics["total_states"] = 0.0;
+            statistics["total_samples"] = 0.0;
+            statistics["successful_samples"] = 0.0;
+            statistics["failed_samples"] = 0.0;
+            // Add the start state
+            SimpleRRTPlannerState<T, Allocator> start_state(start);
+            register_nearest_neighbors_fn(start_state);
+            // Update the start time
+            std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
+            // Plan
+            while (!termination_check_fn())
+            {
+                // Sample a random goal
+                T random_target = sampling_fn();
+                // Get the nearest neighbor
+                const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>& nearest_neighbor = get_nearest_neighbor_fn(random_target);
+                assert(nearest_neighbor);
+                const T& nearest_neighbor_value = nearest_neighbor->GetValueImmutable();
+                // Forward propagate towards the goal
+                std::vector<T> propagated = forward_propagation_fn(nearest_neighbor_value, random_target);
+                if (!propagated.empty())
+                {
+                    statistics["total_samples"] += 1.0;
+                    statistics["successful_samples"] += 1.0;
+                    std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>> parent(nearest_neighbor);
+                    for (size_t idx = 0; idx < propagated.size(); idx++)
+                    {
+                        statistics["total_states"] += 1.0;
+                        const T& current_propagated = propagated[idx];
+                        std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>> new_state(new SimpleRRTPlannerPointerState<T, Allocator>(current_propagated, parent));
+                        // If we've reached a goal, register it specially
+                        if (goal_reached_fn(current_propagated))
+                        {
+                            register_goal_state_fn(new_state);
+                            break;
+                        }
+                        // Otherwise, simply register it as a nearest neighbor
+                        else
+                        {
+                            register_nearest_neighbors_fn(new_state);
+                            parent(new_state);
+                        }
+                    }
+                }
+                else
+                {
+                    statistics["total_samples"] += 1.0;
+                    statistics["failed_samples"] += 1.0;
+                }
+            }
+            // Put together the results
+            std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> planning_time(cur_time - start_time);
+            std::vector<std::vector<T>> planned_paths = extract_solution_paths();
+            statistics["planning_time"] = planning_time.count();
+            statistics["solutions"] = (double)planned_paths.size();
+            return std::pair<std::vector<std::vector<T>>, std::map<std::string, double>>(planned_paths, statistics);
         }
     };
 
