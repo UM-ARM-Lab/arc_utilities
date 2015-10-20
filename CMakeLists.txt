@@ -50,7 +50,7 @@ include_directories(include SYSTEM ${catkin_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Werror")
 
-# SDF library
+# Utility library
 add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/abb_irb1600_145_fk_fast.hpp
     include/${PROJECT_NAME}/arc_helpers.hpp
