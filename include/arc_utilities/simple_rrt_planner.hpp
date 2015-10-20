@@ -189,7 +189,7 @@ namespace simple_rrt_planner
          */
         std::pair<std::vector<T>, std::map<std::string, double>> Plan(const T& start,
                                                                       const T& goal,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&,const T&)>& nearest_neighbor_fn,
+                                                                      std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&,const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& state_sampling_fn,
                                                                       std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
@@ -223,7 +223,7 @@ namespace simple_rrt_planner
          * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
          */
         std::pair<std::vector<T>, std::map<std::string, double>> Plan(const T& start,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& state_sampling_fn,
                                                                       std::function<T(void)>& goal_sampling_fn,
@@ -255,7 +255,7 @@ namespace simple_rrt_planner
          * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
          */
         std::pair<std::vector<T>, std::map<std::string, double>> Plan(const T& start,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& sampling_fn,
                                                                       std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
@@ -284,7 +284,7 @@ namespace simple_rrt_planner
          * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
          */
         std::pair<std::vector<T>, std::map<std::string, double>> Plan(const T& start,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& sampling_fn,
                                                                       std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
@@ -294,8 +294,9 @@ namespace simple_rrt_planner
             bool solution_found = false;
             std::function<bool(const T&)> real_goal_found_fn = [&](const T& state) { if (goal_reached_fn(state)) { solution_found = true; return true; } else {return false;} };
             std::function<bool(void)> real_termination_check_fn = [&](void) { if (!solution_found) { return termination_check_fn(); } else {return true;} };
+            std::function<void(const SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](const SimpleRRTPlannerState<T, Allocator>& state) {;};
             // Call the planner
-            std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> planning_result = PlanMultiPath(start, nearest_neighbor_fn, real_goal_found_fn, sampling_fn, forward_propagation_fn, real_termination_check_fn);
+            std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> planning_result = PlanMultiPath(start, nearest_neighbor_fn, real_goal_found_fn, dummy_goal_callback_fn, sampling_fn, forward_propagation_fn, real_termination_check_fn);
             // Put together the return
             std::vector<T> planned_path;
             if (planning_result.first.size() > 0)
@@ -319,12 +320,13 @@ namespace simple_rrt_planner
          *
          * Returns:
          * std::pair<paths, statistics>
-         * paths - vecotr of vector of states corresponding to the planned path(s)
+         * paths - vector of vector of states corresponding to the planned path(s)
          * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
          */
         std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> PlanMultiPath(const T& start,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
+                                                                      std::function<void(const SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
                                                                       std::function<T(void)>& sampling_fn,
                                                                       std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
                                                                       std::function<bool(void)>& termination_check_fn) const
@@ -379,13 +381,16 @@ namespace simple_rrt_planner
                         if (goal_reached_fn(current_propagated))
                         {
                             goal_states.push_back(new_state);
+                            goal_reached_callback_fn(new_state);
                             break;
                         }
                         // If not, add it to the tree
                         else
                         {
                             nodes.push_back(new_state);
-                            node_parent_index = (int64_t)nodes.size() - 1;
+                            int64_t new_node_index = (int64_t)nodes.size() - 1;
+                            nodes[node_parent_index].AddChildIndex(new_node_index);
+                            node_parent_index = new_node_index;
                         }
                     }
                 }
@@ -483,32 +488,32 @@ namespace simple_rrt_planner
                 // Sample a random goal
                 T random_target = sampling_fn();
                 // Get the nearest neighbor
-                const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>& nearest_neighbor = get_nearest_neighbor_fn(random_target);
-                assert(nearest_neighbor);
-                const T& nearest_neighbor_value = nearest_neighbor->GetValueImmutable();
+                const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>& nearest_neighbor_ptr = get_nearest_neighbor_fn(random_target);
+                assert(nearest_neighbor_ptr);
+                const T& nearest_neighbor_value = nearest_neighbor_ptr->GetValueImmutable();
                 // Forward propagate towards the goal
                 std::vector<T> propagated = forward_propagation_fn(nearest_neighbor_value, random_target);
                 if (!propagated.empty())
                 {
                     statistics["total_samples"] += 1.0;
                     statistics["successful_samples"] += 1.0;
-                    std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>> parent(nearest_neighbor);
+                    std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>> parent_ptr(nearest_neighbor_ptr);
                     for (size_t idx = 0; idx < propagated.size(); idx++)
                     {
                         statistics["total_states"] += 1.0;
                         const T& current_propagated = propagated[idx];
-                        std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>> new_state(new SimpleRRTPlannerPointerState<T, Allocator>(current_propagated, parent));
+                        std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>> new_state_ptr(new SimpleRRTPlannerPointerState<T, Allocator>(current_propagated, parent_ptr));
                         // If we've reached a goal, register it specially
                         if (goal_reached_fn(current_propagated))
                         {
-                            register_goal_state_fn(new_state);
+                            register_goal_state_fn(new_state_ptr);
                             break;
                         }
                         // Otherwise, simply register it as a nearest neighbor
                         else
                         {
-                            register_nearest_neighbors_fn(new_state);
-                            parent(new_state);
+                            register_nearest_neighbors_fn(new_state_ptr);
+                            parent_ptr = new_state_ptr;
                         }
                     }
                 }

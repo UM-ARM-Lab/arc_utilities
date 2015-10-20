@@ -414,7 +414,7 @@ namespace VoxelGrid
             if (IndexInBounds(x_index, y_index, z_index))
             {
                 int64_t data_index = GetDataIndex(x_index, y_index, z_index);
-                assert(data_index >= 0 && data_index < data_.size());
+                assert(data_index >= 0 && data_index < (int64_t)data_.size());
                 return std::pair<const T&, bool>(data_[data_index], true);
             }
             else
@@ -454,7 +454,7 @@ namespace VoxelGrid
             if (IndexInBounds(x_index, y_index, z_index))
             {
                 int64_t data_index = GetDataIndex(x_index, y_index, z_index);
-                assert(data_index >= 0 && data_index < data_.size());
+                assert(data_index >= 0 && data_index < (int64_t)data_.size());
                 return std::pair<T&, bool>(data_[data_index], true);
             }
             else
@@ -494,7 +494,7 @@ namespace VoxelGrid
             if (IndexInBounds(x_index, y_index, z_index))
             {
                 int64_t data_index = GetDataIndex(x_index, y_index, z_index);
-                assert(data_index >= 0 && data_index < data_.size());
+                assert(data_index >= 0 && data_index < (int64_t)data_.size());
                 data_[data_index] = value;
                 return true;
             }
@@ -535,7 +535,7 @@ namespace VoxelGrid
             if (IndexInBounds(x_index, y_index, z_index))
             {
                 int64_t data_index = GetDataIndex(x_index, y_index, z_index);
-                assert(data_index >= 0 && data_index < data_.size());
+                assert(data_index >= 0 && data_index < (int64_t)data_.size());
                 data_[data_index] = value;
                 return true;
             }
