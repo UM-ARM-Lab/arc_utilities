@@ -326,7 +326,7 @@ namespace simple_rrt_planner
         std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> PlanMultiPath(const T& start,
                                                                       std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<void(const SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
+                                                                      std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
                                                                       std::function<T(void)>& sampling_fn,
                                                                       std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
                                                                       std::function<bool(void)>& termination_check_fn) const
@@ -342,14 +342,14 @@ namespace simple_rrt_planner
             statistics["successful_samples"] = 0.0;
             statistics["failed_samples"] = 0.0;
             // Storage for the goal states we reach
-            std::vector<SimpleRRTPlannerState<T, Allocator>> goal_states;
+            std::vector<int64_t> goal_state_indices;
             // Safety check before doing real work
             if (goal_reached_fn(start))
             {
-                goal_states.push_back(start_state);
+                goal_state_indices.push_back(0);
                 std::cerr << "Start state meets goal conditions, returning default path [start]" << std::endl;
                 // Put together the results
-                std::vector<std::vector<T>> planned_paths = ExtractSolutionPaths(nodes, goal_states);
+                std::vector<std::vector<T>> planned_paths = ExtractSolutionPaths(nodes, goal_state_indices);
                 statistics["planning_time"] = 0.0;
                 statistics["total_states"] = nodes.size();
                 statistics["solutions"] = (double)planned_paths.size();
@@ -377,19 +377,19 @@ namespace simple_rrt_planner
                     {
                         const T& current_propagated = propagated[idx];
                         SimpleRRTPlannerState<T, Allocator> new_state(current_propagated, node_parent_index);
+                        nodes.push_back(new_state);
+                        int64_t new_node_index = (int64_t)nodes.size() - 1;
+                        nodes[node_parent_index].AddChildIndex(new_node_index);
                         // Check if we've reached the goal
                         if (goal_reached_fn(current_propagated))
                         {
-                            goal_states.push_back(new_state);
-                            goal_reached_callback_fn(new_state);
+                            goal_state_indices.push_back(new_node_index);
+                            goal_reached_callback_fn(nodes[nodes.size() - 1]);
                             break;
                         }
                         // If not, add it to the tree
                         else
                         {
-                            nodes.push_back(new_state);
-                            int64_t new_node_index = (int64_t)nodes.size() - 1;
-                            nodes[node_parent_index].AddChildIndex(new_node_index);
                             node_parent_index = new_node_index;
                         }
                     }
@@ -402,7 +402,7 @@ namespace simple_rrt_planner
             }
             std::cout << "Planner termination condition met" << std::endl;
             // Put together the results
-            std::vector<std::vector<T>> planned_paths = ExtractSolutionPaths(nodes, goal_states);
+            std::vector<std::vector<T>> planned_paths = ExtractSolutionPaths(nodes, goal_state_indices);
             std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> planning_time(cur_time - start_time);
             statistics["planning_time"] = planning_time.count();
@@ -413,12 +413,12 @@ namespace simple_rrt_planner
 
         /* Extracts all the solution paths corresponding to the provided goal states
          */
-        std::vector<std::vector<T>> ExtractSolutionPaths(const std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes, const std::vector<SimpleRRTPlannerState<T, Allocator>>& goal_states) const
+        std::vector<std::vector<T>> ExtractSolutionPaths(const std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes, const std::vector<int64_t>& goal_state_indices) const
         {
             std::vector<std::vector<T>> solution_paths;
-            for (size_t idx = 0; idx < goal_states.size(); idx++)
+            for (size_t idx = 0; idx < goal_state_indices.size(); idx++)
             {
-                std::vector<T> solution_path = ExtractSolutionPath(nodes, goal_states[idx]);
+                std::vector<T> solution_path = ExtractSolutionPath(nodes, goal_state_indices[idx]);
                 solution_paths.push_back(solution_path);
             }
             return solution_paths;
@@ -426,9 +426,10 @@ namespace simple_rrt_planner
 
         /* Extracts a single solution path corresponding to the provided goal state
          */
-        std::vector<T> ExtractSolutionPath(const std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes, const SimpleRRTPlannerState<T, Allocator>& goal_state) const
+        std::vector<T> ExtractSolutionPath(const std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes, const int64_t goal_state_index) const
         {
             std::vector<T> solution_path;
+            const SimpleRRTPlannerState<T, Allocator>& goal_state = nodes[goal_state_index];
             solution_path.push_back(goal_state.GetValueImmutable());
             int64_t parent_index = goal_state.GetParentIndex();
             while (parent_index >= 0)
