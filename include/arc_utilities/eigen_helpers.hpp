@@ -25,7 +25,10 @@ namespace std
 
 namespace EigenHelpers
 {
+    ////////////////////////////////////////////////////////////////////////////
     // Typedefs for aligned STL containers using Eigen types
+    ////////////////////////////////////////////////////////////////////////////
+
     typedef std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> VectorVector3f;
     typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VectorVector3d;
     typedef std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> VectorVector4f;
@@ -72,6 +75,10 @@ namespace EigenHelpers
         }
         return true;
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Interpolation functions
+    ////////////////////////////////////////////////////////////////////////////
 
     inline double Interpolate(const double p1, const double p2, const double ratio)
     {
@@ -185,6 +192,10 @@ namespace EigenHelpers
         return tint;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    // Distance functions
+    ////////////////////////////////////////////////////////////////////////////
+
     inline double Distance(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
     {
         return (v2 - v1).norm();
@@ -231,6 +242,10 @@ namespace EigenHelpers
         }
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    // Conversion functions
+    ////////////////////////////////////////////////////////////////////////////
+
     inline Eigen::Vector3d StdVectorDoubleToEigenVector3d(const std::vector<double>& vector)
     {
         if (vector.size() != 3)
@@ -263,6 +278,62 @@ namespace EigenHelpers
     inline std::vector<double> EigenQuaterniondToStdVectorDouble(const Eigen::Quaterniond& quat)
     {
         return std::vector<double>{quat.x(), quat.y(), quat.z(), quat.w()};
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Other auxiliary functions
+    ////////////////////////////////////////////////////////////////////////////
+
+    inline double SuggestedRcond()
+    {
+        return 0.001;
+    }
+
+    // Derived from code by Yohann Solaro ( http://listengine.tuxfamily.org/lists.tuxfamily.org/eigen/2010/01/msg00187.html )
+    // see : http://en.wikipedia.org/wiki/Moore-Penrose_pseudoinverse#The_general_case_and_the_SVD_method
+    inline Eigen::MatrixXd Pinv(const Eigen::MatrixXd& b, const double rcond)
+    {
+        bool flip = false;
+        Eigen::MatrixXd a;
+        if (a.rows() < a.cols())
+        {
+            a = b.transpose();
+            flip = true;
+        }
+        else
+        {
+            a = b;
+        }
+        // SVD
+        Eigen::JacobiSVD<Eigen::MatrixXd> svdA;
+        svdA.compute(a, Eigen::ComputeFullU | Eigen::ComputeThinV);
+        Eigen::JacobiSVD<Eigen::MatrixXd>::SingularValuesType vSingular = svdA.singularValues();
+        // Build a diagonal matrix with the Inverted Singular values
+        // The pseudo inverted singular matrix is easy to compute :
+        // is formed by replacing every nonzero entry by its reciprocal (inversing).
+        Eigen::VectorXd vPseudoInvertedSingular(svdA.matrixV().cols());
+        for (int iRow = 0; iRow < vSingular.rows(); iRow++)
+        {
+            if (fabs(vSingular(iRow)) <= rcond) // Todo : Put epsilon in parameter
+            {
+                vPseudoInvertedSingular(iRow)= 0.0;
+            }
+            else
+            {
+                vPseudoInvertedSingular(iRow) = 1.0 / vSingular(iRow);
+            }
+        }
+        // A little optimization here
+        Eigen::MatrixXd mAdjointU = svdA.matrixU().adjoint().block(0, 0, vSingular.rows(), svdA.matrixU().adjoint().cols());
+        // Pseudo-Inversion : V * S * U'
+        Eigen::MatrixXd a_pinv = (svdA.matrixV() * vPseudoInvertedSingular.asDiagonal()) * mAdjointU;
+        // Flip back if need be
+        if (flip)
+        {
+            a = a.transpose();
+            a_pinv = a_pinv.transpose();
+        }
+        return a_pinv;
     }
 }
 
