@@ -359,6 +359,26 @@ namespace EigenHelpers
         return geom_transform;
     }
 
+    inline Eigen::Matrix3Xd VectorGeometryPointToEigenMatrix3Xd(const std::vector<geometry_msgs::Point>& vector_geo)
+    {
+        Eigen::Matrix3Xd eigen_matrix = Eigen::MatrixXd(3, vector_geo.size());
+        for (size_t ind = 0; ind < vector_geo.size(); ind++)
+        {
+            eigen_matrix.block<3,1>(0, ind) = GeometryPointToEigenVector3d(vector_geo[ind]);
+        }
+        return eigen_matrix;
+    }
+
+    inline VectorAffine3d VectorGeometryPoseToVectorAffine3d(const std::vector<geometry_msgs::Pose>& vector_geo)
+    {
+        VectorAffine3d vector_eigen(vector_geo.size());
+        for (size_t ind = 0; ind < vector_geo.size(); ind++)
+        {
+            vector_eigen[ind] = GeometryPoseToEigenAffine3d(vector_geo[ind]);
+        }
+        return vector_eigen;
+    }
+
     inline double SuggestedRcond()
     {
         return 0.001;
