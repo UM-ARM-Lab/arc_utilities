@@ -116,9 +116,9 @@ namespace EigenHelpersConversions
         return eigen_matrix;
     }
 
-    inline VectorAffine3d VectorGeometryPoseToVectorAffine3d(const std::vector<geometry_msgs::Pose>& vector_geo)
+    inline EigenHelpers::VectorAffine3d VectorGeometryPoseToVectorAffine3d(const std::vector<geometry_msgs::Pose>& vector_geo)
     {
-        VectorAffine3d vector_eigen(vector_geo.size());
+        EigenHelpers::VectorAffine3d vector_eigen(vector_geo.size());
         for (size_t ind = 0; ind < vector_geo.size(); ind++)
         {
             vector_eigen[ind] = GeometryPoseToEigenAffine3d(vector_geo[ind]);
@@ -126,8 +126,6 @@ namespace EigenHelpersConversions
         return vector_eigen;
     }
 
-=======
->>>>>>> 63bb6be8c170df3ce2956596eb24015460cfc79a
     inline double SuggestedRcond()
     {
         return 0.001;
