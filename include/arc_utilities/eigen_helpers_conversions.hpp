@@ -8,6 +8,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Transform.h>
+#include <arc_utilities/eigen_helpers.hpp>
 
 #ifndef EIGEN_HELPERS_CONVERSIONS_HPP
 #define EIGEN_HELPERS_CONVERSIONS_HPP
@@ -83,7 +84,7 @@ namespace EigenHelpersConversions
         return geom_pose;
     }
 
-    inline Eigen::Affine3d GeometryTransformEigenAffine3d(const geometry_msgs::Transform& transform)
+    inline Eigen::Affine3d GeometryTransformToEigenAffine3d(const geometry_msgs::Transform& transform)
     {
         Eigen::Translation3d trans(transform.translation.x, transform.translation.y, transform.translation.z);
         Eigen::Quaterniond quat(transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z);
@@ -106,24 +107,54 @@ namespace EigenHelpersConversions
         return geom_transform;
     }
 
-    inline Eigen::Matrix3Xd VectorGeometryPointToEigenMatrix3Xd(const std::vector<geometry_msgs::Point>& vector_geo)
+    inline Eigen::Matrix3Xd VectorGeometryPointToEigenMatrix3Xd(const std::vector<geometry_msgs::Point>& vector_geom)
     {
-        Eigen::Matrix3Xd eigen_matrix = Eigen::MatrixXd(3, vector_geo.size());
-        for (size_t ind = 0; ind < vector_geo.size(); ind++)
+        Eigen::Matrix3Xd eigen_matrix = Eigen::MatrixXd(3, vector_geom.size());
+        for (size_t idx = 0; idx < vector_geom.size(); idx++)
         {
-            eigen_matrix.block<3,1>(0, ind) = GeometryPointToEigenVector3d(vector_geo[ind]);
+            eigen_matrix.block<3,1>(0, idx) = GeometryPointToEigenVector3d(vector_geom[idx]);
         }
         return eigen_matrix;
     }
 
-    inline EigenHelpers::VectorAffine3d VectorGeometryPoseToVectorAffine3d(const std::vector<geometry_msgs::Pose>& vector_geo)
+    inline EigenHelpers::VectorAffine3d VectorGeometryPoseToVectorAffine3d(const std::vector<geometry_msgs::Pose>& vector_geom)
     {
-        EigenHelpers::VectorAffine3d vector_eigen(vector_geo.size());
-        for (size_t ind = 0; ind < vector_geo.size(); ind++)
+        EigenHelpers::VectorAffine3d vector_eigen(vector_geom.size());
+        for (size_t idx = 0; idx < vector_geom.size(); idx++)
         {
-            vector_eigen[ind] = GeometryPoseToEigenAffine3d(vector_geo[ind]);
+            vector_eigen[idx] = GeometryPoseToEigenAffine3d(vector_geom[idx]);
         }
         return vector_eigen;
+    }
+
+    inline EigenHelpers::VectorAffine3d VectorGeometryPoseToVectorAffine3d(const std::vector<geometry_msgs::Transform>& vector_geom)
+    {
+        EigenHelpers::VectorAffine3d vector_eigen(vector_geom.size());
+        for (size_t idx = 0; idx < vector_geom.size(); idx++)
+        {
+            vector_eigen[idx] = GeometryTransformToEigenAffine3d(vector_geom[idx]);
+        }
+        return vector_eigen;
+    }
+
+    inline std::vector<geometry_msgs::Pose> VectorAffine3dToVectorGeometryPose(const EigenHelpers::VectorAffine3d& vector_eigen)
+    {
+        std::vector<geometry_msgs::Pose> vector_geom(vector_eigen.size());
+        for (size_t idx = 0; idx < vector_eigen.size(); idx++)
+        {
+            vector_geom[idx] = EigenAffine3dToGeometryPose(vector_eigen[idx]);
+        }
+        return vector_geom;
+    }
+
+    inline std::vector<geometry_msgs::Transform> VectorAffine3dToVectorGeometryTransform(const EigenHelpers::VectorAffine3d& vector_eigen)
+    {
+        std::vector<geometry_msgs::Transform> vector_geom(vector_eigen.size());
+        for (size_t idx = 0; idx < vector_eigen.size(); idx++)
+        {
+            vector_geom[idx] = EigenAffine3dToGeometryTransform(vector_eigen[idx]);
+        }
+        return vector_geom;
     }
 }
 
