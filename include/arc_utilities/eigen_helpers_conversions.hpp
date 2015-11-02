@@ -105,6 +105,26 @@ namespace EigenHelpersConversions
         geom_transform.rotation.z = quat.z();
         return geom_transform;
     }
+
+    inline Eigen::Matrix3Xd VectorGeometryPointToEigenMatrix3Xd(const std::vector<geometry_msgs::Point>& vector_geo)
+    {
+        Eigen::Matrix3Xd eigen_matrix = Eigen::MatrixXd(3, vector_geo.size());
+        for (size_t ind = 0; ind < vector_geo.size(); ind++)
+        {
+            eigen_matrix.block<3,1>(0, ind) = GeometryPointToEigenVector3d(vector_geo[ind]);
+        }
+        return eigen_matrix;
+    }
+
+    inline EigenHelpers::VectorAffine3d VectorGeometryPoseToVectorAffine3d(const std::vector<geometry_msgs::Pose>& vector_geo)
+    {
+        EigenHelpers::VectorAffine3d vector_eigen(vector_geo.size());
+        for (size_t ind = 0; ind < vector_geo.size(); ind++)
+        {
+            vector_eigen[ind] = GeometryPoseToEigenAffine3d(vector_geo[ind]);
+        }
+        return vector_eigen;
+    }
 }
 
 #endif // EIGEN_HELPERS_CONVERSIONS_HPP

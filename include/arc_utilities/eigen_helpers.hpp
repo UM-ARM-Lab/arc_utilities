@@ -25,7 +25,10 @@ namespace std
 
 namespace EigenHelpers
 {
+    ////////////////////////////////////////////////////////////////////////////
     // Typedefs for aligned STL containers using Eigen types
+    ////////////////////////////////////////////////////////////////////////////
+
     typedef std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> VectorVector3f;
     typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VectorVector3d;
     typedef std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> VectorVector4f;
@@ -72,6 +75,10 @@ namespace EigenHelpers
         }
         return true;
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Interpolation functions
+    ////////////////////////////////////////////////////////////////////////////
 
     inline double Interpolate(const double p1, const double p2, const double ratio)
     {
@@ -185,6 +192,10 @@ namespace EigenHelpers
         return tint;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    // Distance functions
+    ////////////////////////////////////////////////////////////////////////////
+
     inline double Distance(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
     {
         return (v2 - v1).norm();
@@ -231,6 +242,10 @@ namespace EigenHelpers
         }
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    // Conversion functions
+    ////////////////////////////////////////////////////////////////////////////
+
     inline Eigen::Vector3d StdVectorDoubleToEigenVector3d(const std::vector<double>& vector)
     {
         if (vector.size() != 3)
@@ -264,6 +279,10 @@ namespace EigenHelpers
     {
         return std::vector<double>{quat.x(), quat.y(), quat.z(), quat.w()};
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Other auxiliary functions
+    ////////////////////////////////////////////////////////////////////////////
 
     inline double SuggestedRcond()
     {
