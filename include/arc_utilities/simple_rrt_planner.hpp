@@ -75,7 +75,7 @@ namespace simple_rrt_planner
             parent_index_ = parent_index;
         }
 
-        const std::vector<int64_t>& GetChildIndices()
+        const std::vector<int64_t>& GetChildIndices() const
         {
             return child_indices_;
         }
@@ -189,7 +189,7 @@ namespace simple_rrt_planner
          */
         std::pair<std::vector<T>, std::map<std::string, double>> Plan(const T& start,
                                                                       const T& goal,
-                                                                      std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&,const T&)>& nearest_neighbor_fn,
+                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&,const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& state_sampling_fn,
                                                                       std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
@@ -223,7 +223,7 @@ namespace simple_rrt_planner
          * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
          */
         std::pair<std::vector<T>, std::map<std::string, double>> Plan(const T& start,
-                                                                      std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& state_sampling_fn,
                                                                       std::function<T(void)>& goal_sampling_fn,
@@ -255,7 +255,7 @@ namespace simple_rrt_planner
          * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
          */
         std::pair<std::vector<T>, std::map<std::string, double>> Plan(const T& start,
-                                                                      std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& sampling_fn,
                                                                       std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
@@ -284,7 +284,7 @@ namespace simple_rrt_planner
          * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
          */
         std::pair<std::vector<T>, std::map<std::string, double>> Plan(const T& start,
-                                                                      std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& sampling_fn,
                                                                       std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
@@ -297,6 +297,49 @@ namespace simple_rrt_planner
             std::function<void(const SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](const SimpleRRTPlannerState<T, Allocator>& state) {;};
             // Call the planner
             std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> planning_result = PlanMultiPath(start, nearest_neighbor_fn, real_goal_found_fn, dummy_goal_callback_fn, sampling_fn, forward_propagation_fn, real_termination_check_fn);
+            // Put together the return
+            std::vector<T> planned_path;
+            if (planning_result.first.size() > 0)
+            {
+                planned_path = planning_result.first[0];
+            }
+            return std::pair<std::vector<T>, std::map<std::string, double>>(planned_path, planning_result.second);
+        }
+
+        /* Template-based single-tree RRT planner
+         *
+         * Template type T is your state type (i.e. a configuration)
+         *
+         * Arguments:
+         * nodes - a mutable vector of planner states, used internally to store the planner tree.
+         *          This is provided to allow external use of the tree during and after planning.
+         * start - starting configuration
+         * nearest_neighbor_fn - given all nodes explored so far, and a new state, return the index of the "closest" node
+         * goal_reached_fn - return if a given state meets the goal conditions (for example, within a radius of a goal state)
+         * state_sampling_fn - returns a new state (randomly- or deterministically-sampled)
+         * forward_propagation_fn - given the nearest neighbor and a new target state, returns the states that would grow the tree towards the target
+         * termination_check_fn - returns if the planner should terminate (for example, if it has exceeded time/space limits)
+         *
+         * Returns:
+         * std::pair<path, statistics>
+         * path - vector of states corresponding to the planned path
+         * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
+         */
+        std::pair<std::vector<T>, std::map<std::string, double>> Plan(std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes,
+                                                                      const T& start,
+                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<bool(const T&)>& goal_reached_fn,
+                                                                      std::function<T(void)>& sampling_fn,
+                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<bool(void)>& termination_check_fn) const
+        {
+            // Define a couple lambdas to let us use the generic multi-path planner as if it were a single-path planner
+            bool solution_found = false;
+            std::function<bool(const T&)> real_goal_found_fn = [&](const T& state) { if (goal_reached_fn(state)) { solution_found = true; return true; } else {return false;} };
+            std::function<bool(void)> real_termination_check_fn = [&](void) { if (!solution_found) { return termination_check_fn(); } else {return true;} };
+            std::function<void(const SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](const SimpleRRTPlannerState<T, Allocator>& state) {;};
+            // Call the planner
+            std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> planning_result = PlanMultiPath(nodes, start, nearest_neighbor_fn, real_goal_found_fn, dummy_goal_callback_fn, sampling_fn, forward_propagation_fn, real_termination_check_fn);
             // Put together the return
             std::vector<T> planned_path;
             if (planning_result.first.size() > 0)
@@ -324,7 +367,7 @@ namespace simple_rrt_planner
          * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
          */
         std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> PlanMultiPath(const T& start,
-                                                                      std::function<int64_t(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
                                                                       std::function<T(void)>& sampling_fn,
@@ -333,6 +376,39 @@ namespace simple_rrt_planner
         {
             // Keep track of states
             std::vector<SimpleRRTPlannerState<T, Allocator>> nodes;
+            return PlanMultiPath(nodes, start, nearest_neighbor_fn, goal_reached_fn, goal_reached_callback_fn, sampling_fn, forward_propagation_fn, termination_check_fn);
+        }
+
+        /* Template-based single-tree RRT planner
+         *
+         * Template type T is your state type (i.e. a configuration)
+         *
+         * Arguments:
+         * nodes - a mutable vector of planner states, used internally to store the planner tree.
+         *          This is provided to allow external use of the tree during and after planning.
+         * start - starting configuration
+         * nearest_neighbor_fn - given all nodes explored so far, and a new state, return the index of the "closest" node
+         * goal_reached_fn - return if a given state meets the goal conditions (for example, within a radius of a goal state)
+         * state_sampling_fn - returns a new state (randomly- or deterministically-sampled)
+         * forward_propagation_fn - given the nearest neighbor and a new target state, returns the states that would grow the tree towards the target
+         * termination_check_fn - returns if the planner should terminate (for example, if it has exceeded time/space limits)
+         *
+         * Returns:
+         * std::pair<paths, statistics>
+         * paths - vector of vector of states corresponding to the planned path(s)
+         * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
+         */
+        std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> PlanMultiPath(std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes,
+                                                                      const T& start,
+                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<bool(const T&)>& goal_reached_fn,
+                                                                      std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
+                                                                      std::function<T(void)>& sampling_fn,
+                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<bool(void)>& termination_check_fn) const
+        {
+            // Clear the tree we've been given
+            nodes.clear();
             // Add the start state
             SimpleRRTPlannerState<T, Allocator> start_state(start);
             nodes.push_back(start_state);
