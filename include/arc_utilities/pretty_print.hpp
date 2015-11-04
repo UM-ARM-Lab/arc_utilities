@@ -60,6 +60,32 @@ namespace PrettyPrint
     }
 
     template<>
+    inline std::string PrettyPrint(const Eigen::VectorXd& vector_to_print, const bool add_delimiters, const std::string& separator)
+    {
+        UNUSED(add_delimiters);
+        UNUSED(separator);
+        if (vector_to_print.size() > 1)
+        {
+            std::ostringstream strm;
+            strm << "VectorXd: <" << std::to_string(vector_to_print(0));
+            for (std::ptrdiff_t idx = 1; idx < vector_to_print.size(); idx++)
+            {
+                strm << ", " << std::to_string(vector_to_print(idx));
+            }
+            strm << ">";
+            return strm.str();
+        }
+        else if (vector_to_print.size() == 1)
+        {
+            return "VectorXd: <" + std::to_string(vector_to_print(0)) + ">";
+        }
+        else
+        {
+            return "VectorXd: <>";
+        }
+    }
+
+    template<>
     inline std::string PrettyPrint(const Eigen::Quaterniond& quaternion_to_print, const bool add_delimiters, const std::string& separator)
     {
         UNUSED(add_delimiters);

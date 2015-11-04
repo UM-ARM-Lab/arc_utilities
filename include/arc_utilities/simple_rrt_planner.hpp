@@ -192,7 +192,7 @@ namespace simple_rrt_planner
                                                                       std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&,const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& state_sampling_fn,
-                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       const double goal_bias,
                                                                       const std::chrono::duration<double>& time_limit,
                                                                       std::mt19937_64& rng) const
@@ -227,7 +227,7 @@ namespace simple_rrt_planner
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& state_sampling_fn,
                                                                       std::function<T(void)>& goal_sampling_fn,
-                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       const double goal_bias,
                                                                       const std::chrono::duration<double>& time_limit,
                                                                       std::mt19937_64& rng) const
@@ -258,7 +258,7 @@ namespace simple_rrt_planner
                                                                       std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       const std::chrono::duration<double>& time_limit) const
         {
             std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
@@ -287,7 +287,7 @@ namespace simple_rrt_planner
                                                                       std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       std::function<bool(void)>& termination_check_fn) const
         {
             // Define a couple lambdas to let us use the generic multi-path planner as if it were a single-path planner
@@ -330,7 +330,7 @@ namespace simple_rrt_planner
                                                                       std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       std::function<bool(void)>& termination_check_fn) const
         {
             // Define a couple lambdas to let us use the generic multi-path planner as if it were a single-path planner
@@ -371,7 +371,7 @@ namespace simple_rrt_planner
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
                                                                       std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       std::function<bool(void)>& termination_check_fn) const
         {
             // Keep track of states
@@ -404,7 +404,7 @@ namespace simple_rrt_planner
                                                                       std::function<bool(const T&)>& goal_reached_fn,
                                                                       std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
                                                                       std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       std::function<bool(void)>& termination_check_fn) const
         {
             // Clear the tree we've been given
@@ -443,16 +443,34 @@ namespace simple_rrt_planner
                 assert(nearest_neighbor_index >= 0);
                 const T& nearest_neighbor = nodes.at(nearest_neighbor_index).GetValueImmutable();
                 // Forward propagate towards the goal
-                std::vector<T> propagated = forward_propagation_fn(nearest_neighbor, random_target);
+                std::vector<std::pair<T, int64_t>> propagated = forward_propagation_fn(nearest_neighbor, random_target);
                 if (!propagated.empty())
                 {
                     statistics["total_samples"] += 1.0;
                     statistics["successful_samples"] += 1.0;
-                    int64_t node_parent_index = nearest_neighbor_index;
                     for (size_t idx = 0; idx < propagated.size(); idx++)
                     {
-                        const T& current_propagated = propagated[idx];
+                        const std::pair<T, int64_t>& current_propagation = propagated[idx];
+                        // Determine the parent index of the new state
+                        const int64_t& current_relative_parent_index = current_propagation.second;
+                        int64_t node_parent_index = nearest_neighbor_index;
+                        if (current_relative_parent_index >= 0)
+                        {
+                            const int64_t current_relative_index = (int64_t)idx;
+                            const int64_t current_relative_offset = current_relative_parent_index - current_relative_index;
+                            assert(current_relative_offset < 0);
+                            assert(current_relative_offset >= -(int64_t)propagated.size());
+                            const int64_t current_nodes_size = (int64_t)nodes.size();
+                            node_parent_index = current_nodes_size + current_relative_offset; // Offset is negative!
+                        }
+                        else
+                        {
+                            node_parent_index = nearest_neighbor_index; // Negative relative parent index means our parent index is the nearest neighbor index
+                        }
+                        // Build the new state
+                        const T& current_propagated = current_propagation.first;
                         SimpleRRTPlannerState<T, Allocator> new_state(current_propagated, node_parent_index);
+                        // Add the state to the tree
                         nodes.push_back(new_state);
                         int64_t new_node_index = (int64_t)nodes.size() - 1;
                         nodes[node_parent_index].AddChildIndex(new_node_index);
@@ -462,11 +480,6 @@ namespace simple_rrt_planner
                             goal_state_indices.push_back(new_node_index);
                             goal_reached_callback_fn(nodes[nodes.size() - 1]);
                             break;
-                        }
-                        // If not, add it to the tree
-                        else
-                        {
-                            node_parent_index = new_node_index;
                         }
                     }
                 }

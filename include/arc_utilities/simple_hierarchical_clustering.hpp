@@ -179,16 +179,18 @@ namespace simple_hierarchical_clustering
     public:
 
         template<typename Datatype, typename Allocator=std::allocator<Datatype>>
-        static std::vector<std::vector<Datatype, Allocator>> Cluster(const std::vector<Datatype, Allocator>& data, std::function<double(const Datatype&, const Datatype&)>& distance_fn, const double max_cluster_distance)
+        static std::pair<std::vector<std::vector<Datatype, Allocator>>, double> Cluster(const std::vector<Datatype, Allocator>& data, std::function<double(const Datatype&, const Datatype&)>& distance_fn, const double max_cluster_distance)
         {
             Eigen::MatrixXd distance_matrix = BuildDistanceMatrix(data, distance_fn);
             std::vector<u_int8_t> datapoint_mask(data.size(), 0u);
             std::vector<std::vector<int64_t>> cluster_indices;
+            double closest_distance = 0.0;
             bool complete = false;
             while (!complete)
             {
                 // Get closest pair of elements (an element can be a cluster or single data value!)
                 std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> closest_element_pair = GetClosestPair(datapoint_mask, distance_matrix, cluster_indices);
+                closest_distance = closest_element_pair.second;
                 //std::cout << "Element pair: " << PrettyPrint::PrettyPrint(closest_element_pair, true) << std::endl;
                 if (closest_element_pair.second <= max_cluster_distance)
                 {
@@ -270,7 +272,7 @@ namespace simple_hierarchical_clustering
                     clusters.push_back(new_cluster);
                 }
             }
-            return clusters;
+            return std::pair<std::vector<std::vector<Datatype, Allocator>>, double>(clusters, closest_distance);
         }
     };
 }

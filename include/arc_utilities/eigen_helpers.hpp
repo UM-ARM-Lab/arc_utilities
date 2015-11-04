@@ -3,7 +3,8 @@
 #include <Eigen/SVD>
 #include <stdio.h>
 #include <iostream>
-#include <arc_utilities/pretty_print.hpp>
+#include <map>
+#include <vector>
 #include <functional>
 
 #ifndef EIGEN_HELPERS_HPP

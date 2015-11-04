@@ -74,24 +74,18 @@ namespace execution_policy
     };
 }
 
-namespace PrettyPrint
+template<typename Observation, typename Action>
+std::ostream& operator<<(std::ostream& strm, const execution_policy::ExecutionPolicy<Observation, Action>& policy)
 {
-    template<typename Observation, typename Action>
-    inline std::string PrettyPrint(const execution_policy::ExecutionPolicy<Observation, Action>& policy_to_print, const bool add_delimiters=false, const std::string& separator="")
+    const std::vector<std::pair<std::pair<Observation, Action>, double>>& raw_policy = policy.GetRawPolicy();
+    strm << "Execution Policy - Policy: ";
+    for (size_t idx = 0; idx < raw_policy.size(); idx++)
     {
-        UNUSED(add_delimiters);
-        UNUSED(separator);
-        const std::vector<std::pair<std::pair<Observation, Action>, double>>& raw_policy = policy_to_print.GetRawPolicy();
-        std::ostringstream strm;
-        strm << "Execution Policy - Policy: ";
-        for (size_t idx = 0; idx < raw_policy.size(); idx++)
-        {
-            const std::pair<Observation, Action>& observation_action_pair = raw_policy[idx].first;
-            const double& pair_confidence = raw_policy[idx].second;
-            strm << "\nObservation: " << PrettyPrint(observation_action_pair.first) << " | Action: " << PrettyPrint(observation_action_pair.second) << " | Confidence: " << pair_confidence;
-        }
-        return strm.str();
+        const std::pair<Observation, Action>& observation_action_pair = raw_policy[idx].first;
+        const double& pair_confidence = raw_policy[idx].second;
+        strm << "\nObservation: " << PrettyPrint::PrettyPrint(observation_action_pair.first) << " | Action: " << PrettyPrint::PrettyPrint(observation_action_pair.second) << " | Confidence: " << pair_confidence;
     }
+    return strm;
 }
 
 #endif // EXECUTION_POLICY_HPP
