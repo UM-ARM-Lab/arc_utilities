@@ -64,6 +64,7 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/simple_rrt_planner.hpp
     include/${PROJECT_NAME}/execution_policy.hpp
     include/${PROJECT_NAME}/simple_hierarchical_clustering.hpp
+    include/${PROJECT_NAME}/simple_hausdorff_distance.hpp
     src/${PROJECT_NAME}/zlib_helpers.cpp)
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
