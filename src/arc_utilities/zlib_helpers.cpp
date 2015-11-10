@@ -11,7 +11,7 @@
 
 namespace ZlibHelpers
 {
-    std::vector<u_int8_t> DecompressBytes(std::vector<u_int8_t>& compressed)
+    std::vector<u_int8_t> DecompressBytes(const std::vector<u_int8_t>& compressed)
     {
         z_stream strm;
         std::vector<u_int8_t> buffer;
@@ -28,7 +28,7 @@ namespace ZlibHelpers
             throw std::invalid_argument("ZLIB unable to init inflate stream");
         }
         strm.avail_in = compressed.size();
-        strm.next_in = reinterpret_cast<uint8_t *>(compressed.data());
+        strm.next_in = const_cast<u_int8_t*>(reinterpret_cast<const u_int8_t*>(compressed.data()));
         do
         {
             strm.next_out = temp_buffer;
@@ -51,7 +51,7 @@ namespace ZlibHelpers
         return decompressed;
     }
 
-    std::vector<u_int8_t> CompressBytes(std::vector<u_int8_t>& uncompressed)
+    std::vector<u_int8_t> CompressBytes(const std::vector<u_int8_t>& uncompressed)
     {
         z_stream strm;
         std::vector<u_int8_t> buffer;
@@ -61,7 +61,7 @@ namespace ZlibHelpers
         strm.zfree = Z_NULL;
         strm.opaque = Z_NULL;
         strm.avail_in = uncompressed.size();
-        strm.next_in = reinterpret_cast<u_int8_t *>(uncompressed.data());
+        strm.next_in = const_cast<u_int8_t*>(reinterpret_cast<const u_int8_t*>(uncompressed.data()));
         strm.next_out = temp_buffer;
         strm.avail_out = BUFSIZE;
         int ret = deflateInit(&strm, Z_BEST_SPEED);
