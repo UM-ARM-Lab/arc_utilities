@@ -52,6 +52,7 @@ set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Werror")
 
 # Utility library
 add_library(${PROJECT_NAME}
+    include/${PROJECT_NAME}/log.hpp
     include/${PROJECT_NAME}/maybe.hpp
     include/${PROJECT_NAME}/ros_helpers.hpp
     include/${PROJECT_NAME}/abb_irb1600_145_fk_fast.hpp
