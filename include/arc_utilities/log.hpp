@@ -7,7 +7,7 @@
 
 #define LOG( log, message )                            \
     (log).logMessage(                                  \
-        static_cast<std::ostringstream&>(              \
+        static_cast< std::ostringstream& >(            \
             std::ostringstream().flush() << (message)  \
         ).str()                                        \
     )
