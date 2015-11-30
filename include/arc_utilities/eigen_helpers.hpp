@@ -1,4 +1,5 @@
 #include <Eigen/Geometry>
+#include <Eigen/Eigenvalues>
 #include <Eigen/Jacobi>
 #include <Eigen/SVD>
 #include <stdio.h>
@@ -279,6 +280,129 @@ namespace EigenHelpers
     inline std::vector<double> EigenQuaterniondToStdVectorDouble(const Eigen::Quaterniond& quat)
     {
         return std::vector<double>{quat.x(), quat.y(), quat.z(), quat.w()};
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Averaging functions
+    ////////////////////////////////////////////////////////////////////////////
+
+    inline Eigen::Vector3d AverageEigenVector3d(const EigenHelpers::VectorVector3d& vectors, const std::vector<double>& weights=std::vector<double>())
+    {
+        assert(vectors.size() > 0);
+        assert((weights.size() == vectors.size()) || (weights.size() == 0));
+        if (vectors.size() == 1)
+        {
+            return vectors[0];
+        }
+        // Get the weights
+        bool use_weights = false;
+        double sum_weights = 0.0;
+        if (weights.size() == vectors.size())
+        {
+            use_weights = true;
+            for (size_t idx = 0; idx < weights.size(); idx++)
+            {
+                sum_weights += fabs(weights[idx]);
+            }
+            assert(sum_weights > 0.0);
+        }
+        else
+        {
+            sum_weights = (double)vectors.size();
+        }
+        // Do the weighted averaging
+        Eigen::Vector3d sum_vector(0.0, 0.0, 0.0);
+        for (size_t idx = 0; idx < vectors.size(); idx++)
+        {
+            double ew = 1.0;
+            if (use_weights)
+            {
+                ew = fabs(weights[idx]);
+            }
+            const Eigen::Vector3d& prev_sum = sum_vector;
+            const Eigen::Vector3d& current = vectors[idx];
+            sum_vector = prev_sum + ((ew / sum_weights) * (current - prev_sum));
+        }
+        return sum_vector;
+    }
+
+    /*
+     * Implementation of method described in (http://stackoverflow.com/a/27410865)
+     * See paper at (http://www.acsu.buffalo.edu/~johnc/ave_quat07.pdf) for full explanation
+     */
+    inline Eigen::Quaterniond AverageEigenQuaterniond(const EigenHelpers::VectorQuaterniond& quaternions, const std::vector<double>& weights=std::vector<double>())
+    {
+        assert(quaternions.size() > 0);
+        assert((weights.size() == quaternions.size()) || (weights.size() == 0));
+        if (quaternions.size() == 1)
+        {
+            return quaternions[0];
+        }
+        bool use_weights = false;
+        if (weights.size() == quaternions.size())
+        {
+            use_weights = true;
+        }
+        // Build the averaging matrix
+        Eigen::MatrixXd q_matrix(4, quaternions.size());
+        for (size_t idx = 0; idx < quaternions.size(); idx++)
+        {
+            double ew = 1.0;
+            if (use_weights)
+            {
+                ew = fabs(weights[idx]);
+            }
+            const Eigen::Quaterniond& q = quaternions[idx];
+            q_matrix.col(idx) << ew * q.w(), ew * q.x(), ew * q.y(), ew * q.z();
+        }
+        // Make the matrix square
+        Eigen::Matrix<double, 4, 4> qqtranspose_matrix = q_matrix * q_matrix.transpose();
+        // Compute the eigenvectors and eigenvalues of the qqtranspose matrix
+        Eigen::EigenSolver<Eigen::Matrix<double, 4, 4>> solver(qqtranspose_matrix);
+        Eigen::EigenSolver<Eigen::Matrix<double, 4, 4>>::EigenvalueType eigen_values = solver.eigenvalues();
+        Eigen::EigenSolver<Eigen::Matrix<double, 4, 4>>::EigenvectorsType eigen_vectors = solver.eigenvectors();
+        // Extract the eigenvector corresponding to the largest eigenvalue
+        double max_eigenvalue = -INFINITY;
+        int64_t max_eigenvector_index = -1;
+        for (size_t idx = 0; idx < 4; idx++)
+        {
+            const double current_eigenvalue = eigen_values(idx).real();
+            if (current_eigenvalue > max_eigenvalue)
+            {
+                max_eigenvalue = current_eigenvalue;
+                max_eigenvector_index = idx;
+            }
+        }
+        assert(max_eigenvector_index >= 0);
+        // Note that these are already normalized!
+        const Eigen::Vector4cd best_eigenvector = eigen_vectors.col(max_eigenvector_index);
+        // Convert back into a quaternion
+        const Eigen::Quaterniond average_q(best_eigenvector(0).real(), best_eigenvector(1).real(), best_eigenvector(2).real(), best_eigenvector(3).real());
+        return average_q;
+    }
+
+    inline Eigen::Affine3d AverageEigenAffine3d(const EigenHelpers::VectorAffine3d& transforms, const std::vector<double>& weights=std::vector<double>())
+    {
+        assert(transforms.size() > 0);
+        assert((weights.size() == transforms.size()) || (weights.size() == 0));
+        if (transforms.size() == 1)
+        {
+            return transforms[0];
+        }
+        // Extract components
+        EigenHelpers::VectorVector3d translations(transforms.size());
+        EigenHelpers::VectorQuaterniond rotations(transforms.size());
+        for (size_t idx = 0; idx < transforms.size(); idx++)
+        {
+            translations[idx] = transforms[idx].translation();
+            rotations[idx] = Eigen::Quaterniond(transforms[idx].rotation());
+        }
+        // Average
+        const Eigen::Vector3d average_translation = AverageEigenVector3d(translations, weights);
+        const Eigen::Quaterniond average_rotation = AverageEigenQuaterniond(rotations, weights);
+        // Make the average transform
+        const Eigen::Affine3d average_transform = (Eigen::Translation3d)average_translation * average_rotation;
+        return average_transform;
     }
 
     ////////////////////////////////////////////////////////////////////////////

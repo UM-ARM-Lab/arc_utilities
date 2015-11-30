@@ -499,7 +499,6 @@ namespace simple_rrt_planner
                     statistics["failed_samples"] += 1.0;
                 }
             }
-            std::cout << "Planner termination condition met" << std::endl;
             // Put together the results
             std::vector<std::vector<T>> planned_paths = ExtractSolutionPaths(nodes, goal_state_indices);
             std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();
