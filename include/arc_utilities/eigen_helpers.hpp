@@ -353,7 +353,7 @@ namespace EigenHelpers
                 ew = fabs(weights[idx]);
             }
             const Eigen::Quaterniond& q = quaternions[idx];
-            q_matrix.col(idx) << ew * q.w(), ew * q.x(), ew * q.y(), ew * q.z();
+            q_matrix.col((long)idx) << ew * q.w(), ew * q.x(), ew * q.y(), ew * q.z();
         }
         // Make the matrix square
         Eigen::Matrix<double, 4, 4> qqtranspose_matrix = q_matrix * q_matrix.transpose();
@@ -366,11 +366,11 @@ namespace EigenHelpers
         int64_t max_eigenvector_index = -1;
         for (size_t idx = 0; idx < 4; idx++)
         {
-            const double current_eigenvalue = eigen_values(idx).real();
+            const double current_eigenvalue = eigen_values((long)idx).real();
             if (current_eigenvalue > max_eigenvalue)
             {
                 max_eigenvalue = current_eigenvalue;
-                max_eigenvector_index = idx;
+                max_eigenvector_index = (int64_t)idx;
             }
         }
         assert(max_eigenvector_index >= 0);
@@ -449,9 +449,13 @@ namespace EigenHelpers
             }
         }
         // A little optimization here
-        Eigen::MatrixXd mAdjointU = svdA.matrixU().adjoint().block(0, 0, vSingular.rows(), svdA.matrixU().adjoint().cols());
+        const Eigen::MatrixXd mAdjointU = svdA.matrixU().adjoint().block(0, 0, vSingular.rows(), svdA.matrixU().adjoint().cols());
+        // Yes, this is ugly. This is to suppress a warning on type conversion related to Eigen operations
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wconversion"
         // Pseudo-Inversion : V * S * U'
         Eigen::MatrixXd a_pinv = (svdA.matrixV() * vPseudoInvertedSingular.asDiagonal()) * mAdjointU;
+        #pragma GCC diagnostic pop
         // Flip back if need be
         if (flip)
         {
