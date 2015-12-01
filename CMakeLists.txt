@@ -64,7 +64,6 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/eigen_helpers.hpp
     include/${PROJECT_NAME}/eigen_helpers_conversions.hpp
     include/${PROJECT_NAME}/simple_rrt_planner.hpp
-    include/${PROJECT_NAME}/execution_policy.hpp
     include/${PROJECT_NAME}/simple_hierarchical_clustering.hpp
     include/${PROJECT_NAME}/simple_hausdorff_distance.hpp
     src/${PROJECT_NAME}/zlib_helpers.cpp)
