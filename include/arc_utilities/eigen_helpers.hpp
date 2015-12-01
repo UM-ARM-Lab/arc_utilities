@@ -326,6 +326,46 @@ namespace EigenHelpers
         return sum_vector;
     }
 
+    inline Eigen::VectorXd AverageEigenVectorXd(const std::vector<Eigen::VectorXd>& vectors, const std::vector<double>& weights=std::vector<double>())
+    {
+        assert(vectors.size() > 0);
+        assert((weights.size() == vectors.size()) || (weights.size() == 0));
+        if (vectors.size() == 1)
+        {
+            return vectors[0];
+        }
+        // Get the weights
+        bool use_weights = false;
+        double sum_weights = 0.0;
+        if (weights.size() == vectors.size())
+        {
+            use_weights = true;
+            for (size_t idx = 0; idx < weights.size(); idx++)
+            {
+                sum_weights += fabs(weights[idx]);
+            }
+            assert(sum_weights > 0.0);
+        }
+        else
+        {
+            sum_weights = (double)vectors.size();
+        }
+        // Do the weighted averaging
+        Eigen::VectorXd sum_vector = Eigen::VectorXd::Zero(vectors[0].size());
+        for (size_t idx = 0; idx < vectors.size(); idx++)
+        {
+            double ew = 1.0;
+            if (use_weights)
+            {
+                ew = fabs(weights[idx]);
+            }
+            const Eigen::VectorXd& prev_sum = sum_vector;
+            const Eigen::VectorXd& current = vectors[idx];
+            sum_vector = prev_sum + ((ew / sum_weights) * (current - prev_sum));
+        }
+        return sum_vector;
+    }
+
     /*
      * Implementation of method described in (http://stackoverflow.com/a/27410865)
      * See paper at (http://www.acsu.buffalo.edu/~johnc/ave_quat07.pdf) for full explanation
