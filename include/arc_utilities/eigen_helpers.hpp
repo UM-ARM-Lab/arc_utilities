@@ -319,9 +319,8 @@ namespace EigenHelpers
             {
                 ew = fabs(weights[idx]);
             }
-            const Eigen::Vector3d& prev_sum = sum_vector;
             const Eigen::Vector3d& current = vectors[idx];
-            sum_vector = prev_sum + ((ew / sum_weights) * (current - prev_sum));
+            sum_vector += (ew / sum_weights) * current;
         }
         return sum_vector;
     }

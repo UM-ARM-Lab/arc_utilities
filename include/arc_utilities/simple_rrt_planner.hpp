@@ -55,6 +55,11 @@ namespace simple_rrt_planner
             initialized_ = true;
         }
 
+        bool IsInitialized() const
+        {
+            return initialized_;
+        }
+
         const T& GetValueImmutable() const
         {
             return value_;
@@ -139,6 +144,11 @@ namespace simple_rrt_planner
             parent_ = std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>>();
             value_ = value;
             initialized_ = true;
+        }
+
+        bool IsInitialized() const
+        {
+            return initialized_;
         }
 
         const T& GetValueImmutable() const
