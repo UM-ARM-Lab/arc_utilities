@@ -50,7 +50,7 @@ namespace EigenHelpers
 
     inline bool Equal(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
     {
-        if (v1.x() == v2.x() && v1.y() == v2.y() && v1.z() == v2.z())
+        if ((v1.x() == v2.x()) && (v1.y() == v2.y()) && (v1.z() == v2.z()))
         {
             return true;
         }
