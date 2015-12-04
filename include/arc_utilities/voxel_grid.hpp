@@ -695,4 +695,10 @@ namespace std
     };
 }
 
+inline std::ostream& operator<<(std::ostream& strm, const VoxelGrid::GRID_INDEX& index)
+{
+    strm << "GridIndex: " << index.x << "," << index.y << "," << index.z;
+    return strm;
+}
+
 #endif // VOXEL_GRID_HPP
