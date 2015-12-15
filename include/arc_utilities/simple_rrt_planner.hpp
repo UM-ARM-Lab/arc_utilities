@@ -433,7 +433,7 @@ namespace simple_rrt_planner
             SimpleRRTPlannerState<T, Allocator> start_state(start);
             nodes.push_back(start_state);
             // Call the planner
-            return PlanMultiPath(nodes, start, nearest_neighbor_fn, goal_reached_fn, goal_reached_callback_fn, sampling_fn, forward_propagation_fn, termination_check_fn);
+            return PlanMultiPath(nodes, nearest_neighbor_fn, goal_reached_fn, goal_reached_callback_fn, sampling_fn, forward_propagation_fn, termination_check_fn);
         }
 
         /* Template-based single-tree RRT planner
@@ -508,11 +508,17 @@ namespace simple_rrt_planner
                     {
                         const std::pair<T, int64_t>& current_propagation = propagated[idx];
                         // Determine the parent index of the new state
+                        // This process deserves some explanation
+                        // The "current relative parent index" is the index of the parent, relative to the list of propagated nodes.
+                        // A negative value means the nearest neighbor in the tree, zero means the first propagated node, and so on.
+                        // NOTE - the relative parent index *must* be lower than the index in the list of prograted nodes
+                        // i.e. the first node must have a negative value, and so on.
                         const int64_t& current_relative_parent_index = current_propagation.second;
                         int64_t node_parent_index = nearest_neighbor_index;
                         if (current_relative_parent_index >= 0)
                         {
                             const int64_t current_relative_index = (int64_t)idx;
+                            assert(current_relative_parent_index < current_relative_index);
                             const int64_t current_relative_offset = current_relative_parent_index - current_relative_index;
                             assert(current_relative_offset < 0);
                             assert(current_relative_offset >= -(int64_t)propagated.size());
@@ -535,7 +541,6 @@ namespace simple_rrt_planner
                         {
                             goal_state_indices.push_back(new_node_index);
                             goal_reached_callback_fn(nodes[nodes.size() - 1]);
-                            break;
                         }
                     }
                 }
