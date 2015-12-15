@@ -10,17 +10,14 @@
 #include <unordered_set>
 #include <string>
 #include <Eigen/Geometry>
+#include <arc_utilities/arc_helpers.hpp>
 
 #ifndef PRETTY_PRINT_HPP
 #define PRETTY_PRINT_HPP
 
-// Macro to disable unused parameter compiler warnings
-#define UNUSED(x) (void)(x)
-
 // Handy functions for printing vectors and pairs
 namespace PrettyPrint
 {
-
     // Base template function for printing types
     template <typename T>
     inline std::string PrettyPrint(const T& toprint, const bool add_delimiters=false, const std::string& separator=", ")

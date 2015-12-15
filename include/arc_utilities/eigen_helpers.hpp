@@ -203,6 +203,12 @@ namespace EigenHelpers
         return (v2 - v1).norm();
     }
 
+    inline double Distance(const Eigen::VectorXd& v1, const Eigen::VectorXd& v2)
+    {
+        assert(v1.size() == v2.size());
+        return (v2 - v1).norm();
+    }
+
     inline double Distance(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2)
     {
         double dq = fabs((q1.w() * q2.w()) + (q1.x() * q2.x()) + (q1.y() * q2.y()) + (q1.z() * q2.z()));
