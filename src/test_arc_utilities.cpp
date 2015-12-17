@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <random>
+#include <chrono>
+#include <arc_utilities/arc_helpers.hpp>
 #include <arc_utilities/eigen_helpers.hpp>
 #include <arc_utilities/pretty_print.hpp>
 #include <arc_utilities/abb_irb1600_145_fk_fast.hpp>
@@ -32,5 +35,14 @@ int main(int argc, char** argv)
     std::cout << "Individual vectors: " << PrettyPrint::PrettyPrint(testvecs) << std::endl;
     Eigen::Vector3d averagevec = EigenHelpers::AverageEigenVector3d(testvecs);
     std::cout << "Average vector: " << PrettyPrint::PrettyPrint(averagevec) << std::endl;
+    unsigned long seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    std::mt19937_64 prng(seed);
+    arc_helpers::TruncatedNormalDistribution dist(0.0, 1.0, -5.0, 5.0);
+    std::vector<double> test_trunc_normals(10000, 0.0);
+    for (size_t idx = 0; idx < test_trunc_normals.size(); idx++)
+    {
+        test_trunc_normals[idx] = dist(prng);
+    }
+    std::cout << "Truncated normal test:\n" << PrettyPrint::PrettyPrint(test_trunc_normals, false, ",") << std::endl;
     return 0;
 }

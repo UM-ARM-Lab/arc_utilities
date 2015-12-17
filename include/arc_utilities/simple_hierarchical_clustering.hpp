@@ -6,6 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <functional>
+#include <arc_utilities/arc_helpers.hpp>
 #include <Eigen/Geometry>
 
 #ifndef SIMPLE_HIERARCHICAL_CLUSTERING_HPP
@@ -18,23 +19,6 @@ namespace simple_hierarchical_clustering
     private:
 
         SimpleHierarchicalClustering() {}
-
-        template<typename Datatype, typename Allocator=std::allocator<Datatype>>
-        static Eigen::MatrixXd BuildDistanceMatrix(const std::vector<Datatype, Allocator>& data, std::function<double(const Datatype&, const Datatype&)>& distance_fn)
-        {
-            Eigen::MatrixXd distance_matrix(data.size(), data.size());
-#ifdef ENABLE_PARALLEL
-            #pragma omp parallel for schedule(guided)
-#endif
-            for (size_t idx = 0; idx < data.size(); idx++)
-            {
-                for (size_t jdx = 0; jdx < data.size(); jdx++)
-                {
-                    distance_matrix(idx, jdx) = distance_fn(data[idx], data[jdx]);
-                }
-            }
-            return distance_matrix;
-        }
 
         static std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> GetClosestPair(const std::vector<u_int8_t>& datapoint_mask, const Eigen::MatrixXd& distance_matrix, const std::vector<std::vector<int64_t>>& clusters)
         {
@@ -181,7 +165,15 @@ namespace simple_hierarchical_clustering
         template<typename Datatype, typename Allocator=std::allocator<Datatype>>
         static std::pair<std::vector<std::vector<Datatype, Allocator>>, double> Cluster(const std::vector<Datatype, Allocator>& data, std::function<double(const Datatype&, const Datatype&)>& distance_fn, const double max_cluster_distance)
         {
-            Eigen::MatrixXd distance_matrix = BuildDistanceMatrix(data, distance_fn);
+            const Eigen::MatrixXd distance_matrix = arc_helpers::BuildDistanceMatrix(data, distance_fn);
+            return Cluster(data, distance_matrix, max_cluster_distance);
+        }
+
+        template<typename Datatype, typename Allocator=std::allocator<Datatype>>
+        static std::pair<std::vector<std::vector<Datatype, Allocator>>, double> Cluster(const std::vector<Datatype, Allocator>& data, const Eigen::MatrixXd& distance_matrix, const double max_cluster_distance)
+        {
+            assert((size_t)distance_matrix.rows() == data.size());
+            assert((size_t)distance_matrix.cols() == data.size());
             std::vector<u_int8_t> datapoint_mask(data.size(), 0u);
             std::vector<std::vector<int64_t>> cluster_indices;
             double closest_distance = 0.0;
