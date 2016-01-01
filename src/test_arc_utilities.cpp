@@ -38,7 +38,7 @@ int main(int argc, char** argv)
     unsigned long seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
     std::mt19937_64 prng(seed);
     arc_helpers::TruncatedNormalDistribution dist(0.0, 1.0, -5.0, 5.0);
-    std::vector<double> test_trunc_normals(10000, 0.0);
+    std::vector<double> test_trunc_normals(100000, 0.0);
     for (size_t idx = 0; idx < test_trunc_normals.size(); idx++)
     {
         test_trunc_normals[idx] = dist(prng);

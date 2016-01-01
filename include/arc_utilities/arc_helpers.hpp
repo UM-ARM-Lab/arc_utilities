@@ -77,6 +77,177 @@ namespace arc_helpers
         return distance_matrix;
     }
 
+    class SplitMix64PRNG
+    {
+    private:
+
+        u_int64_t state_; /* The state can be seeded with any value. */
+
+        inline u_int64_t next(void)
+        {
+            u_int64_t z = (state_ += UINT64_C(0x9E3779B97F4A7C15));
+            z = (z ^ (z >> 30)) * UINT64_C(0xBF58476D1CE4E5B9);
+            z = (z ^ (z >> 27)) * UINT64_C(0x94D049BB133111EB);
+            return z ^ (z >> 31);
+        }
+
+    public:
+
+        inline SplitMix64PRNG(const u_int64_t seed_val)
+        {
+            seed(seed_val);
+        }
+
+        static constexpr u_int64_t min(void)
+        {
+            return 0u;
+        }
+
+        static constexpr u_int64_t max(void)
+        {
+            return std::numeric_limits<u_int64_t>::max();
+        }
+
+        inline void seed(const u_int64_t seed_val)
+        {
+            state_ = seed_val;
+        }
+
+        inline void discard(const unsigned long long z)
+        {
+            u_int64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
+            temp = 0u;
+            for (unsigned long long i; i < z; i++)
+            {
+                temp = next();
+                __asm__ __volatile__(""); // This should prevent the compiler from optimizing out the loop
+            }
+        }
+
+        inline u_int64_t operator() (void)
+        {
+            return next();
+        }
+    };
+
+    class XorShift128PlusPRNG
+    {
+    private:
+
+        u_int64_t state_1_;
+        u_int64_t state_2_;
+
+        inline u_int64_t next(void)
+        {
+            u_int64_t s1 = state_1_;
+            const u_int64_t s0 = state_2_;
+            state_1_ = s0;
+            s1 ^= s1 << 23; // a
+            state_2_ = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5); // b, c
+            return state_2_ + s0;
+        }
+
+    public:
+
+        inline XorShift128PlusPRNG(const u_int64_t seed_val)
+        {
+            seed(seed_val);
+        }
+
+        static constexpr u_int64_t min(void)
+        {
+            return 0u;
+        }
+
+        static constexpr u_int64_t max(void)
+        {
+            return std::numeric_limits<u_int64_t>::max();
+        }
+
+        inline void seed(const u_int64_t seed_val)
+        {
+            SplitMix64PRNG temp_seed_gen(seed_val);
+            state_1_ = temp_seed_gen();
+            state_2_ = temp_seed_gen();
+        }
+
+        inline void discard(const unsigned long long z)
+        {
+            u_int64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
+            temp = 0u;
+            for (unsigned long long i; i < z; i++)
+            {
+                temp = next();
+                __asm__ __volatile__(""); // This should prevent the compiler from optimizing out the loop
+            }
+        }
+
+        inline u_int64_t operator() (void)
+        {
+            return next();
+        }
+    };
+
+    class XorShift1024StarPRNG
+    {
+    private:
+
+        std::array<u_int64_t, 16> state_;
+        int32_t p;
+
+        inline u_int64_t next(void)
+        {
+            const u_int64_t s0 = state_[p];
+            u_int64_t s1 = state_[p = (p + 1) & 15];
+            s1 ^= s1 << 31; // a
+            state_[p] = s1 ^ s0 ^ (s1 >> 11) ^ (s0 >> 30); // b,c
+            return state_[p] * UINT64_C(1181783497276652981);
+        }
+
+    public:
+
+        inline XorShift1024StarPRNG(const u_int64_t seed_val)
+        {
+            seed(seed_val);
+            p = 0;
+        }
+
+        static constexpr u_int64_t min(void)
+        {
+            return 0u;
+        }
+
+        static constexpr u_int64_t max(void)
+        {
+            return std::numeric_limits<u_int64_t>::max();
+        }
+
+        inline void seed(const u_int64_t seed_val)
+        {
+            SplitMix64PRNG temp_seed_gen(seed_val);
+            for (size_t idx = 0u; idx < state_.size(); idx++)
+            {
+                state_[idx] = temp_seed_gen();
+            }
+        }
+
+        inline void discard(const unsigned long long z)
+        {
+            u_int64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
+            temp = 0u;
+            for (unsigned long long i; i < z; i++)
+            {
+                temp = next();
+                __asm__ __volatile__(""); // This should prevent the compiler from optimizing out the loop
+            }
+        }
+
+        inline u_int64_t operator() (void)
+        {
+            return next();
+        }
+    };
+
     class TruncatedNormalDistribution
     {
     protected:
@@ -250,6 +421,73 @@ namespace arc_helpers
         inline double operator() (Generator& prng)
         {
             return Sample(prng);
+        }
+    };
+
+    class RandomRotationGenerator
+    {
+    protected:
+
+        std::uniform_real_distribution<double> uniform_unit_dist_;
+
+        // From: "Uniform Random Rotations", Ken Shoemake, Graphics Gems III, pg. 124-132
+        template<typename Generator>
+        inline Eigen::Quaterniond GenerateUniformRandomQuaternion(Generator& prng)
+        {
+            const double x0 = uniform_unit_dist_(prng);
+            const double r1 = sqrt(1.0 - x0);
+            const double r2 = sqrt(x0);
+            const double t1 = 2.0 * M_PI * uniform_unit_dist_(prng);
+            const double t2 = 2.0 * M_PI * uniform_unit_dist_(prng);
+            const double c1 = cos(t1);
+            const double s1 = sin(t1);
+            const double c2 = cos(t2);
+            const double s2 = sin(t2);
+            const double x = s1 * r1;
+            const double y = c1 * r1;
+            const double z = s2 * r2;
+            const double w = c2 * r2;
+            return Eigen::Quaterniond(w, x, y, z);
+        }
+
+        // From Effective Sampling and Distance Metrics for 3D Rigid Body Path Planning, by James Kuffner, ICRA 2004
+        template<typename Generator>
+        Eigen::Vector3d GenerateUniformRandomEulerAngles(Generator& prng)
+        {
+            const double roll = M_PI * (-2.0 * uniform_unit_dist_(prng) + 1.0);
+            const double pitch = acos(1.0 - 2.0 * uniform_unit_dist_(prng)) - M_PI_2;
+            const double yaw = M_PI * (-2.0 * uniform_unit_dist_(prng) + 1.0);
+            return Eigen::Vector3d(roll, pitch, yaw);
+        }
+
+    public:
+
+        inline RandomRotationGenerator() : uniform_unit_dist_(0.0, 1.0) {}
+
+        template<typename Generator>
+        inline Eigen::Quaterniond GetQuaternion(Generator& prng)
+        {
+            return GenerateUniformRandomQuaternion(prng);
+        }
+
+        template<typename Generator>
+        inline std::vector<double> GetRawQuaternion(Generator& prng)
+        {
+            const Eigen::Quaterniond quat = GenerateUniformRandomQuaternion(prng);
+            return std::vector<double>{quat.x(), quat.y(), quat.z(), quat.w()};
+        }
+
+        template<typename Generator>
+        inline Eigen::Vector3d GetEulerAngles(Generator& prng)
+        {
+            return GenerateUniformRandomEulerAngles(prng);
+        }
+
+        template<typename Generator>
+        inline std::vector<double> GetRawEulerAngles(Generator& prng)
+        {
+            const Eigen::Vector3d angles = GenerateUniformRandomEulerAngles(prng);
+            return std::vector<double>{angles.x(), angles.y(), angles.z()};
         }
     };
 }
