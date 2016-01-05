@@ -117,7 +117,7 @@ namespace arc_helpers
         {
             u_int64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
             temp = 0u;
-            for (unsigned long long i; i < z; i++)
+            for (unsigned long long i = 0; i < z; i++)
             {
                 temp = next();
                 __asm__ __volatile__(""); // This should prevent the compiler from optimizing out the loop
@@ -175,7 +175,7 @@ namespace arc_helpers
         {
             u_int64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
             temp = 0u;
-            for (unsigned long long i; i < z; i++)
+            for (unsigned long long i = 0; i < z; i++)
             {
                 temp = next();
                 __asm__ __volatile__(""); // This should prevent the compiler from optimizing out the loop
@@ -198,10 +198,11 @@ namespace arc_helpers
         inline u_int64_t next(void)
         {
             const u_int64_t s0 = state_[p];
-            u_int64_t s1 = state_[p = (p + 1) & 15];
+            p = (p + 1) & 15;
+            u_int64_t s1 = state_[(size_t)p];
             s1 ^= s1 << 31; // a
-            state_[p] = s1 ^ s0 ^ (s1 >> 11) ^ (s0 >> 30); // b,c
-            return state_[p] * UINT64_C(1181783497276652981);
+            state_[(size_t)p] = s1 ^ s0 ^ (s1 >> 11) ^ (s0 >> 30); // b,c
+            return state_[(size_t)p] * UINT64_C(1181783497276652981);
         }
 
     public:
@@ -235,7 +236,7 @@ namespace arc_helpers
         {
             u_int64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
             temp = 0u;
-            for (unsigned long long i; i < z; i++)
+            for (unsigned long long i = 0; i < z; i++)
             {
                 temp = next();
                 __asm__ __volatile__(""); // This should prevent the compiler from optimizing out the loop

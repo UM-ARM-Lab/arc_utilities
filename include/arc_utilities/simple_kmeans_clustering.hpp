@@ -103,7 +103,7 @@ namespace simple_kmeans_clustering
                 return std::vector<u_int32_t>(data.size(), 0u);
             }
             // Prepare an RNG for cluster initialization
-            unsigned long seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+            auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
             std::mt19937_64 prng(seed);
             std::uniform_int_distribution<size_t> initialization_distribution(0u, data.size() - 1);
             // Initialize cluster centers
