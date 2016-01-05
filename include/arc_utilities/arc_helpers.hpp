@@ -197,7 +197,7 @@ namespace arc_helpers
 
         inline u_int64_t next(void)
         {
-            const u_int64_t s0 = state_[p];
+            const u_int64_t s0 = state_[(size_t)p];
             p = (p + 1) & 15;
             u_int64_t s1 = state_[(size_t)p];
             s1 ^= s1 << 31; // a
