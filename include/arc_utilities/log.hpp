@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <stdexcept>
 
 #ifndef LOG_HPP
 #define LOG_HPP
@@ -26,6 +27,13 @@ namespace Log
                 : filename_( filename )
                 , out_file_( filename, std::ios_base::out | std::ios_base::trunc )
             {
+                // check if we've succesfully opened the file
+                if ( !out_file_.is_open() )
+                {
+                    std::cerr << "\x1b[31;1m Unable to create folder/file to log to: " << filename << "\x1b[37m \n";
+                    throw std::invalid_argument( "filename must be write-openable" );
+                }
+
                 time_t rawtime;
                 tm * timeinfo;
                 char buffer[80];
