@@ -23,7 +23,7 @@ namespace Log
     class Log
     {
         public:
-            Log( const std::string& filename )
+            Log( const std::string& filename, bool add_header = true )
                 : filename_( filename )
                 , out_file_( filename, std::ios_base::out | std::ios_base::trunc )
             {
@@ -34,16 +34,19 @@ namespace Log
                     throw std::invalid_argument( "filename must be write-openable" );
                 }
 
-                time_t rawtime;
-                tm * timeinfo;
-                char buffer[80];
+                if ( add_header )
+                {
+                    time_t rawtime;
+                    tm * timeinfo;
+                    char buffer[80];
 
-                time(&rawtime);
-                timeinfo = localtime(&rawtime);
+                    time(&rawtime);
+                    timeinfo = localtime(&rawtime);
 
-                strftime( buffer, 80, "%Y-%m-%d %H:%M:%S", timeinfo );
+                    strftime( buffer, 80, "%Y-%m-%d %H:%M:%S", timeinfo );
 
-                out_file_ << buffer << std::endl;
+                    out_file_ << buffer << std::endl;
+                }
             }
 
             /** Copy constructor */
