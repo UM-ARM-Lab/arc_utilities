@@ -1,4 +1,4 @@
-#include <Eigen/Geometry>
+﻿#include <Eigen/Geometry>
 #include <Eigen/Eigenvalues>
 #include <Eigen/Jacobi>
 #include <Eigen/SVD>
@@ -79,6 +79,47 @@ namespace EigenHelpers
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    // Helper functions
+    ////////////////////////////////////////////////////////////////////////////
+
+    inline double EnforceContinuousRevoluteBounds(const double value)
+    {
+        if ((value <= -M_PI) || (value > M_PI))
+        {
+            const double remainder = fmod(value, 2.0 * M_PI);
+            if (remainder <= -M_PI)
+            {
+                return (remainder + (2.0 * M_PI));
+            }
+            else if (remainder > M_PI)
+            {
+                return (remainder - (2.0 * M_PI));
+            }
+            else
+            {
+                return remainder;
+            }
+        }
+        else
+        {
+            return value;
+        }
+    }
+
+    inline Eigen::Vector3d SafeNorm(const Eigen::Vector3d& vec)
+    {
+        const double norm = vec.norm();
+        if (norm > std::numeric_limits<double>::epsilon())
+        {
+            return vec / norm;
+        }
+        else
+        {
+            return vec;
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
     // Interpolation functions
     ////////////////////////////////////////////////////////////////////////////
 
@@ -99,6 +140,57 @@ namespace EigenHelpers
         // Interpolate
         // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
         return ((p1 * (1.0 - real_ratio)) + (p2 * real_ratio));
+    }
+
+    inline double InterpolateContinuousRevolute(const double p1, const double p2, const double ratio)
+    {
+        // Safety check ratio
+        double real_ratio = ratio;
+        if (real_ratio < 0.0)
+        {
+            real_ratio = 0.0;
+            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
+        }
+        else if (real_ratio > 1.0)
+        {
+            real_ratio = 1.0;
+            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
+        }
+        // Safety check args
+        const double real_p1 = EnforceContinuousRevoluteBounds(p1);
+        const double real_p2 = EnforceContinuousRevoluteBounds(p2);
+        // Interpolate
+        double interpolated = 0.0;
+        double diff = real_p2 - real_p1;
+        if (fabs(diff) <= M_PI)
+        {
+            interpolated = real_p1 + diff * ratio;
+        }
+        else
+        {
+            if (diff > 0.0)
+            {
+                diff = 2.0 * M_PI - diff;
+            }
+            else
+            {
+                diff = -2.0 * M_PI - diff;
+            }
+            interpolated = real_p1 - diff * ratio;
+            // Input states are within bounds, so the following check is sufficient
+            if (interpolated > M_PI)
+            {
+                interpolated -= 2.0 * M_PI;
+            }
+            else
+            {
+                if (interpolated < -M_PI)
+                {
+                    interpolated += 2.0 * M_PI;
+                }
+            }
+        }
+        return interpolated;
     }
 
     inline std::vector<double> Interpolate(const std::vector<double>& v1, const std::vector<double>& v2, const double ratio)
@@ -184,13 +276,13 @@ namespace EigenHelpers
             std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
         }
         // Interpolate
-        Eigen::Vector3d v1 = t1.translation();
-        Eigen::Quaterniond q1(t1.rotation());
-        Eigen::Vector3d v2 = t2.translation();
-        Eigen::Quaterniond q2(t2.rotation());
-        Eigen::Vector3d vint = Interpolate(v1, v2, real_ratio);
-        Eigen::Quaterniond qint = Interpolate(q1, q2, real_ratio);
-        Eigen::Affine3d tint = ((Eigen::Translation3d)vint) * qint;
+        const Eigen::Vector3d v1 = t1.translation();
+        const Eigen::Quaterniond q1(t1.rotation());
+        const Eigen::Vector3d v2 = t2.translation();
+        const Eigen::Quaterniond q2(t2.rotation());
+        const Eigen::Vector3d vint = Interpolate(v1, v2, real_ratio);
+        const Eigen::Quaterniond qint = Interpolate(q1, q2, real_ratio);
+        const Eigen::Affine3d tint = ((Eigen::Translation3d)vint) * qint;
         return tint;
     }
 
@@ -222,14 +314,16 @@ namespace EigenHelpers
         }
     }
 
-    inline double Distance(const Eigen::Affine3d& t1, const Eigen::Affine3d& t2)
+    inline double Distance(const Eigen::Affine3d& t1, const Eigen::Affine3d& t2, const double alpha=0.5)
     {
-        Eigen::Vector3d v1 = t1.translation();
-        Eigen::Quaterniond q1(t1.rotation());
-        Eigen::Vector3d v2 = t2.translation();
-        Eigen::Quaterniond q2(t2.rotation());
-        double vdist = Distance(v1, v2);
-        double qdist = Distance(q1, q2);
+        assert(alpha >= 0.0);
+        assert(alpha <= 1.0);
+        const Eigen::Vector3d v1 = t1.translation();
+        const Eigen::Quaterniond q1(t1.rotation());
+        const Eigen::Vector3d v2 = t2.translation();
+        const Eigen::Quaterniond q2(t2.rotation());
+        const double vdist = Distance(v1, v2) * (1.0 - alpha);
+        const double qdist = Distance(q1, q2) * (alpha);
         return vdist + qdist;
     }
 
@@ -250,9 +344,62 @@ namespace EigenHelpers
         }
     }
 
+    inline double ContinuousRevoluteSignedDistance(const double p1, const double p2)
+    {
+        // Safety check args
+        const double real_p1 = EnforceContinuousRevoluteBounds(p1);
+        const double real_p2 = EnforceContinuousRevoluteBounds(p2);
+        const double raw_distance = real_p2 - real_p1;
+        if ((raw_distance <= -M_PI) || (raw_distance > M_PI))
+        {
+            if (raw_distance <= -M_PI)
+            {
+                return (-(2.0 * M_PI) - raw_distance);
+            }
+            else if (raw_distance > M_PI)
+            {
+                return ((2.0 * M_PI) - raw_distance);
+            }
+            else
+            {
+                return raw_distance;
+            }
+        }
+        else
+        {
+            return raw_distance;
+        }
+    }
+
+    inline double ContinuousRevoluteDistance(const double p1, const double p2)
+    {
+        return fabs(ContinuousRevoluteSignedDistance(p1, p2));
+    }
+
+    inline double AddContinuousRevoluteValues(const double start, const double change)
+    {
+        return EnforceContinuousRevoluteBounds(start + change);
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Conversion functions
     ////////////////////////////////////////////////////////////////////////////
+
+    inline Eigen::Vector3d EulerAnglesFromRotationMatrix(const Eigen::Matrix<double, 3, 3>& rot_matrix)
+    {
+        const Eigen::Vector3d euler_angles = rot_matrix.eulerAngles(0, 1, 2); // Use XYZ angles
+        return euler_angles;
+    }
+
+    inline Eigen::Vector3d EulerAnglesFromQuaternion(const Eigen::Quaterniond& quat)
+    {
+        return EulerAnglesFromRotationMatrix(quat.toRotationMatrix());
+    }
+
+    inline Eigen::Vector3d EulerAnglesFromAffine3d(const Eigen::Affine3d& trans)
+    {
+        return EulerAnglesFromRotationMatrix(trans.rotation());
+    }
 
     inline Eigen::Vector3d StdVectorDoubleToEigenVector3d(const std::vector<double>& vector)
     {
@@ -291,6 +438,84 @@ namespace EigenHelpers
     ////////////////////////////////////////////////////////////////////////////
     // Averaging functions
     ////////////////////////////////////////////////////////////////////////////
+
+    inline double AverageStdVectorDouble(const std::vector<double>& values, const std::vector<double>& weights=std::vector<double>())
+    {
+        assert(values.size() > 0);
+        assert((weights.size() == values.size()) || (weights.size() == 0));
+        if (values.size() == 1)
+        {
+            return values[0];
+        }
+        // Get the weights
+        bool use_weights = false;
+        double sum_weights = 0.0;
+        if (weights.size() == values.size())
+        {
+            use_weights = true;
+            for (size_t idx = 0; idx < weights.size(); idx++)
+            {
+                sum_weights += fabs(weights[idx]);
+            }
+            assert(sum_weights > 0.0);
+        }
+        else
+        {
+            sum_weights = (double)values.size();
+        }
+        // Do weighted averaging
+        double average = 0.0;
+        for (size_t idx = 0; idx < values.size(); idx++)
+        {
+            double ew = 1.0;
+            if (use_weights)
+            {
+                ew = fabs(weights[idx]);
+            }
+            const double current = values[idx];
+            average += (ew / sum_weights) * current;
+        }
+        return average;
+    }
+
+    inline double AverageContinuousRevolute(const std::vector<double>& angles, const std::vector<double>& weights=std::vector<double>())
+    {
+        assert(angles.size() > 0);
+        assert((weights.size() == angles.size()) || (weights.size() == 0));
+        if (angles.size() == 1)
+        {
+            return angles[0];
+        }
+        // Get the weights
+        bool use_weights = false;
+        double sum_weights = 0.0;
+        if (weights.size() == angles.size())
+        {
+            use_weights = true;
+            for (size_t idx = 0; idx < weights.size(); idx++)
+            {
+                sum_weights += fabs(weights[idx]);
+            }
+            assert(sum_weights > 0.0);
+        }
+        else
+        {
+            sum_weights = (double)angles.size();
+        }
+        // Do weighted averaging
+        double average = angles[0];
+        for (size_t idx = 0; idx < angles.size(); idx++)
+        {
+            double ew = 1.0;
+            if (use_weights)
+            {
+                ew = fabs(weights[idx]);
+            }
+            const double current = angles[idx] - angles[0];
+            average += (ew / sum_weights) * current;
+        }
+        return average;
+    }
 
     inline Eigen::Vector3d AverageEigenVector3d(const EigenHelpers::VectorVector3d& vectors, const std::vector<double>& weights=std::vector<double>())
     {

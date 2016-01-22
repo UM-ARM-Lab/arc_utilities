@@ -372,8 +372,8 @@ namespace arc_helpers
             }
             else
             {
-                assert((case_ == TYPE_1) || (case_ == TYPE_2) || (case_ == TYPE_3) || (case_ == TYPE_4));
-                return 0.0; // Make the compiler happy - THIS SHOULD BE IMPOSSIBLE!
+                assert(case_ == NONE);
+                return mean_;
             }
         }
 
@@ -384,38 +384,45 @@ namespace arc_helpers
             // Set operating parameters
             mean_ = mean;
             stddev_ = stddev;
-            // Standardize the lower and upper bounds
-            std_lower_bound_ = (lower_bound - mean_) / stddev_;
-            std_upper_bound_ = (upper_bound - mean_) / stddev_;
-            // Set the operating case - i.e. which sampling method we will use
-            case_ = NONE;
-            if (0 <= std_upper_bound_ && 0 >= std_lower_bound_)
+            if (fabs(stddev_) == 0.0)
             {
-                case_ = TYPE_1;
+                case_ = NONE;
             }
-            if (0 < std_lower_bound_ && std_upper_bound_ == INFINITY)
+            else
             {
-                case_ = TYPE_2;
-            }
-            if (0 > std_upper_bound_ && std_lower_bound_ == -INFINITY)
-            {
-                std_lower_bound_ = -1 * std_upper_bound_;
-                std_upper_bound_ = INFINITY;
-                stddev_ = -1 * stddev_;
-                case_ = TYPE_2;
-            }
-            if ((0 > std_upper_bound_ || 0 < std_lower_bound_) && !(std_upper_bound_ == INFINITY || std_lower_bound_ == -INFINITY))
-            {
-                if (CheckSimple(std_lower_bound_, std_upper_bound_))
+                // Standardize the lower and upper bounds
+                std_lower_bound_ = (lower_bound - mean_) / stddev_;
+                std_upper_bound_ = (upper_bound - mean_) / stddev_;
+                // Set the operating case - i.e. which sampling method we will use
+                case_ = NONE;
+                if (0.0 <= std_upper_bound_ && 0.0 >= std_lower_bound_)
                 {
-                    case_ = TYPE_3;
+                    case_ = TYPE_1;
                 }
-                else
+                if (0.0 < std_lower_bound_ && std_upper_bound_ == INFINITY)
                 {
-                    case_ = TYPE_4;
+                    case_ = TYPE_2;
                 }
+                if (0.0 > std_upper_bound_ && std_lower_bound_ == -INFINITY)
+                {
+                    std_lower_bound_ = -1 * std_upper_bound_;
+                    std_upper_bound_ = INFINITY;
+                    stddev_ = -1 * stddev_;
+                    case_ = TYPE_2;
+                }
+                if ((0.0 > std_upper_bound_ || 0.0 < std_lower_bound_) && !(std_upper_bound_ == INFINITY || std_lower_bound_ == -INFINITY))
+                {
+                    if (CheckSimple(std_lower_bound_, std_upper_bound_))
+                    {
+                        case_ = TYPE_3;
+                    }
+                    else
+                    {
+                        case_ = TYPE_4;
+                    }
+                }
+                assert((case_ == TYPE_1) || (case_ == TYPE_2) || (case_ == TYPE_3) || (case_ == TYPE_4));
             }
-            assert((case_ == TYPE_1) || (case_ == TYPE_2) || (case_ == TYPE_3) || (case_ == TYPE_4));
         }
 
         template<typename Generator>

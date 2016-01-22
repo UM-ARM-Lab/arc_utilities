@@ -464,6 +464,41 @@ namespace simple_rrt_planner
                                                                       std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       std::function<bool(void)>& termination_check_fn)
         {
+            // Make a dummy state added function
+            std::function<void(SimpleRRTPlannerState<T, Allocator>&, SimpleRRTPlannerState<T, Allocator>&)> dummy_state_added_fn = [] (SimpleRRTPlannerState<T, Allocator>& parent, SimpleRRTPlannerState<T, Allocator>& new_child) { ; };
+            // Call the planner
+            return PlanMultiPath(nodes, nearest_neighbor_fn, dummy_state_added_fn, goal_reached_fn, goal_reached_callback_fn, sampling_fn, forward_propagation_fn, termination_check_fn);
+        }
+
+        /* Template-based single-tree RRT planner
+         *
+         * Template type T is your state type (i.e. a configuration)
+         *
+         * Arguments:
+         * nodes - a mutable vector of planner states, used internally to store the planner tree.
+         *          This is provided to allow external use of the tree during and after planning.
+         *          This contains either a SINGLE start state, or the tree resulting from previous planning.
+         * nearest_neighbor_fn - given all nodes explored so far, and a new state, return the index of the "closest" node
+         * goal_reached_fn - return if a given state meets the goal conditions (for example, within a radius of a goal state)
+         * state_sampling_fn - returns a new state (randomly- or deterministically-sampled)
+         * forward_propagation_fn - given the nearest neighbor and a new target state, returns the states that would grow the tree towards the target
+         * termination_check_fn - returns if the planner should terminate (for example, if it has exceeded time/space limits)
+         *
+         * Returns:
+         * std::pair<paths, statistics>
+         * paths - vector of vector of states corresponding to the planned path(s)
+         * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
+         */
+        template<typename T, typename Allocator=std::allocator<T>>
+        static std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> PlanMultiPath(std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes,
+                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      std::function<void(SimpleRRTPlannerState<T, Allocator>&, SimpleRRTPlannerState<T, Allocator>&)>& state_added_fn,
+                                                                      std::function<bool(const T&)>& goal_reached_fn,
+                                                                      std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
+                                                                      std::function<T(void)>& sampling_fn,
+                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
+                                                                      std::function<bool(void)>& termination_check_fn)
+        {
             // Make sure we've been given a start state
             assert(nodes.size() > 0);
             // Make sure the tree is properly linked
@@ -536,11 +571,13 @@ namespace simple_rrt_planner
                         nodes.push_back(new_state);
                         int64_t new_node_index = (int64_t)nodes.size() - 1;
                         nodes[node_parent_index].AddChildIndex(new_node_index);
+                        // Call the state added callback
+                        state_added_fn(nodes[node_parent_index], nodes[new_node_index]);
                         // Check if we've reached the goal
-                        if (goal_reached_fn(current_propagated))
+                        if (goal_reached_fn(nodes[new_node_index].GetValueImmutable()))
                         {
                             goal_state_indices.push_back(new_node_index);
-                            goal_reached_callback_fn(nodes[nodes.size() - 1]);
+                            goal_reached_callback_fn(nodes[new_node_index]);
                         }
                     }
                 }
