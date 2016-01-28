@@ -311,7 +311,7 @@ namespace simple_rrt_planner
             bool solution_found = false;
             std::function<bool(const T&)> real_goal_found_fn = [&](const T& state) { if (goal_reached_fn(state)) { solution_found = true; return true; } else {return false;} };
             std::function<bool(void)> real_termination_check_fn = [&](void) { if (!solution_found) { return termination_check_fn(); } else {return true;} };
-            std::function<void(const SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](const SimpleRRTPlannerState<T, Allocator>& state) {;};
+            std::function<void(SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](SimpleRRTPlannerState<T, Allocator>& state) {;};
             // Call the planner
             std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> planning_result = PlanMultiPath(start, nearest_neighbor_fn, real_goal_found_fn, dummy_goal_callback_fn, sampling_fn, forward_propagation_fn, real_termination_check_fn);
             // Put together the return
@@ -355,7 +355,7 @@ namespace simple_rrt_planner
             bool solution_found = false;
             std::function<bool(const T&)> real_goal_found_fn = [&](const T& state) { if (goal_reached_fn(state)) { solution_found = true; return true; } else {return false;} };
             std::function<bool(void)> real_termination_check_fn = [&](void) { if (!solution_found) { return termination_check_fn(); } else {return true;} };
-            std::function<void(const SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](const SimpleRRTPlannerState<T, Allocator>& state) {;};
+            std::function<void(SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](SimpleRRTPlannerState<T, Allocator>& state) {;};
             // Call the planner
             std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> planning_result = PlanMultiPath(nodes, start, nearest_neighbor_fn, real_goal_found_fn, dummy_goal_callback_fn, sampling_fn, forward_propagation_fn, real_termination_check_fn);
             // Put together the return
