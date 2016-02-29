@@ -734,6 +734,35 @@ namespace EigenHelpers
         }
         return a_pinv;
     }
+
+    /**
+     * @brief WeightedLeastSquaresSolver Solves the minimization problem min || Ax - b ||^2 for x, using weights w in the norm
+     *                                   If the problem is ill-conditioned, adds in a damping factor. This is equivalent to
+     *                                   solving A^T * diag(W) * A * x = A^T * diag(W) * b for x.
+     * @param A size M x N with M > N
+     * @param b size M x 1
+     * @param w size M x 1
+     * @param damping_threshold The smallest singular value we allow in A^T * W * A before we apply damping
+     * @param damping_value The damping value we apply to the main diagonal of A^T * W * A if we exceed the threshold
+     * @return size N x 1
+     */
+    inline Eigen::VectorXd WeightedLeastSquaresSolver(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const Eigen::VectorXd& w, const double damping_threshold, const double damping_value)
+    {
+        // Yes, this is ugly. This is to suppress a warning on type conversion related to Eigen operations
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wconversion"
+        Eigen::MatrixXd left_side = A.transpose() * w.asDiagonal() * A;
+        #pragma GCC diagnostic pop
+        const double minimum_singular_value =  left_side.jacobiSvd().singularValues().minCoeff();
+
+        if (minimum_singular_value < damping_threshold)
+        {
+            left_side += damping_value * Eigen::MatrixXd::Identity(left_side.rows(), left_side.cols());
+        }
+
+        // With the damping we can assume that the left side is positive definite, so use LLT to solve this
+        return left_side.llt().solve(A.transpose() * w.cwiseProduct(b));
+    }
 }
 
 #endif // EIGEN_HELPERS_HPP
