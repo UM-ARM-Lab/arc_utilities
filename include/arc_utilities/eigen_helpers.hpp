@@ -753,7 +753,7 @@ namespace EigenHelpers
         #pragma GCC diagnostic ignored "-Wconversion"
         Eigen::MatrixXd left_side = A.transpose() * w.asDiagonal() * A;
         #pragma GCC diagnostic pop
-        const double minimum_singular_value =  left_side.jacobiSvd().singularValues().minCoeff();
+        const double minimum_singular_value = left_side.jacobiSvd().singularValues().minCoeff();
 
         if (minimum_singular_value < damping_threshold)
         {
