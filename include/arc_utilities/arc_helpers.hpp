@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <functional>
 #include <Eigen/Geometry>
+#include <Eigen/Cholesky>
 #include <type_traits>
 #include <random>
 #include <array>
@@ -427,7 +428,43 @@ namespace arc_helpers
         }
 
         template<typename Generator>
-        inline double operator() (Generator& prng)
+        inline double operator()(Generator& prng)
+        {
+            return Sample(prng);
+        }
+    };
+
+    class MultivariteGaussianDistribution
+    {
+    protected:
+        const Eigen::VectorXd mean_;
+        const Eigen::MatrixXd chol_decomp_;
+
+        std::normal_distribution<double> unit_gaussian_dist_;
+
+        template<typename Generator>
+        inline Eigen::VectorXd Sample(Generator& prng)
+        {
+            Eigen::VectorXd draw;
+            draw.resize(mean_.rows());
+
+            for (ssize_t idx = 0; idx < draw.rows(); idx++)
+            {
+                draw(idx) = unit_gaussian_dist_(prng);
+            }
+
+            return chol_decomp_ * draw + mean_;
+        }
+
+    public:
+        inline MultivariteGaussianDistribution(const Eigen::VectorXd& mean, const Eigen::MatrixXd& covariance) : mean_(mean), chol_decomp_(covariance.llt().matrixL().transpose()), unit_gaussian_dist_(0.0, 1.0)
+        {
+            assert(mean.rows() == covariance.rows());
+            assert(covariance.cols() == covariance.rows());
+        }
+
+        template<typename Generator>
+        inline Eigen::VectorXd operator()(Generator& prng)
         {
             return Sample(prng);
         }
