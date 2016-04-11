@@ -22,6 +22,7 @@ int main(int argc, char** argv)
     std::vector<double> base_config = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     EigenHelpers::VectorAffine3d link_transforms = ABB_IRB1600_145_FK_FAST::GetLinkTransforms(base_config);
     std::cout << "Link transforms:\n" << PrettyPrint::PrettyPrint(link_transforms, false, "\n") << std::endl;
+
     // Test Vector3d averaging
     Eigen::Vector3d testvec1(-1.0, -1.0, -1.0);
     Eigen::Vector3d testvec2(-1.0, -1.0, 1.0);
@@ -44,5 +45,16 @@ int main(int argc, char** argv)
         test_trunc_normals[idx] = dist(prng);
     }
     std::cout << "Truncated normal test:\n" << PrettyPrint::PrettyPrint(test_trunc_normals, false, ",") << std::endl;
+
+    // Test weighted dot product functions
+    Eigen::Vector3d weights(1.0, 2.0, 3.0);
+    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvec1) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvec1, weights) << std::endl;
+    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvec8) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvec8, weights) << std::endl;
+    std::cout << "Weighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvec1, testvec8, weights) << std::endl;
+    std::cout << "Unweighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvec1, testvec8, Eigen::Vector3d::Ones()) << std::endl;
+    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvec2) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvec2, weights) << std::endl;
+    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvec3) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvec3, weights) << std::endl;
+    std::cout << "Weighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvec2, testvec3, weights) << std::endl;
+    std::cout << "Unweighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvec2, testvec3, Eigen::Vector3d::Ones()) << std::endl;
     return 0;
 }
