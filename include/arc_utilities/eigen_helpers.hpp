@@ -676,6 +676,39 @@ namespace EigenHelpers
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    // Weighted dot product, norm, and angle functions
+    ////////////////////////////////////////////////////////////////////////////
+
+    inline double WeightedDotProduct(const Eigen::VectorXd& vec1, const Eigen::VectorXd& vec2, const Eigen::VectorXd& weights)
+    {
+        return vec1.cwiseProduct(weights).dot(vec2);
+    }
+
+    inline double WeightedSquaredNorm(const Eigen::VectorXd& vec, const Eigen::VectorXd weights)
+    {
+        return WeightedDotProduct(vec, vec, weights);
+    }
+
+    inline double WeightedNorm(const Eigen::VectorXd& vec, const Eigen::VectorXd& weights)
+    {
+        return std::sqrt(WeightedSquaredNorm(vec, weights));
+    }
+
+    inline double WeightedCosineAngleBetweenVectors(const Eigen::VectorXd& vec1, const Eigen::VectorXd& vec2, const Eigen::VectorXd& weights)
+    {
+        const double vec1_norm = WeightedNorm(vec1, weights);
+        const double vec2_norm = WeightedNorm(vec2, weights);
+        assert(vec1_norm > 0 && vec2_norm > 0);
+        const double result = WeightedDotProduct(vec1, vec2, weights) / (vec1_norm * vec2_norm);
+        return std::max(-1.0, std::min(result, 1.0));;
+    }
+
+    inline double WeightedAngleBetweenVectors(const Eigen::VectorXd& vec1, const Eigen::VectorXd& vec2, const Eigen::VectorXd& weights)
+    {
+        return std::acos(WeightedCosineAngleBetweenVectors(vec1, vec2, weights));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
     // Other auxiliary functions
     ////////////////////////////////////////////////////////////////////////////
 
