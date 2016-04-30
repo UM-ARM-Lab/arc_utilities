@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iostream>
 #include <iomanip>
 #include <string>
 #include <stdexcept>
@@ -6,14 +7,16 @@
 #ifndef LOG_HPP
 #define LOG_HPP
 
-#define LOG( log, message )                            \
-    (log).logMessage(                                  \
-        static_cast< std::ostringstream& >(            \
-            std::ostringstream().flush() << (message)  \
-        ).str()                                        \
+#define LOG( log, message )                  \
+    (log).logMessage(                        \
+        static_cast< std::ostringstream& >(  \
+            std::ostringstream().flush()     \
+            << std::setprecision(12)         \
+            << (message)                     \
+        ).str()                              \
     )
 
-#define LOG_COND( log, cond, message )                 \
+#define LOG_COND( log, cond, message )       \
     if ( cond ) LOG( log, message )
 
 

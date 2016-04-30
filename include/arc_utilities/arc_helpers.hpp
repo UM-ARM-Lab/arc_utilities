@@ -4,6 +4,7 @@
 #include <Eigen/Geometry>
 #include <type_traits>
 #include <random>
+#include <array>
 
 #ifdef ENABLE_PARALLEL
 #include <omp.h>
