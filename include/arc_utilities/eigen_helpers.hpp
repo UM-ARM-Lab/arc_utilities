@@ -79,6 +79,139 @@ namespace EigenHelpers
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    // Serialization/Deserialization functions
+    ////////////////////////////////////////////////////////////////////////////
+
+    // Prototypes for serialization/deserialization functions
+    template<typename Container>
+    inline uint64_t SerializedSize(const Container& value);
+
+    // For fixed-size containers only (others have a uint64_t size header first)
+    template<typename Container>
+    inline uint64_t SerializedSize(void);
+
+    template<typename Container>
+    inline uint64_t Serialize(const Container& value, std::vector<uint8_t>& buffer);
+
+    template<typename Container>
+    inline std::pair<Container, uint64_t> Deserialize(const std::vector<uint8_t>& buffer, const uint64_t current);
+
+    // Concrete implementations
+    template<>
+    inline uint64_t SerializedSize(const Eigen::VectorXd& value)
+    {
+        (void)(value);
+        return (uint64_t)((1 * sizeof(uint64_t)) + (value.size() * sizeof(double))); // Space for a uint64_t size header and the data
+    }
+
+    template<>
+    inline uint64_t Serialize(const Eigen::VectorXd& value, std::vector<uint8_t>& buffer)
+    {
+        // Takes a state to serialize and a buffer to serialize into
+        // Return number of bytes written to buffer
+        const uint64_t serialized_size = SerializedSize(value);
+        std::vector<uint8_t> temp_buffer(serialized_size, 0x00);
+        // Make the header
+        const uint64_t size_header = (uint64_t)value.size();
+        memcpy(&temp_buffer.front(), & size_header, sizeof(size_header));
+        // Copy the data
+        memcpy(&(temp_buffer[sizeof(size_header)]), value.data(), (serialized_size - sizeof(size_header)));
+        buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
+        return serialized_size;
+    }
+
+    template<>
+    inline std::pair<Eigen::VectorXd, uint64_t> Deserialize<Eigen::VectorXd>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        assert(current < buffer.size());
+        assert((current + sizeof(uint64_t)) <= buffer.size());
+        // Takes a buffer to read from and the starting index in the buffer
+        // Return the loaded state and how many bytes we read from the buffer
+        // Load the header
+        uint64_t size_header = 0u;
+        memcpy(&size_header, &buffer[current], sizeof(uint64_t));
+        // Check buffer size
+        Eigen::VectorXd temp_value = Eigen::VectorXd::Zero(size_header);
+        const uint64_t serialized_size = SerializedSize(temp_value);
+        assert((current + serialized_size) <= buffer.size());
+        // Load from the buffer
+        memcpy(temp_value.data(), &buffer[current + sizeof(size_header)], (serialized_size - sizeof(size_header)));
+        return std::make_pair(temp_value, serialized_size);
+    }
+
+    template<>
+    inline uint64_t SerializedSize(const Eigen::Vector3d& value)
+    {
+        (void)(value);
+        return (uint64_t)(3 * sizeof(double));
+    }
+
+    template<>
+    inline uint64_t SerializedSize<Eigen::Vector3d>(void)
+    {
+        return (uint64_t)(3 * sizeof(double));
+    }
+
+    template<>
+    inline uint64_t Serialize(const Eigen::Vector3d& value, std::vector<uint8_t>& buffer)
+    {
+        // Takes a state to serialize and a buffer to serialize into
+        // Return number of bytes written to buffer
+        std::vector<uint8_t> temp_buffer(SerializedSize<Eigen::Vector3d>(), 0x00);
+        memcpy(&temp_buffer.front(), value.data(), SerializedSize<Eigen::Vector3d>());
+        buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
+        return SerializedSize<Eigen::Vector3d>();
+    }
+
+    template<>
+    inline std::pair<Eigen::Vector3d, uint64_t> Deserialize<Eigen::Vector3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        assert(current < buffer.size());
+        assert((current + SerializedSize<Eigen::Vector3d>()) <= buffer.size());
+        // Takes a buffer to read from and the starting index in the buffer
+        // Return the loaded state and how many bytes we read from the buffer
+        Eigen::Vector3d temp_value;
+        memcpy(temp_value.data(), &buffer[current], SerializedSize<Eigen::Vector3d>());
+        return std::make_pair(temp_value, SerializedSize<Eigen::Vector3d>());
+    }
+
+    template<>
+    inline uint64_t SerializedSize(const Eigen::Matrix<double, 6, 1>& value)
+    {
+        (void)(value);
+        return (uint64_t)(6 * sizeof(double));
+    }
+
+    template<>
+    inline uint64_t SerializedSize<Eigen::Matrix<double, 6, 1>>(void)
+    {
+        return (uint64_t)(6 * sizeof(double));
+    }
+
+    template<>
+    inline uint64_t Serialize(const Eigen::Matrix<double, 6, 1>& value, std::vector<uint8_t>& buffer)
+    {
+        // Takes a state to serialize and a buffer to serialize into
+        // Return number of bytes written to buffer
+        std::vector<uint8_t> temp_buffer(SerializedSize<Eigen::Matrix<double, 6, 1>>(), 0x00);
+        memcpy(&temp_buffer.front(), value.data(), SerializedSize<Eigen::Matrix<double, 6, 1>>());
+        buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
+        return SerializedSize<Eigen::Matrix<double, 6, 1>>();
+    }
+
+    template<>
+    inline std::pair<Eigen::Matrix<double, 6, 1>, uint64_t> Deserialize<Eigen::Matrix<double, 6, 1>>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        assert(current < buffer.size());
+        assert((current + SerializedSize<Eigen::Matrix<double, 6, 1>>()) <= buffer.size());
+        // Takes a buffer to read from and the starting index in the buffer
+        // Return the loaded state and how many bytes we read from the buffer
+        Eigen::Matrix<double, 6, 1> temp_value;
+        memcpy(temp_value.data(), &buffer[current], SerializedSize<Eigen::Matrix<double, 6, 1>>());
+        return std::make_pair(temp_value, SerializedSize<Eigen::Matrix<double, 6, 1>>());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
     // Helper functions
     ////////////////////////////////////////////////////////////////////////////
 
@@ -117,6 +250,41 @@ namespace EigenHelpers
         {
             return vec;
         }
+    }
+
+    inline Eigen::Matrix3d Skew(const Eigen::Vector3d& vector)
+    {
+        Eigen::Matrix3d skewed;
+        skewed << 0.0, -vector.z(), vector.y(),
+                  vector.z(), 0.0, -vector.x(),
+                  -vector.y(), vector.x(), 0.0;
+        return skewed;
+    }
+
+    inline Eigen::Vector3d Unskew(const Eigen::Matrix3d& matrix)
+    {
+        const Eigen::Matrix3d matrix_symetric = (matrix - matrix.transpose()) / 2.0;
+        const Eigen::Vector3d unskewed(matrix_symetric(2, 1), matrix_symetric(0, 2), matrix_symetric(1, 0));
+        return unskewed;
+    }
+
+    inline Eigen::Matrix<double, 6, 6> AdjointFromTransform(const Eigen::Affine3d& transform)
+    {
+        const Eigen::Matrix3d rotation = transform.matrix().block<3, 3>(0, 0);
+        const Eigen::Vector3d translation = transform.matrix().block<3, 1>(0, 3);
+        const Eigen::Matrix3d translation_hat = Skew(translation);
+        // Assemble the adjoint matrix
+        Eigen::Matrix<double, 6, 6> adjoint;
+        adjoint.block<3, 3>(0, 0) = rotation;
+        adjoint.block<3, 3>(0, 3) = translation_hat * rotation;
+        adjoint.block<3, 3>(3, 0) = Eigen::Matrix3d::Zero();
+        adjoint.block<3, 3>(3, 3) = rotation;
+        return adjoint;
+    }
+
+    inline Eigen::Matrix<double, 6, 1> TransformTwist(const Eigen::Affine3d& transform, const Eigen::Matrix<double, 6, 1>& initial_twist)
+    {
+        return (Eigen::Matrix<double, 6, 1>)(EigenHelpers::AdjointFromTransform(transform) * initial_twist);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -645,7 +813,7 @@ namespace EigenHelpers
         }
         assert(max_eigenvector_index >= 0);
         // Note that these are already normalized!
-        const Eigen::Vector4cd best_eigenvector = eigen_vectors.col(max_eigenvector_index);
+        const Eigen::Vector4cd best_eigenvector = eigen_vectors.col((long)max_eigenvector_index);
         // Convert back into a quaternion
         const Eigen::Quaterniond average_q(best_eigenvector(0).real(), best_eigenvector(1).real(), best_eigenvector(2).real(), best_eigenvector(3).real());
         return average_q;
@@ -686,11 +854,11 @@ namespace EigenHelpers
 
     // Derived from code by Yohann Solaro ( http://listengine.tuxfamily.org/lists.tuxfamily.org/eigen/2010/01/msg00187.html )
     // see : http://en.wikipedia.org/wiki/Moore-Penrose_pseudoinverse#The_general_case_and_the_SVD_method
-    inline Eigen::MatrixXd Pinv(const Eigen::MatrixXd& b, const double rcond)
+    inline Eigen::MatrixXd Pinv(const Eigen::MatrixXd& b, const double rcond, const bool enable_flip=true)
     {
         bool flip = false;
         Eigen::MatrixXd a;
-        if (a.rows() < a.cols())
+        if (enable_flip && (b.rows() < b.cols()))
         {
             a = b.transpose();
             flip = true;
@@ -724,15 +892,17 @@ namespace EigenHelpers
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wconversion"
         // Pseudo-Inversion : V * S * U'
-        Eigen::MatrixXd a_pinv = (svdA.matrixV() * vPseudoInvertedSingular.asDiagonal()) * mAdjointU;
+        const Eigen::MatrixXd a_pinv = (svdA.matrixV() * vPseudoInvertedSingular.asDiagonal()) * mAdjointU;
         #pragma GCC diagnostic pop
         // Flip back if need be
         if (flip)
         {
-            a = a.transpose();
-            a_pinv = a_pinv.transpose();
+            return a_pinv.transpose();
         }
-        return a_pinv;
+        else
+        {
+            return a_pinv;
+        }
     }
 }
 

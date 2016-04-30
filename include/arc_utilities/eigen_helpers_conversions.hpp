@@ -6,7 +6,8 @@
 #include <arc_utilities/pretty_print.hpp>
 #include <functional>
 #include <ros/ros.h>
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Transform.h>
 #include <arc_utilities/eigen_helpers.hpp>
 
@@ -28,6 +29,14 @@ namespace EigenHelpersConversions
         geom_point.y = point.y();
         geom_point.z = point.z();
         return geom_point;
+    }
+
+    inline geometry_msgs::PointStamped EigenVector3dToGeometryPointStamped(const Eigen::Vector3d& point, const std::string& frame_id)
+    {
+        geometry_msgs::PointStamped point_stamped;
+        point_stamped.header.frame_id = frame_id;
+        point_stamped.point = EigenVector3dToGeometryPoint(point);
+        return point_stamped;
     }
 
     inline Eigen::Vector3d GeometryVector3ToEigenVector3d(const geometry_msgs::Vector3& vector)
@@ -82,6 +91,14 @@ namespace EigenHelpersConversions
         geom_pose.orientation.y = quat.y();
         geom_pose.orientation.z = quat.z();
         return geom_pose;
+    }
+
+    inline geometry_msgs::PoseStamped EigenAffine3dToGeometryPoseStamped(const Eigen::Affine3d& transform, const std::string& frame_id)
+    {
+        geometry_msgs::PoseStamped pose_stamped;
+        pose_stamped.header.frame_id = frame_id;
+        pose_stamped.pose = EigenAffine3dToGeometryPose(transform);
+        return pose_stamped;
     }
 
     inline Eigen::Affine3d GeometryTransformToEigenAffine3d(const geometry_msgs::Transform& transform)
