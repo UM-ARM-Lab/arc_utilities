@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <iostream>
 #include <functional>
 #include <Eigen/Geometry>
 #include <type_traits>
@@ -38,13 +39,13 @@
 namespace arc_helpers
 {
     template <typename T>
-    inline T SetBit(const T current, const u_int32_t bit_position, const bool bit_value)
+    inline T SetBit(const T current, const uint32_t bit_position, const bool bit_value)
     {
         // Safety check on the type we've been called with
-        static_assert((std::is_same<T, u_int8_t>::value
-                       || std::is_same<T, u_int16_t>::value
-                       || std::is_same<T, u_int32_t>::value
-                       || std::is_same<T, u_int64_t>::value),
+        static_assert((std::is_same<T, uint8_t>::value
+                       || std::is_same<T, uint16_t>::value
+                       || std::is_same<T, uint32_t>::value
+                       || std::is_same<T, uint64_t>::value),
                       "Type must be a fixed-size unsigned integral type");
         // Do it
         T update_mask = 1;
@@ -61,7 +62,7 @@ namespace arc_helpers
     }
 
     template<typename Datatype, typename Allocator=std::allocator<Datatype>>
-    static Eigen::MatrixXd BuildDistanceMatrix(const std::vector<Datatype, Allocator>& data, std::function<double(const Datatype&, const Datatype&)>& distance_fn)
+    static Eigen::MatrixXd BuildDistanceMatrix(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
     {
         Eigen::MatrixXd distance_matrix(data.size(), data.size());
 #ifdef ENABLE_PARALLEL
@@ -81,11 +82,11 @@ namespace arc_helpers
     {
     private:
 
-        u_int64_t state_; /* The state can be seeded with any value. */
+        uint64_t state_; /* The state can be seeded with any value. */
 
-        inline u_int64_t next(void)
+        inline uint64_t next(void)
         {
-            u_int64_t z = (state_ += UINT64_C(0x9E3779B97F4A7C15));
+            uint64_t z = (state_ += UINT64_C(0x9E3779B97F4A7C15));
             z = (z ^ (z >> 30)) * UINT64_C(0xBF58476D1CE4E5B9);
             z = (z ^ (z >> 27)) * UINT64_C(0x94D049BB133111EB);
             return z ^ (z >> 31);
@@ -93,29 +94,29 @@ namespace arc_helpers
 
     public:
 
-        inline SplitMix64PRNG(const u_int64_t seed_val)
+        inline SplitMix64PRNG(const uint64_t seed_val)
         {
             seed(seed_val);
         }
 
-        static constexpr u_int64_t min(void)
+        static constexpr uint64_t min(void)
         {
             return 0u;
         }
 
-        static constexpr u_int64_t max(void)
+        static constexpr uint64_t max(void)
         {
-            return std::numeric_limits<u_int64_t>::max();
+            return std::numeric_limits<uint64_t>::max();
         }
 
-        inline void seed(const u_int64_t seed_val)
+        inline void seed(const uint64_t seed_val)
         {
             state_ = seed_val;
         }
 
         inline void discard(const unsigned long long z)
         {
-            u_int64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
+            uint64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
             temp = 0u;
             for (unsigned long long i = 0; i < z; i++)
             {
@@ -124,7 +125,7 @@ namespace arc_helpers
             }
         }
 
-        inline u_int64_t operator() (void)
+        inline uint64_t operator() (void)
         {
             return next();
         }
@@ -134,13 +135,13 @@ namespace arc_helpers
     {
     private:
 
-        u_int64_t state_1_;
-        u_int64_t state_2_;
+        uint64_t state_1_;
+        uint64_t state_2_;
 
-        inline u_int64_t next(void)
+        inline uint64_t next(void)
         {
-            u_int64_t s1 = state_1_;
-            const u_int64_t s0 = state_2_;
+            uint64_t s1 = state_1_;
+            const uint64_t s0 = state_2_;
             state_1_ = s0;
             s1 ^= s1 << 23; // a
             state_2_ = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5); // b, c
@@ -149,22 +150,22 @@ namespace arc_helpers
 
     public:
 
-        inline XorShift128PlusPRNG(const u_int64_t seed_val)
+        inline XorShift128PlusPRNG(const uint64_t seed_val)
         {
             seed(seed_val);
         }
 
-        static constexpr u_int64_t min(void)
+        static constexpr uint64_t min(void)
         {
             return 0u;
         }
 
-        static constexpr u_int64_t max(void)
+        static constexpr uint64_t max(void)
         {
-            return std::numeric_limits<u_int64_t>::max();
+            return std::numeric_limits<uint64_t>::max();
         }
 
-        inline void seed(const u_int64_t seed_val)
+        inline void seed(const uint64_t seed_val)
         {
             SplitMix64PRNG temp_seed_gen(seed_val);
             state_1_ = temp_seed_gen();
@@ -173,7 +174,7 @@ namespace arc_helpers
 
         inline void discard(const unsigned long long z)
         {
-            u_int64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
+            uint64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
             temp = 0u;
             for (unsigned long long i = 0; i < z; i++)
             {
@@ -182,7 +183,7 @@ namespace arc_helpers
             }
         }
 
-        inline u_int64_t operator() (void)
+        inline uint64_t operator() (void)
         {
             return next();
         }
@@ -192,14 +193,14 @@ namespace arc_helpers
     {
     private:
 
-        std::array<u_int64_t, 16> state_;
+        std::array<uint64_t, 16> state_;
         int32_t p;
 
-        inline u_int64_t next(void)
+        inline uint64_t next(void)
         {
-            const u_int64_t s0 = state_[(size_t)p];
+            const uint64_t s0 = state_[(size_t)p];
             p = (p + 1) & 15;
-            u_int64_t s1 = state_[(size_t)p];
+            uint64_t s1 = state_[(size_t)p];
             s1 ^= s1 << 31; // a
             state_[(size_t)p] = s1 ^ s0 ^ (s1 >> 11) ^ (s0 >> 30); // b,c
             return state_[(size_t)p] * UINT64_C(1181783497276652981);
@@ -207,23 +208,23 @@ namespace arc_helpers
 
     public:
 
-        inline XorShift1024StarPRNG(const u_int64_t seed_val)
+        inline XorShift1024StarPRNG(const uint64_t seed_val)
         {
             seed(seed_val);
             p = 0;
         }
 
-        static constexpr u_int64_t min(void)
+        static constexpr uint64_t min(void)
         {
             return 0u;
         }
 
-        static constexpr u_int64_t max(void)
+        static constexpr uint64_t max(void)
         {
-            return std::numeric_limits<u_int64_t>::max();
+            return std::numeric_limits<uint64_t>::max();
         }
 
-        inline void seed(const u_int64_t seed_val)
+        inline void seed(const uint64_t seed_val)
         {
             SplitMix64PRNG temp_seed_gen(seed_val);
             for (size_t idx = 0u; idx < state_.size(); idx++)
@@ -234,7 +235,7 @@ namespace arc_helpers
 
         inline void discard(const unsigned long long z)
         {
-            u_int64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
+            uint64_t temp __attribute__((unused)); // This suppresses "set but not used" warnings
             temp = 0u;
             for (unsigned long long i = 0; i < z; i++)
             {
@@ -243,7 +244,7 @@ namespace arc_helpers
             }
         }
 
-        inline u_int64_t operator() (void)
+        inline uint64_t operator() (void)
         {
             return next();
         }
@@ -498,6 +499,77 @@ namespace arc_helpers
             return std::vector<double>{angles.x(), angles.y(), angles.z()};
         }
     };
+
+    template<typename T>
+    inline uint64_t SerializeFixedSizePOD(const T& item_to_serialize, std::vector<uint8_t>& buffer)
+    {
+        const uint64_t start_buffer_size = buffer.size();
+        // Fixed-size serialization via memcpy
+        std::vector<uint8_t> temp_buffer(sizeof(item_to_serialize), 0x00);
+        memcpy(&temp_buffer[0], &item_to_serialize, sizeof(item_to_serialize));
+        // Move to buffer
+        buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
+        // Figure out how many bytes were written
+        const uint64_t end_buffer_size = buffer.size();
+        const uint64_t bytes_written = end_buffer_size - start_buffer_size;
+        return bytes_written;
+    }
+
+    template<typename T>
+    inline std::pair<T, uint64_t> DeserializeFixedSizePOD(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        T temp_item;
+        assert(current <= buffer.size());
+        assert((current + sizeof(temp_item)) <= buffer.size());
+        memcpy(&temp_item, &buffer[current], sizeof(temp_item));
+        return std::make_pair(temp_item, sizeof(temp_item));
+    }
+
+    template<typename T, typename Allocator=std::allocator<T>>
+    inline uint64_t SerializeVector(const std::vector<T, Allocator>& vec_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& item_serializer)
+    {
+        const uint64_t start_buffer_size = buffer.size();
+        // First, write a uint64_t size header
+        const uint64_t size = (uint64_t)vec_to_serialize.size();
+        std::vector<uint8_t> size_header(sizeof(size), 0x00);
+        memcpy(&size_header[0], &size, sizeof(size));
+        // Move to buffer
+        buffer.insert(buffer.end(), size_header.begin(), size_header.end());
+        // Serialize the contained items
+        for (size_t idx = 0; idx < size; idx++)
+        {
+            const T& current = vec_to_serialize[idx];
+            item_serializer(current, buffer);
+        }
+        // Figure out how many bytes were written
+        const uint64_t end_buffer_size = buffer.size();
+        const uint64_t bytes_written = end_buffer_size - start_buffer_size;
+        return bytes_written;
+    }
+
+    template<typename T, typename Allocator=std::allocator<T>>
+    inline std::pair<std::vector<T, Allocator>, uint64_t> DeserializeVector(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& item_deserializer)
+    {
+        // First, try to load the header
+        assert(current < buffer.size());
+        assert((current + sizeof(uint64_t)) <= buffer.size());
+        // Load the header
+        uint64_t size = 0u;
+        memcpy(&size, &buffer[current], sizeof(uint64_t));
+        // Deserialize the items
+        std::vector<T, Allocator> deserialized;
+        deserialized.reserve(size);
+        uint64_t current_position = current + sizeof(uint64_t);
+        for (uint64_t idx = 0; idx < size; idx++)
+        {
+            const std::pair<T, uint64_t> deserialized_item = item_deserializer(buffer, current_position);
+            deserialized.push_back(deserialized_item.first);
+            current_position += deserialized_item.second;
+        }
+        // Figure out how many bytes were read
+        const uint64_t bytes_read = current_position - current;
+        return std::make_pair(deserialized, bytes_read);
+    }
 }
 
 #endif // ARC_HELPERS_HPP
