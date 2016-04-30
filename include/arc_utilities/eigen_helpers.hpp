@@ -1,4 +1,5 @@
-﻿#include <Eigen/Geometry>
+﻿#include <Eigen/StdVector>
+#include <Eigen/Geometry>
 #include <Eigen/Eigenvalues>
 #include <Eigen/Jacobi>
 #include <Eigen/SVD>

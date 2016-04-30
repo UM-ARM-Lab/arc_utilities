@@ -23,15 +23,15 @@ int main(int argc, char** argv)
     EigenHelpers::VectorAffine3d link_transforms = ABB_IRB1600_145_FK_FAST::GetLinkTransforms(base_config);
     std::cout << "Link transforms:\n" << PrettyPrint::PrettyPrint(link_transforms, false, "\n") << std::endl;
     // Test Vector3d averaging
-    Eigen::Vector3d testvec1(-1.0, -1.0, -1.0);
-    Eigen::Vector3d testvec2(-1.0, -1.0, 1.0);
-    Eigen::Vector3d testvec3(-1.0, 1.0, -1.0);
-    Eigen::Vector3d testvec4(-1.0, 1.0, 1.0);
-    Eigen::Vector3d testvec5(1.0, -1.0, -1.0);
-    Eigen::Vector3d testvec6(1.0, -1.0, 1.0);
-    Eigen::Vector3d testvec7(1.0, 1.0, -1.0);
-    Eigen::Vector3d testvec8(1.0, 1.0, 1.0);
-    EigenHelpers::VectorVector3d testvecs = {testvec1, testvec2, testvec3, testvec4, testvec5, testvec6, testvec7, testvec8};
+    EigenHelpers::VectorVector3d testvecs(8, Eigen::Vector3d::Zero());
+    testvecs[0] = Eigen::Vector3d(-1.0, -1.0, -1.0);
+    testvecs[1] = Eigen::Vector3d(-1.0, -1.0, 1.0);
+    testvecs[2] = Eigen::Vector3d(-1.0, 1.0, -1.0);
+    testvecs[3] = Eigen::Vector3d(-1.0, 1.0, 1.0);
+    testvecs[4] = Eigen::Vector3d(1.0, -1.0, -1.0);
+    testvecs[5] = Eigen::Vector3d(1.0, -1.0, 1.0);
+    testvecs[6] = Eigen::Vector3d(1.0, 1.0, -1.0);
+    testvecs[7] = Eigen::Vector3d(1.0, 1.0, 1.0);
     std::cout << "Individual vectors: " << PrettyPrint::PrettyPrint(testvecs) << std::endl;
     Eigen::Vector3d averagevec = EigenHelpers::AverageEigenVector3d(testvecs);
     std::cout << "Average vector: " << PrettyPrint::PrettyPrint(averagevec) << std::endl;
