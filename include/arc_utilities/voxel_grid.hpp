@@ -674,7 +674,7 @@ namespace VoxelGrid
             }
         }
 
-        inline u_int64_t HashDataIndex(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
+        inline uint64_t HashDataIndex(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
         {
             return (x_index * stride1_) + (y_index * stride2_) + z_index;
         }

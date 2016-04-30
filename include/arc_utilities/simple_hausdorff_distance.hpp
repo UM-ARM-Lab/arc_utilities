@@ -23,7 +23,7 @@ namespace simple_hausdorff_distance
     public:
 
         template<typename Datatype, typename Allocator=std::allocator<Datatype>>
-        static double ComputeDistance(const std::vector<Datatype, Allocator>& first_distribution, const std::vector<Datatype, Allocator>& second_distribution, std::function<double(const Datatype&, const Datatype&)>& distance_fn)
+        static double ComputeDistance(const std::vector<Datatype, Allocator>& first_distribution, const std::vector<Datatype, Allocator>& second_distribution, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
         {
             // Compute the Hausdorff distance - the "maximum minimum" distance
             double maximum_minimum_distance = 0.0;

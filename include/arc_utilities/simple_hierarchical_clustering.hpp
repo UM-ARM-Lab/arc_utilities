@@ -20,7 +20,7 @@ namespace simple_hierarchical_clustering
 
         SimpleHierarchicalClustering() {}
 
-        static std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> GetClosestPair(const std::vector<u_int8_t>& datapoint_mask, const Eigen::MatrixXd& distance_matrix, const std::vector<std::vector<int64_t>>& clusters)
+        static std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> GetClosestPair(const std::vector<uint8_t>& datapoint_mask, const Eigen::MatrixXd& distance_matrix, const std::vector<std::vector<int64_t>>& clusters)
         {
             // Compute distances between unclustered points <-> unclustered points, unclustered_points <-> clusters, and clusters <-> clusters
             // Compute the minimum unclustered point <-> unclustered point / unclustered_point <-> cluster distance
@@ -163,7 +163,7 @@ namespace simple_hierarchical_clustering
     public:
 
         template<typename Datatype, typename Allocator=std::allocator<Datatype>>
-        static std::pair<std::vector<std::vector<Datatype, Allocator>>, double> Cluster(const std::vector<Datatype, Allocator>& data, std::function<double(const Datatype&, const Datatype&)>& distance_fn, const double max_cluster_distance)
+        static std::pair<std::vector<std::vector<Datatype, Allocator>>, double> Cluster(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn, const double max_cluster_distance)
         {
             const Eigen::MatrixXd distance_matrix = arc_helpers::BuildDistanceMatrix(data, distance_fn);
             return Cluster(data, distance_matrix, max_cluster_distance);
@@ -174,7 +174,7 @@ namespace simple_hierarchical_clustering
         {
             assert((size_t)distance_matrix.rows() == data.size());
             assert((size_t)distance_matrix.cols() == data.size());
-            std::vector<u_int8_t> datapoint_mask(data.size(), 0u);
+            std::vector<uint8_t> datapoint_mask(data.size(), 0u);
             std::vector<std::vector<int64_t>> cluster_indices;
             double closest_distance = 0.0;
             bool complete = false;
