@@ -30,6 +30,72 @@ namespace PrettyPrint
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////                                       PROTOTYPES ONLY                                         /////
+    ///// Specializations for specific types - if you want a specialization for a new type, add it here /////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    template<>
+    inline std::string PrettyPrint(const bool& bool_to_print, const bool add_delimiters, const std::string& separator);
+
+    template<>
+    inline std::string PrettyPrint(const Eigen::Vector3d& vector_to_print, const bool add_delimiters, const std::string& separator);
+
+    template<>
+    inline std::string PrettyPrint(const Eigen::VectorXd& vector_to_print, const bool add_delimiters, const std::string& separator);
+
+    template<>
+    inline std::string PrettyPrint(const Eigen::MatrixXd& matrix_to_print, const bool add_delimiters, const std::string& separator);
+
+    template<>
+    inline std::string PrettyPrint(const Eigen::Quaterniond& quaternion_to_print, const bool add_delimiters, const std::string& separator);
+
+    template<>
+    inline std::string PrettyPrint(const Eigen::Affine3d& transform_to_print, const bool add_delimiters, const std::string& separator);
+
+    template <typename A, typename B>
+    inline std::string PrettyPrint(const std::pair<A, B>& pairtoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename T, size_t N>
+    inline std::string PrettyPrint(const std::array<T, N>& arraytoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename T, typename Allocator=std::allocator<T>>
+    inline std::string PrettyPrint(const std::vector<T, Allocator>& vectoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename T, typename Allocator=std::allocator<T>>
+    inline std::string PrettyPrint(const std::list<T, Allocator>& listtoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename T, typename Allocator=std::allocator<T>>
+    inline std::string PrettyPrint(const std::forward_list<T, Allocator>& listtoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename T, typename Allocator=std::allocator<T>>
+    inline std::string PrettyPrint(const std::deque<T, Allocator>& dequetoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename A, typename B, typename Compare=std::less<A>, typename Allocator=std::allocator<std::pair<const A, B>>>
+    inline std::string PrettyPrint(const std::map<A, B, Compare, Allocator>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename A, typename B, typename Compare=std::less<A>, typename Allocator=std::allocator<std::pair<const A, B>>>
+    inline std::string PrettyPrint(const std::multimap<A, B, Compare, Allocator>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename T, typename Compare=std::less<T>, typename Allocator=std::allocator<T>>
+    inline std::string PrettyPrint(const std::set<T, Compare, Allocator>& settoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename T, typename Compare=std::less<T>, typename Allocator=std::allocator<T>>
+    inline std::string PrettyPrint(const std::multiset<T, Compare, Allocator>& settoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename A, typename B, typename Hash=std::hash<A>, typename Predicate=std::equal_to<A>, typename Allocator=std::allocator<std::pair<const A, B>>>
+    inline std::string PrettyPrint(const std::unordered_map<A, B, Hash, Predicate, Allocator>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename A, typename B, typename Hash=std::hash<A>, typename Predicate=std::equal_to<A>, typename Allocator=std::allocator<std::pair<const A, B>>>
+    inline std::string PrettyPrint(const std::unordered_multimap<A, B, Hash, Predicate, Allocator>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename T, typename Hash=std::hash<T>, typename Predicate=std::equal_to<T>, typename Allocator=std::allocator<T>>
+    inline std::string PrettyPrint(const std::unordered_set<T, Hash, Predicate, Allocator>& settoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    template <typename T, typename Hash=std::hash<T>, typename Predicate=std::equal_to<T>, typename Allocator=std::allocator<T>>
+    inline std::string PrettyPrint(const std::unordered_multiset<T, Hash, Predicate, Allocator>& settoprint, const bool add_delimiters=false, const std::string& separator=", ");
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////                                   IMPLEMENTATIONS ONLY                                        /////
     ///// Specializations for specific types - if you want a specialization for a new type, add it here /////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -83,6 +149,37 @@ namespace PrettyPrint
     }
 
     template<>
+    inline std::string PrettyPrint(const Eigen::MatrixXd& matrix_to_print, const bool add_delimiters, const std::string& separator)
+    {
+        UNUSED(add_delimiters);
+        UNUSED(separator);
+        if (matrix_to_print.rows() > 0 && matrix_to_print.cols() > 0)
+        {
+            std::ostringstream strm;
+            strm << "MatrixXd:\n[";
+            strm << std::to_string(matrix_to_print(0, 0));
+            for (int64_t col = 1; col < matrix_to_print.cols(); col++)
+            {
+                strm << ", " << std::to_string(matrix_to_print(0, col));
+            }
+            for (int64_t row = 1; row < matrix_to_print.rows(); row++)
+            {
+                strm << "\n" << std::to_string(matrix_to_print(row, 0));
+                for (int64_t col = 1; col < matrix_to_print.cols(); col++)
+                {
+                    strm << ", " << std::to_string(matrix_to_print(row, col));
+                }
+            }
+            strm << "]";
+            return strm.str();
+        }
+        else
+        {
+            return "MatrixXd:\n[]";
+        }
+    }
+
+    template<>
     inline std::string PrettyPrint(const Eigen::Quaterniond& quaternion_to_print, const bool add_delimiters, const std::string& separator)
     {
         UNUSED(add_delimiters);
@@ -100,12 +197,23 @@ namespace PrettyPrint
         return "Affine3d <x: " + std::to_string(vector_to_print.x()) + " y: " + std::to_string(vector_to_print.y()) + " z: " + std::to_string(vector_to_print.z()) + ">, <x: " + std::to_string(quaternion_to_print.x()) + " y: " + std::to_string(quaternion_to_print.y()) + " z: " + std::to_string(quaternion_to_print.z()) + " w: " + std::to_string(quaternion_to_print.w()) + ">";
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///// Template functions for printing containers - if you want to add a new container, add your function below /////
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    template <typename A, typename B>
+    inline std::string PrettyPrint(const std::pair<A, B>& pairtoprint, const bool add_delimiters, const std::string& separator)
+    {
+        std::ostringstream strm;
+        if (add_delimiters)
+        {
+            strm << "<" << PrettyPrint(pairtoprint.first, add_delimiters, separator) << ": " << PrettyPrint(pairtoprint.second, add_delimiters, separator) << ">";
+        }
+        else
+        {
+            strm << PrettyPrint(pairtoprint.first, add_delimiters, separator) << ": " << PrettyPrint(pairtoprint.second, add_delimiters, separator);
+        }
+        return strm.str();
+    }
 
     template <typename T, size_t N>
-    inline std::string PrettyPrint(const std::array<T, N>& arraytoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    inline std::string PrettyPrint(const std::array<T, N>& arraytoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (arraytoprint.size() > 0)
@@ -131,8 +239,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename T, typename Allocator=std::allocator<T>>
-    inline std::string PrettyPrint(const std::vector<T, Allocator>& vectoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename T, typename Allocator>
+    inline std::string PrettyPrint(const std::vector<T, Allocator>& vectoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (vectoprint.size() > 0)
@@ -158,8 +266,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename T, typename Allocator=std::allocator<T>>
-    inline std::string PrettyPrint(const std::list<T, Allocator>& listtoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename T, typename Allocator>
+    inline std::string PrettyPrint(const std::list<T, Allocator>& listtoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (listtoprint.size() > 0)
@@ -200,8 +308,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename T, typename Allocator=std::allocator<T>>
-    inline std::string PrettyPrint(const std::forward_list<T, Allocator>& listtoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename T, typename Allocator>
+    inline std::string PrettyPrint(const std::forward_list<T, Allocator>& listtoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (listtoprint.size() > 0)
@@ -242,8 +350,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename T, typename Allocator=std::allocator<T>>
-    inline std::string PrettyPrint(const std::deque<T, Allocator>& dequetoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename T, typename Allocator>
+    inline std::string PrettyPrint(const std::deque<T, Allocator>& dequetoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (dequetoprint.size() > 0)
@@ -284,23 +392,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename A, typename B>
-    inline std::string PrettyPrint(const std::pair<A, B>& pairtoprint, const bool add_delimiters=false, const std::string& separator=", ")
-    {
-        std::ostringstream strm;
-        if (add_delimiters)
-        {
-            strm << "<" << PrettyPrint(pairtoprint.first, add_delimiters, separator) << ": " << PrettyPrint(pairtoprint.second, add_delimiters, separator) << ">";
-        }
-        else
-        {
-            strm << PrettyPrint(pairtoprint.first, add_delimiters, separator) << ": " << PrettyPrint(pairtoprint.second, add_delimiters, separator);
-        }
-        return strm.str();
-    }
-
-    template <typename A, typename B, typename Compare=std::less<A>, typename Allocator=std::allocator<std::pair<const A, B>>>
-    inline std::string PrettyPrint(const std::map<A, B, Compare, Allocator>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename A, typename B, typename Compare, typename Allocator>
+    inline std::string PrettyPrint(const std::map<A, B, Compare, Allocator>& maptoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (maptoprint.size() > 0)
@@ -343,8 +436,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename A, typename B, typename Compare=std::less<A>, typename Allocator=std::allocator<std::pair<const A, B>>>
-    inline std::string PrettyPrint(const std::multimap<A, B, Compare, Allocator>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename A, typename B, typename Compare, typename Allocator>
+    inline std::string PrettyPrint(const std::multimap<A, B, Compare, Allocator>& maptoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (maptoprint.size() > 0)
@@ -387,8 +480,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename T, typename Compare=std::less<T>, typename Allocator=std::allocator<T>>
-    inline std::string PrettyPrint(const std::set<T, Compare, Allocator>& settoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename T, typename Compare, typename Allocator>
+    inline std::string PrettyPrint(const std::set<T, Compare, Allocator>& settoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (settoprint.size() > 0)
@@ -429,8 +522,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename T, typename Compare=std::less<T>, typename Allocator=std::allocator<T>>
-    inline std::string PrettyPrint(const std::multiset<T>& settoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename T, typename Compare, typename Allocator>
+    inline std::string PrettyPrint(const std::multiset<T, Compare, Allocator>& settoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (settoprint.size() > 0)
@@ -471,8 +564,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename A, typename B, typename Hash=std::hash<A>, typename Predicate=std::equal_to<A>, typename Allocator=std::allocator<std::pair<const A, B>>>
-    inline std::string PrettyPrint(const std::unordered_map<A, B, Hash, Predicate, Allocator>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename A, typename B, typename Hash, typename Predicate, typename Allocator>
+    inline std::string PrettyPrint(const std::unordered_map<A, B, Hash, Predicate, Allocator>& maptoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (maptoprint.size() > 0)
@@ -515,8 +608,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename A, typename B, typename Hash=std::hash<A>, typename Predicate=std::equal_to<A>, typename Allocator=std::allocator<std::pair<const A, B>>>
-    inline std::string PrettyPrint(const std::unordered_multimap<A, B, Hash, Predicate, Allocator>& maptoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename A, typename B, typename Hash, typename Predicate, typename Allocator>
+    inline std::string PrettyPrint(const std::unordered_multimap<A, B, Hash, Predicate, Allocator>& maptoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (maptoprint.size() > 0)
@@ -559,8 +652,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename T, typename Hash=std::hash<T>, typename Predicate=std::equal_to<T>, typename Allocator=std::allocator<T>>
-    inline std::string PrettyPrint(const std::unordered_set<T, Hash, Predicate, Allocator>& settoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename T, typename Hash, typename Predicate, typename Allocator>
+    inline std::string PrettyPrint(const std::unordered_set<T, Hash, Predicate, Allocator>& settoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (settoprint.size() > 0)
@@ -601,8 +694,8 @@ namespace PrettyPrint
         return strm.str();
     }
 
-    template <typename T, typename Hash=std::hash<T>, typename Predicate=std::equal_to<T>, typename Allocator=std::allocator<T>>
-    inline std::string PrettyPrint(const std::unordered_multiset<T, Hash, Predicate, Allocator>& settoprint, const bool add_delimiters=false, const std::string& separator=", ")
+    template <typename T, typename Hash, typename Predicate, typename Allocator>
+    inline std::string PrettyPrint(const std::unordered_multiset<T, Hash, Predicate, Allocator>& settoprint, const bool add_delimiters, const std::string& separator)
     {
         std::ostringstream strm;
         if (settoprint.size() > 0)
