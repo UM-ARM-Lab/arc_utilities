@@ -8,6 +8,7 @@
 #include <functional>
 #include <chrono>
 #include <random>
+#include <arc_utilities/arc_helpers.hpp>
 
 #ifndef SIMPLE_RRT_PLANNER_HPP
 #define SIMPLE_RRT_PLANNER_HPP
@@ -25,6 +26,18 @@ namespace simple_rrt_planner
         T value_;
 
     public:
+
+        static uint64_t Serialize(const SimpleRRTPlannerState<T, Allocator>& state, std::vector<uint8_t>& buffer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& value_serializer)
+        {
+            return state.SerializeSelf(buffer, value_serializer);
+        }
+
+        static std::pair<SimpleRRTPlannerState<T, Allocator>, uint64_t> Deserialize(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+        {
+            SimpleRRTPlannerState<T, Allocator> temp_state;
+            const uint64_t bytes_read = temp_state.DeserializeSelf(buffer, current, value_deserializer);
+            return std::make_pair(temp_state, bytes_read);
+        }
 
         SimpleRRTPlannerState() : initialized_(false), parent_index_(-1)
         {
@@ -53,6 +66,47 @@ namespace simple_rrt_planner
             child_indices_.clear();
             value_ = value;
             initialized_ = true;
+        }
+
+        uint64_t SerializeSelf(std::vector<uint8_t>& buffer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& value_serializer) const
+        {
+            const uint64_t start_buffer_size = buffer.size();
+            // Serialize the initialized
+            arc_helpers::SerializeFixedSizePOD<uint8_t>((uint8_t)initialized_, buffer);
+            // Serialize the parent index
+            arc_helpers::SerializeFixedSizePOD<int64_t>(parent_index_, buffer);
+            // Serialize the child indices
+            arc_helpers::SerializeVector<int64_t>(child_indices_, buffer, arc_helpers::SerializeFixedSizePOD<int64_t>);
+            // Serialize the value
+            value_serializer(value_, buffer);
+            // Figure out how many bytes were written
+            const uint64_t end_buffer_size = buffer.size();
+            const uint64_t bytes_written = end_buffer_size - start_buffer_size;
+            return bytes_written;
+        }
+
+        uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+        {
+            uint64_t current_position = current;
+            // Deserialize the initialized
+            const std::pair<uint8_t, uint64_t> initialized_deserialized = arc_helpers::DeserializeFixedSizePOD<uint8_t>(buffer, current_position);
+            initialized_ = (bool)initialized_deserialized.first;
+            current_position += initialized_deserialized.second;
+            // Deserialize the parent index
+            const std::pair<int64_t, uint64_t> parent_index_deserialized = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
+            parent_index_ = parent_index_deserialized.first;
+            current_position += parent_index_deserialized.second;
+            // Deserialize the child indices
+            const std::pair<std::vector<int64_t>, uint64_t> child_indices_deserialized = arc_helpers::DeserializeVector<int64_t>(buffer, current_position, arc_helpers::DeserializeFixedSizePOD<int64_t>);
+            child_indices_ = child_indices_deserialized.first;
+            current_position += child_indices_deserialized.second;
+            // Deserialize the value
+            const std::pair<T, uint64_t> value_deserialized = value_deserializer(buffer, current_position);
+            value_ = value_deserialized.first;
+            current_position += value_deserialized.second;
+            // Figure out how many bytes were read
+            const uint64_t bytes_read = current_position - current;
+            return bytes_read;
         }
 
         bool IsInitialized() const
@@ -203,16 +257,16 @@ namespace simple_rrt_planner
         template<typename RNG, typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<T, Allocator>, std::map<std::string, double>> Plan(const T& start,
                                                                       const T& goal,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&,const T&)>& nearest_neighbor_fn,
-                                                                      std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<T(void)>& state_sampling_fn,
-                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
+                                                                      const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&,const T&)>& nearest_neighbor_fn,
+                                                                      const std::function<bool(const T&)>& goal_reached_fn,
+                                                                      const std::function<T(void)>& state_sampling_fn,
+                                                                      const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       const double goal_bias,
                                                                       const std::chrono::duration<double>& time_limit,
                                                                       RNG& rng)
         {
             std::uniform_real_distribution<double> goal_bias_distribution(0.0, 1.0);
-            std::function<T(void)> sampling_function = [&](void) { return ((goal_bias_distribution(rng) > goal_bias) ? state_sampling_fn() : goal); };
+            const std::function<T(void)> sampling_function = [&](void) { return ((goal_bias_distribution(rng) > goal_bias) ? state_sampling_fn() : goal); };
             return Plan(start, nearest_neighbor_fn, goal_reached_fn, sampling_function, forward_propagation_fn, time_limit);
         }
 
@@ -238,17 +292,17 @@ namespace simple_rrt_planner
          */
         template<typename RNG, typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<T, Allocator>, std::map<std::string, double>> Plan(const T& start,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
-                                                                      std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<T(void)>& state_sampling_fn,
-                                                                      std::function<T(void)>& goal_sampling_fn,
-                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
+                                                                      const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      const std::function<bool(const T&)>& goal_reached_fn,
+                                                                      const std::function<T(void)>& state_sampling_fn,
+                                                                      const std::function<T(void)>& goal_sampling_fn,
+                                                                      const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       const double goal_bias,
                                                                       const std::chrono::duration<double>& time_limit,
                                                                       RNG& rng)
         {
             std::uniform_real_distribution<double> goal_bias_distribution(0.0, 1.0);
-            std::function<T(void)> sampling_function = [&](void) { return ((goal_bias_distribution(rng) > goal_bias) ? state_sampling_fn() : goal_sampling_fn()); };
+            const std::function<T(void)> sampling_function = [&](void) { return ((goal_bias_distribution(rng) > goal_bias) ? state_sampling_fn() : goal_sampling_fn()); };
             return Plan(start, nearest_neighbor_fn, goal_reached_fn, sampling_function, forward_propagation_fn, time_limit);
         }
 
@@ -271,14 +325,14 @@ namespace simple_rrt_planner
          */
         template<typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<T, Allocator>, std::map<std::string, double>> Plan(const T& start,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
-                                                                      std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
+                                                                      const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      const std::function<bool(const T&)>& goal_reached_fn,
+                                                                      const std::function<T(void)>& sampling_fn,
+                                                                      const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       const std::chrono::duration<double>& time_limit)
         {
             std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
-            std::function<bool(void)> termination_check_fn = [&](void) { return (((std::chrono::time_point<std::chrono::high_resolution_clock>)std::chrono::high_resolution_clock::now() - start_time) > time_limit); };
+            const std::function<bool(void)> termination_check_fn = [&](void) { return (((std::chrono::time_point<std::chrono::high_resolution_clock>)std::chrono::high_resolution_clock::now() - start_time) > time_limit); };
             return Plan(start, nearest_neighbor_fn, goal_reached_fn, sampling_fn, forward_propagation_fn, termination_check_fn);
         }
 
@@ -301,17 +355,17 @@ namespace simple_rrt_planner
          */
         template<typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<T, Allocator>, std::map<std::string, double>> Plan(const T& start,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
-                                                                      std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
-                                                                      std::function<bool(void)>& termination_check_fn)
+                                                                      const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      const std::function<bool(const T&)>& goal_reached_fn,
+                                                                      const std::function<T(void)>& sampling_fn,
+                                                                      const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
+                                                                      const std::function<bool(void)>& termination_check_fn)
         {
             // Define a couple lambdas to let us use the generic multi-path planner as if it were a single-path planner
             bool solution_found = false;
-            std::function<bool(const T&)> real_goal_found_fn = [&](const T& state) { if (goal_reached_fn(state)) { solution_found = true; return true; } else {return false;} };
-            std::function<bool(void)> real_termination_check_fn = [&](void) { if (!solution_found) { return termination_check_fn(); } else {return true;} };
-            std::function<void(SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](SimpleRRTPlannerState<T, Allocator>& state) {;};
+            const std::function<bool(const T&)> real_goal_found_fn = [&](const T& state) { if (goal_reached_fn(state)) { solution_found = true; return true; } else {return false;} };
+            const std::function<bool(void)> real_termination_check_fn = [&](void) { if (!solution_found) { return termination_check_fn(); } else {return true;} };
+            const std::function<void(SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](SimpleRRTPlannerState<T, Allocator>& state) {;};
             // Call the planner
             std::pair<std::vector<std::vector<T, Allocator>>, std::map<std::string, double>> planning_result = PlanMultiPath(start, nearest_neighbor_fn, real_goal_found_fn, dummy_goal_callback_fn, sampling_fn, forward_propagation_fn, real_termination_check_fn);
             // Put together the return
@@ -345,17 +399,17 @@ namespace simple_rrt_planner
         template<typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<T, Allocator>, std::map<std::string, double>> Plan(std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes,
                                                                       const T& start,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
-                                                                      std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
-                                                                      std::function<bool(void)>& termination_check_fn)
+                                                                      const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      const std::function<bool(const T&)>& goal_reached_fn,
+                                                                      const std::function<T(void)>& sampling_fn,
+                                                                      const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
+                                                                      const std::function<bool(void)>& termination_check_fn)
         {
             // Define a couple lambdas to let us use the generic multi-path planner as if it were a single-path planner
             bool solution_found = false;
-            std::function<bool(const T&)> real_goal_found_fn = [&](const T& state) { if (goal_reached_fn(state)) { solution_found = true; return true; } else {return false;} };
-            std::function<bool(void)> real_termination_check_fn = [&](void) { if (!solution_found) { return termination_check_fn(); } else {return true;} };
-            std::function<void(SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](SimpleRRTPlannerState<T, Allocator>& state) {;};
+            const std::function<bool(const T&)> real_goal_found_fn = [&](const T& state) { if (goal_reached_fn(state)) { solution_found = true; return true; } else {return false;} };
+            const std::function<bool(void)> real_termination_check_fn = [&](void) { if (!solution_found) { return termination_check_fn(); } else {return true;} };
+            const std::function<void(SimpleRRTPlannerState<T, Allocator>&)> dummy_goal_callback_fn = [](SimpleRRTPlannerState<T, Allocator>& state) {;};
             // Call the planner
             std::pair<std::vector<std::vector<T, Allocator>>, std::map<std::string, double>> planning_result = PlanMultiPath(nodes, start, nearest_neighbor_fn, real_goal_found_fn, dummy_goal_callback_fn, sampling_fn, forward_propagation_fn, real_termination_check_fn);
             // Put together the return
@@ -386,12 +440,12 @@ namespace simple_rrt_planner
          */
         template<typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<std::vector<T, Allocator>>, std::map<std::string, double>> PlanMultiPath(const T& start,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
-                                                                      std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
-                                                                      std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
-                                                                      std::function<bool(void)>& termination_check_fn)
+                                                                      const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      const std::function<bool(const T&)>& goal_reached_fn,
+                                                                      const std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
+                                                                      const std::function<T(void)>& sampling_fn,
+                                                                      const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
+                                                                      const std::function<bool(void)>& termination_check_fn)
         {
             // Keep track of states
             std::vector<SimpleRRTPlannerState<T, Allocator>> nodes;
@@ -420,12 +474,12 @@ namespace simple_rrt_planner
         template<typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<std::vector<T, Allocator>>, std::map<std::string, double>> PlanMultiPath(std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes,
                                                                       const T& start,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
-                                                                      std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
-                                                                      std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
-                                                                      std::function<bool(void)>& termination_check_fn)
+                                                                      const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      const std::function<bool(const T&)>& goal_reached_fn,
+                                                                      const std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
+                                                                      const std::function<T(void)>& sampling_fn,
+                                                                      const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
+                                                                      const std::function<bool(void)>& termination_check_fn)
         {
             // Clear the tree we've been given
             nodes.clear();
@@ -457,15 +511,15 @@ namespace simple_rrt_planner
          */
         template<typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<std::vector<T, Allocator>>, std::map<std::string, double>> PlanMultiPath(std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
-                                                                      std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
-                                                                      std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
-                                                                      std::function<bool(void)>& termination_check_fn)
+                                                                      const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      const std::function<bool(const T&)>& goal_reached_fn,
+                                                                      const std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
+                                                                      const std::function<T(void)>& sampling_fn,
+                                                                      const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
+                                                                      const std::function<bool(void)>& termination_check_fn)
         {
             // Make a dummy state added function
-            std::function<void(SimpleRRTPlannerState<T, Allocator>&, SimpleRRTPlannerState<T, Allocator>&)> dummy_state_added_fn = [] (SimpleRRTPlannerState<T, Allocator>& parent, SimpleRRTPlannerState<T, Allocator>& new_child) { ; };
+            const std::function<void(SimpleRRTPlannerState<T, Allocator>&, SimpleRRTPlannerState<T, Allocator>&)> dummy_state_added_fn = [] (SimpleRRTPlannerState<T, Allocator>& parent, SimpleRRTPlannerState<T, Allocator>& new_child) { ; };
             // Call the planner
             return PlanMultiPath(nodes, nearest_neighbor_fn, dummy_state_added_fn, goal_reached_fn, goal_reached_callback_fn, sampling_fn, forward_propagation_fn, termination_check_fn);
         }
@@ -492,13 +546,13 @@ namespace simple_rrt_planner
          */
         template<typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<std::vector<T, Allocator>>, std::map<std::string, double>> PlanMultiPath(std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes,
-                                                                      std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
-                                                                      std::function<void(SimpleRRTPlannerState<T, Allocator>&, SimpleRRTPlannerState<T, Allocator>&)>& state_added_fn,
-                                                                      std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
-                                                                      std::function<T(void)>& sampling_fn,
-                                                                      std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
-                                                                      std::function<bool(void)>& termination_check_fn)
+                                                                      const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
+                                                                      const std::function<void(SimpleRRTPlannerState<T, Allocator>&, SimpleRRTPlannerState<T, Allocator>&)>& state_added_fn,
+                                                                      const std::function<bool(const T&)>& goal_reached_fn,
+                                                                      const std::function<void(SimpleRRTPlannerState<T, Allocator>&)>& goal_reached_callback_fn,
+                                                                      const std::function<T(void)>& sampling_fn,
+                                                                      const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
+                                                                      const std::function<bool(void)>& termination_check_fn)
         {
             // Make sure we've been given a start state
             assert(nodes.size() > 0);
@@ -742,14 +796,14 @@ namespace simple_rrt_planner
          */
         template<typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<std::vector<T>>, std::map<std::string, double>> PlanMultiPath(const T& start,
-                                                                      std::function<void(const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>&)>& register_nearest_neighbors_fn,
-                                                                      std::function<const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>&(const T&)>& get_nearest_neighbor_fn,
-                                                                      std::function<std::vector<std::vector<T>>(void)>& extract_solution_paths,
-                                                                      std::function<T(void)>& sampling_fn,
-                                                                      std::function<bool(const T&)>& goal_reached_fn,
-                                                                      std::function<void(const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>&)>& register_goal_state_fn,
-                                                                      std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
-                                                                      std::function<bool(void)>& termination_check_fn)
+                                                                      const std::function<void(const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>&)>& register_nearest_neighbors_fn,
+                                                                      const std::function<const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>&(const T&)>& get_nearest_neighbor_fn,
+                                                                      const std::function<std::vector<std::vector<T>>(void)>& extract_solution_paths,
+                                                                      const std::function<T(void)>& sampling_fn,
+                                                                      const std::function<bool(const T&)>& goal_reached_fn,
+                                                                      const std::function<void(const std::shared_ptr<SimpleRRTPlannerPointerState<T, Allocator>>&)>& register_goal_state_fn,
+                                                                      const std::function<std::vector<T>(const T&, const T&)>& forward_propagation_fn,
+                                                                      const std::function<bool(void)>& termination_check_fn)
         {
             // Keep track of statistics
             std::map<std::string, double> statistics;
