@@ -13,9 +13,9 @@
 
 namespace ZlibHelpers
 {
-    std::vector<u_int8_t> DecompressBytes(const std::vector<u_int8_t>& compressed);
+    std::vector<uint8_t> DecompressBytes(const std::vector<uint8_t>& compressed);
 
-    std::vector<u_int8_t> CompressBytes(const std::vector<u_int8_t>& uncompressed);
+    std::vector<uint8_t> CompressBytes(const std::vector<uint8_t>& uncompressed);
 }
 
 #endif // ZLIB_HELPERS_HPP
