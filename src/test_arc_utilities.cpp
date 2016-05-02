@@ -48,13 +48,28 @@ int main(int argc, char** argv)
 
     // Test weighted dot product functions
     Eigen::Vector3d weights(1.0, 2.0, 3.0);
-    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvec1) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvec1, weights) << std::endl;
-    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvec8) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvec8, weights) << std::endl;
-    std::cout << "Weighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvec1, testvec8, weights) << std::endl;
-    std::cout << "Unweighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvec1, testvec8, Eigen::Vector3d::Ones()) << std::endl;
-    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvec2) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvec2, weights) << std::endl;
-    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvec3) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvec3, weights) << std::endl;
-    std::cout << "Weighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvec2, testvec3, weights) << std::endl;
-    std::cout << "Unweighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvec2, testvec3, Eigen::Vector3d::Ones()) << std::endl;
+    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvecs[0]) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvecs[0], weights) << std::endl;
+    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvecs[7]) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvecs[7], weights) << std::endl;
+    std::cout << "Weighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvecs[0], testvecs[7], weights) << std::endl;
+    std::cout << "Unweighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvecs[0], testvecs[7], Eigen::Vector3d::Ones()) << std::endl;
+    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvecs[1]) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvecs[1], weights) << std::endl;
+    std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvecs[2]) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvecs[2], weights) << std::endl;
+    std::cout << "Weighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvecs[1], testvecs[2], weights) << std::endl;
+    std::cout << "Unweighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvecs[1], testvecs[2], Eigen::Vector3d::Ones()) << std::endl;
+
+    // Test multivariate gaussian
+    std::cout << "MVN Gaussian test:\n";
+    Eigen::Vector2d mean(0.0, 1.0);
+    Eigen::Matrix2d covar;
+    covar << 10.0, 5.0,
+             5.0, 10.0;
+    arc_helpers::MultivariteGaussianDistribution mvn_dist(mean, covar);
+    std::vector<Eigen::VectorXd> mvn_gaussians(3000);
+    for (size_t idx = 0; idx < mvn_gaussians.size(); idx++)
+    {
+        mvn_gaussians[idx] = mvn_dist(prng);
+        std::cout << mvn_gaussians[idx].transpose() << std::endl;
+    }
+
     return 0;
 }
