@@ -17,7 +17,7 @@
    )
 
 #define LOG_COND(log, cond, message)        \
-    if (cond) LOG(log, message)
+    if ((cond)) LOG(log, message)
 
 
 // TODO: confirm that I havn't made any mistakes in this file
