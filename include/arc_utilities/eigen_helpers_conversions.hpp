@@ -134,12 +134,12 @@ namespace EigenHelpersConversions
         return eigen_matrix;
     }
 
-    inline std::vector<geometry_msgs::Point> EigenMatrix3XdToVectorGeometryPoint( const Eigen::Matrix3Xd& eigen_matrix)
+    inline std::vector<geometry_msgs::Point> EigenMatrix3XdToVectorGeometryPoint(const Eigen::Matrix3Xd& eigen_matrix)
     {
-        std::vector<geometry_msgs::Point> vector_geom( eigen_matrix.cols() );
+        std::vector<geometry_msgs::Point> vector_geom(eigen_matrix.cols());
         for (size_t idx = 0; idx < vector_geom.size(); idx++)
         {
-            vector_geom[idx] = EigenVector3dToGeometryPoint( eigen_matrix.block<3,1>(0,idx));
+            vector_geom[idx] = EigenVector3dToGeometryPoint(eigen_matrix.block<3,1>(0,idx));
         }
         return vector_geom;
     }
