@@ -102,7 +102,7 @@ namespace EigenHelpers
     inline uint64_t SerializedSize(const Eigen::VectorXd& value)
     {
         (void)(value);
-        return (uint64_t)((1 * sizeof(uint64_t)) + (value.size() * sizeof(double))); // Space for a uint64_t size header and the data
+        return (uint64_t)((1 * sizeof(uint64_t)) + ((size_t)value.size() * sizeof(double))); // Space for a uint64_t size header and the data
     }
 
     template<>
@@ -132,7 +132,7 @@ namespace EigenHelpers
         uint64_t size_header = 0u;
         memcpy(&size_header, &buffer[current], sizeof(uint64_t));
         // Check buffer size
-        Eigen::VectorXd temp_value = Eigen::VectorXd::Zero(size_header);
+        Eigen::VectorXd temp_value = Eigen::VectorXd::Zero((ssize_t)size_header);
         const uint64_t serialized_size = SerializedSize(temp_value);
         assert((current + serialized_size) <= buffer.size());
         // Load from the buffer
