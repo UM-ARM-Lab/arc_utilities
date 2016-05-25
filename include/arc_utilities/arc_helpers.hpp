@@ -72,9 +72,11 @@ namespace arc_helpers
 #endif
         for (size_t idx = 0; idx < data.size(); idx++)
         {
-            for (size_t jdx = 0; jdx < data.size(); jdx++)
+            for (size_t jdx = idx; jdx < data.size(); jdx++)
             {
-                distance_matrix(idx, jdx) = distance_fn(data[idx], data[jdx]);
+                const double distance = distance_fn(data[idx], data[jdx]);
+                distance_matrix(idx, jdx) = distance;
+                distance_matrix(jdx, idx) = distance;
             }
         }
         return distance_matrix;

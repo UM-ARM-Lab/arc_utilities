@@ -9,6 +9,10 @@
 #include <mutex>
 #include <Eigen/Geometry>
 
+#ifdef ENABLE_PARALLEL
+    #include <omp.h>
+#endif
+
 #ifndef SIMPLE_HAUSDORFF_DISTANCE_HPP
 #define SIMPLE_HAUSDORFF_DISTANCE_HPP
 
@@ -20,6 +24,20 @@ namespace simple_hausdorff_distance
 
         SimpleHausdorffDistance() {}
 
+        static inline size_t GetNumOMPThreads()
+        {
+#ifdef ENABLE_PARALLEL
+            size_t num_threads = 0;
+            #pragma omp parallel
+            {
+                num_threads = (size_t)omp_get_num_threads();
+            }
+            return num_threads;
+#else
+            return 1;
+#endif
+        }
+
     public:
 
         template<typename Datatype, typename Allocator=std::allocator<Datatype>>
@@ -28,7 +46,7 @@ namespace simple_hausdorff_distance
             // Compute the Hausdorff distance - the "maximum minimum" distance
             double maximum_minimum_distance = 0.0;
 #ifdef ENABLE_PARALLEL
-            std::mutex dist_mutex;
+            std::vector<double> thread_temp_storage(GetNumOMPThreads(), 0.0);
             #pragma omp parallel for schedule(guided)
 #endif
             for (size_t idx = 0; idx < first_distribution.size(); idx++)
@@ -45,13 +63,28 @@ namespace simple_hausdorff_distance
                     }
                 }
 #ifdef ENABLE_PARALLEL
-                std::lock_guard<std::mutex> lock(dist_mutex);
-#endif
+                const size_t current_thread_id = (size_t)omp_get_thread_num();
+                if (minimum_distance > thread_temp_storage[current_thread_id])
+                {
+                    thread_temp_storage[current_thread_id] = minimum_distance;
+                }
+#else
                 if (minimum_distance > maximum_minimum_distance)
                 {
                     maximum_minimum_distance = minimum_distance;
                 }
+#endif
             }
+#ifdef ENABLE_PARALLEL
+            for (size_t idx = 0; idx < thread_temp_storage.size(); idx++)
+            {
+                const double& temp_minimum_distance = thread_temp_storage[idx];
+                if (temp_minimum_distance > maximum_minimum_distance)
+                {
+                    maximum_minimum_distance = temp_minimum_distance;
+                }
+            }
+#endif
             return maximum_minimum_distance;
         }
     };
