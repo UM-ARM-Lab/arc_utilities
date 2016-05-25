@@ -210,8 +210,6 @@ namespace EigenHelpersConversions
         assert(vector_eigen_input.size() > 0);
 
         Eigen::Matrix<data_type, Eigen::Dynamic, 1> eigen_result;
-        typedef Eigen::Matrix<data_type, Eigen::Dynamic, 1> type;
-        EIGEN_STATIC_ASSERT_VECTOR_ONLY(type);
         eigen_result.resize((ssize_t)vector_eigen_input.size() * vector_eigen_input[0].rows());
 
         for (size_t idx = 0; idx < vector_eigen_input.size(); idx++)
