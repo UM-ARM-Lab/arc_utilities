@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <functional>
+#include <type_traits>
 
 #ifndef EIGEN_HELPERS_HPP
 #define EIGEN_HELPERS_HPP
@@ -842,6 +843,37 @@ namespace EigenHelpers
         // Make the average transform
         const Eigen::Affine3d average_transform = (Eigen::Translation3d)average_translation * average_rotation;
         return average_transform;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Projection/Rejection functions
+    ////////////////////////////////////////////////////////////////////////////
+
+    // Projects vector_to_project onto base_vector and returns the portion that is parallel to base_vector
+    template <typename DerivedB, typename DerivedV>
+    inline Eigen::Matrix<typename DerivedB::Scalar, Eigen::Dynamic, 1> VectorProjection(const Eigen::MatrixBase<DerivedB>& base_vector, const Eigen::MatrixBase<DerivedV>& vector_to_project)
+    {
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedB);
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedV);
+        EIGEN_STATIC_ASSERT_SAME_VECTOR_SIZE(DerivedB, DerivedV)
+        static_assert(std::is_same<typename DerivedB::Scalar, typename DerivedV::Scalar>::value, "base_vector and vector_to_project must have the same data type");
+
+        const typename DerivedB::Scalar b_squared_norm = base_vector.squaredNorm();
+        if (b_squared_norm > 0)
+        {
+            return (base_vector.dot(vector_to_project) / b_squared_norm) * base_vector;
+        }
+        else
+        {
+            return Eigen::Matrix<typename DerivedB::Scalar, Eigen::Dynamic, 1>::Zero(base_vector.rows());
+        }
+    }
+
+    // Projects vector_to_project onto base_vector and returns the portion that is perpendicular to base_vector
+    template <typename DerivedB, typename DerivedV>
+    inline Eigen::Matrix<typename DerivedB::Scalar, Eigen::Dynamic, 1> VectorRejection(const Eigen::MatrixBase<DerivedB>& base_vector, const Eigen::MatrixBase<DerivedV>& vector_to_project)
+    {
+        return vector_to_project - VectorProjection(base_vector, vector_to_project);
     }
 
     ////////////////////////////////////////////////////////////////////////////
