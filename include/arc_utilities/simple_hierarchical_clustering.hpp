@@ -40,7 +40,7 @@ namespace simple_hierarchical_clustering
                         if ((idx != jdx) && (datapoint_mask[jdx] == 0))
                         {
                             const double& current_distance = distance_matrix(idx, jdx);
-                            // Update the clkosest point
+                            // Update the closest point
                             if (current_distance < min_point_point_distance)
                             {
                                 min_point_point_distance = current_distance;
@@ -115,9 +115,9 @@ namespace simple_hierarchical_clustering
                                 // Find the maximum-pointwise distance between clusters
                                 for (size_t fcpx = 0; fcpx < first_cluster.size(); fcpx++)
                                 {
+                                    const int64_t& fcp_index = first_cluster[fcpx];
                                     for (size_t scpx = 0; scpx < second_cluster.size(); scpx++)
                                     {
-                                        const int64_t& fcp_index = first_cluster[fcpx];
                                         const int64_t& scp_index = second_cluster[scpx];
                                         const double& new_distance = distance_matrix(fcp_index, scp_index);
                                         if (new_distance > max_point_point_distance)
@@ -126,7 +126,7 @@ namespace simple_hierarchical_clustering
                                         }
                                     }
                                 }
-                                double cluster_cluster_distance = max_point_point_distance;
+                                const double cluster_cluster_distance = max_point_point_distance;
                                 if (cluster_cluster_distance < min_cluster_cluster_distance)
                                 {
                                     min_cluster_cluster_distance = cluster_cluster_distance;
@@ -139,23 +139,23 @@ namespace simple_hierarchical_clustering
                 }
             }
             // Return the minimum-distance pair
-            if (min_distance <= min_cluster_cluster_distance)
+            if (min_distance < min_cluster_cluster_distance)
             {
                 // Set the indices
-                std::pair<bool, int64_t> first_index(false, min_element_pair.first);
-                std::pair<bool, int64_t> second_index = min_element_pair.second;
-                std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>> indices(first_index, second_index);
-                std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> minimum_pair(indices, min_distance);
+                const std::pair<bool, int64_t> first_index(false, min_element_pair.first);
+                const std::pair<bool, int64_t> second_index = min_element_pair.second;
+                const std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>> indices(first_index, second_index);
+                const std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> minimum_pair(indices, min_distance);
                 return minimum_pair;
             }
             // A cluster <-> cluster pair is closest
             else
             {
                 // Set the indices
-                std::pair<bool, int64_t> first_index(true, min_cluster_pair.first);
-                std::pair<bool, int64_t> second_index(true, min_cluster_pair.second);
-                std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>> indices(first_index, second_index);
-                std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> minimum_pair(indices, min_cluster_cluster_distance);
+                const std::pair<bool, int64_t> first_index(true, min_cluster_pair.first);
+                const std::pair<bool, int64_t> second_index(true, min_cluster_pair.second);
+                const std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>> indices(first_index, second_index);
+                const std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> minimum_pair(indices, min_cluster_cluster_distance);
                 return minimum_pair;
             }
         }
@@ -181,38 +181,43 @@ namespace simple_hierarchical_clustering
             while (!complete)
             {
                 // Get closest pair of elements (an element can be a cluster or single data value!)
-                std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> closest_element_pair = GetClosestPair(datapoint_mask, distance_matrix, cluster_indices);
+                const std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> closest_element_pair = GetClosestPair(datapoint_mask, distance_matrix, cluster_indices);
+                const std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>& closest_elements = closest_element_pair.first;
                 closest_distance = closest_element_pair.second;
                 //std::cout << "Element pair: " << PrettyPrint::PrettyPrint(closest_element_pair, true) << std::endl;
-                if (closest_element_pair.second <= max_cluster_distance)
+                if (closest_distance <= max_cluster_distance)
                 {
+                    const std::pair<bool, int64_t>& first_element = closest_elements.first;
+                    const std::pair<bool, int64_t>& second_element = closest_elements.second;
                     // If both elements are points, create a new cluster
-                    if ((closest_element_pair.first.first.first == false) && (closest_element_pair.first.second.first == false))
+                    if ((first_element.first == false) && (second_element.first == false))
                     {
                         //std::cout << "New point-point cluster" << std::endl;
-                        int64_t first_element_index = closest_element_pair.first.first.second;
+                        const int64_t first_element_index = first_element.second;
                         assert(first_element_index >= 0);
-                        int64_t second_element_index = closest_element_pair.first.second.second;
+                        const int64_t second_element_index = second_element.second;
                         assert(second_element_index >= 0);
                         // Add a cluster
                         cluster_indices.push_back(std::vector<int64_t>{first_element_index, second_element_index});
                         // Mask out the indices
-                        datapoint_mask[first_element_index] += 1;
-                        datapoint_mask[second_element_index] += 1;
+                        datapoint_mask[first_element_index] = 1u;
+                        datapoint_mask[second_element_index] = 1u;
                     }
                     // If both elements are clusters, merge the clusters
-                    else if ((closest_element_pair.first.first.first == true) && (closest_element_pair.first.second.first == true))
+                    else if ((first_element.first == true) && (second_element.first == true))
                     {
                         //std::cout << "Combining clusters" << std::endl;
                         // Get the cluster indices
-                        int64_t first_cluster_index = closest_element_pair.first.first.second;
+                        const int64_t first_cluster_index = first_element.second;
                         assert(first_cluster_index >= 0);
-                        int64_t second_cluster_index = closest_element_pair.first.second.second;
+                        const int64_t second_cluster_index = second_element.second;
                         assert(second_cluster_index >= 0);
                         // Merge the second cluster into the first
-                        cluster_indices[first_cluster_index].insert(cluster_indices[first_cluster_index].end(), cluster_indices[second_cluster_index].begin(), cluster_indices[second_cluster_index].end());
+                        std::vector<int64_t>& first_cluster = cluster_indices[first_cluster_index];
+                        std::vector<int64_t>& second_cluster = cluster_indices[second_cluster_index];
+                        first_cluster.insert(first_cluster.end(), second_cluster.begin(), second_cluster.end());
                         // Empty the second cluster (we don't remove, because this triggers move)
-                        cluster_indices[second_cluster_index].clear();
+                        second_cluster.clear();
                     }
                     // If one of the elements is a cluster and the other is a point, add the point to the existing cluster
                     else
@@ -220,15 +225,15 @@ namespace simple_hierarchical_clustering
                         //std::cout << "Adding to an existing cluster" << std::endl;
                         int64_t cluster_index = -1;
                         int64_t element_index = -1;
-                        if (closest_element_pair.first.first.first)
+                        if (first_element.first)
                         {
-                            cluster_index = closest_element_pair.first.first.second;
-                            element_index = closest_element_pair.first.second.second;
+                            cluster_index = first_element.second;
+                            element_index = second_element.second;
                         }
-                        else if (closest_element_pair.first.second.first)
+                        else if (second_element.first)
                         {
-                            cluster_index = closest_element_pair.first.second.second;
-                            element_index = closest_element_pair.first.first.second;
+                            cluster_index = second_element.second;
+                            element_index = first_element.second;
                         }
                         else
                         {
@@ -237,9 +242,10 @@ namespace simple_hierarchical_clustering
                         assert(cluster_index >= 0);
                         assert(element_index >= 0);
                         // Add the element to the cluster
-                        cluster_indices[cluster_index].push_back(element_index);
+                        std::vector<int64_t>& cluster = cluster_indices[cluster_index];
+                        cluster.push_back(element_index);
                         // Mask out the element index
-                        datapoint_mask[element_index] += 1;
+                        datapoint_mask[element_index] = 1u;
                     }
                 }
                 else
@@ -258,10 +264,19 @@ namespace simple_hierarchical_clustering
                     std::vector<Datatype, Allocator> new_cluster;
                     for (size_t cdx = 0; cdx < current_cluster.size(); cdx++)
                     {
-                        int64_t index = current_cluster[cdx];
+                        const int64_t index = current_cluster[cdx];
                         new_cluster.push_back(data[index]);
                     }
                     clusters.push_back(new_cluster);
+                }
+            }
+            // Add any points that we haven't clustered into their own clusters
+            for (size_t idx = 0; idx < datapoint_mask.size(); idx++)
+            {
+                // If an element hasn't been clustered at all
+                if (datapoint_mask[idx] == 0)
+                {
+                    clusters.push_back(std::vector<Datatype, Allocator>{data[idx]});
                 }
             }
             return std::pair<std::vector<std::vector<Datatype, Allocator>>, double>(clusters, closest_distance);
