@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <functional>
+#include <type_traits>
 
 #ifndef EIGEN_HELPERS_HPP
 #define EIGEN_HELPERS_HPP
@@ -102,7 +103,7 @@ namespace EigenHelpers
     inline uint64_t SerializedSize(const Eigen::VectorXd& value)
     {
         (void)(value);
-        return (uint64_t)((1 * sizeof(uint64_t)) + (value.size() * sizeof(double))); // Space for a uint64_t size header and the data
+        return (uint64_t)((1 * sizeof(uint64_t)) + ((size_t)value.size() * sizeof(double))); // Space for a uint64_t size header and the data
     }
 
     template<>
@@ -132,7 +133,7 @@ namespace EigenHelpers
         uint64_t size_header = 0u;
         memcpy(&size_header, &buffer[current], sizeof(uint64_t));
         // Check buffer size
-        Eigen::VectorXd temp_value = Eigen::VectorXd::Zero(size_header);
+        Eigen::VectorXd temp_value = Eigen::VectorXd::Zero((ssize_t)size_header);
         const uint64_t serialized_size = SerializedSize(temp_value);
         assert((current + serialized_size) <= buffer.size());
         // Load from the buffer
@@ -842,6 +843,37 @@ namespace EigenHelpers
         // Make the average transform
         const Eigen::Affine3d average_transform = (Eigen::Translation3d)average_translation * average_rotation;
         return average_transform;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Projection/Rejection functions
+    ////////////////////////////////////////////////////////////////////////////
+
+    // Projects vector_to_project onto base_vector and returns the portion that is parallel to base_vector
+    template <typename DerivedB, typename DerivedV>
+    inline Eigen::Matrix<typename DerivedB::Scalar, Eigen::Dynamic, 1> VectorProjection(const Eigen::MatrixBase<DerivedB>& base_vector, const Eigen::MatrixBase<DerivedV>& vector_to_project)
+    {
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedB);
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedV);
+        EIGEN_STATIC_ASSERT_SAME_VECTOR_SIZE(DerivedB, DerivedV)
+        static_assert(std::is_same<typename DerivedB::Scalar, typename DerivedV::Scalar>::value, "base_vector and vector_to_project must have the same data type");
+
+        const typename DerivedB::Scalar b_squared_norm = base_vector.squaredNorm();
+        if (b_squared_norm > 0)
+        {
+            return (base_vector.dot(vector_to_project) / b_squared_norm) * base_vector;
+        }
+        else
+        {
+            return Eigen::Matrix<typename DerivedB::Scalar, Eigen::Dynamic, 1>::Zero(base_vector.rows());
+        }
+    }
+
+    // Projects vector_to_project onto base_vector and returns the portion that is perpendicular to base_vector
+    template <typename DerivedB, typename DerivedV>
+    inline Eigen::Matrix<typename DerivedB::Scalar, Eigen::Dynamic, 1> VectorRejection(const Eigen::MatrixBase<DerivedB>& base_vector, const Eigen::MatrixBase<DerivedV>& vector_to_project)
+    {
+        return vector_to_project - VectorProjection(base_vector, vector_to_project);
     }
 
     ////////////////////////////////////////////////////////////////////////////

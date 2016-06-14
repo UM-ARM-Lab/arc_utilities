@@ -203,6 +203,38 @@ namespace EigenHelpersConversions
         }
         return vector_geom;
     }
+
+    template<typename data_type, int LENGTH>
+    inline Eigen::Matrix<data_type, Eigen::Dynamic, 1> VectorEigenVectorToEigenVectorX(const std::vector<Eigen::Matrix<data_type, LENGTH, 1>>& vector_eigen_input)
+    {
+        assert(vector_eigen_input.size() > 0);
+
+        Eigen::Matrix<data_type, Eigen::Dynamic, 1> eigen_result;
+        eigen_result.resize((ssize_t)vector_eigen_input.size() * vector_eigen_input[0].rows());
+
+        for (size_t idx = 0; idx < vector_eigen_input.size(); idx++)
+        {
+            eigen_result.segment((ssize_t)idx * LENGTH, LENGTH) = vector_eigen_input[idx];
+        }
+
+        return eigen_result;
+    }
+
+    template<typename data_type, int LENGTH>
+    inline std::vector<Eigen::Matrix<data_type, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<data_type, LENGTH, 1>>> EigenVectorXToVectorEigenVector(const Eigen::Matrix<data_type, Eigen::Dynamic, 1>& eigen_input)
+    {
+        assert(eigen_input.rows() % LENGTH == 0);
+        size_t num_vectors = eigen_input.rows() / LENGTH;
+
+        std::vector<Eigen::Matrix<data_type, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<data_type, LENGTH, 1>>> vector_eigen_output(num_vectors);
+
+        for (size_t idx = 0; idx < num_vectors; idx++)
+        {
+            vector_eigen_output[idx] = eigen_input.segment<LENGTH>((ssize_t)idx * LENGTH);
+        }
+
+        return vector_eigen_output;
+    }
 }
 
 #endif // EIGEN_HELPERS_CONVERSIONS_HPP
