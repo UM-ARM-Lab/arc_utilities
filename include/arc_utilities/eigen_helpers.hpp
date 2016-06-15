@@ -214,6 +214,42 @@ namespace EigenHelpers
         return std::make_pair(temp_value, SerializedSize<Eigen::Matrix<double, 6, 1>>());
     }
 
+    template<>
+    inline uint64_t SerializedSize(const Eigen::Affine3d& value)
+    {
+        (void)(value);
+        return (uint64_t)(16 * sizeof(double));
+    }
+
+    template<>
+    inline uint64_t SerializedSize<Eigen::Affine3d>(void)
+    {
+        return (uint64_t)(16 * sizeof(double));
+    }
+
+    template<>
+    inline uint64_t Serialize(const Eigen::Affine3d& value, std::vector<uint8_t>& buffer)
+    {
+        // Takes a state to serialize and a buffer to serialize into
+        // Return number of bytes written to buffer
+        std::vector<uint8_t> temp_buffer(SerializedSize<Eigen::Affine3d>(), 0x00);
+        memcpy(&temp_buffer.front(), value.matrix().data(), SerializedSize<Eigen::Affine3d>());
+        buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
+        return SerializedSize<Eigen::Affine3d>();
+    }
+
+    template<>
+    inline std::pair<Eigen::Affine3d, uint64_t> Deserialize<Eigen::Affine3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        assert(current < buffer.size());
+        assert((current + SerializedSize<Eigen::Affine3d>()) <= buffer.size());
+        // Takes a buffer to read from and the starting index in the buffer
+        // Return the loaded state and how many bytes we read from the buffer
+        Eigen::Affine3d temp_value;
+        memcpy(temp_value.matrix().data(), &buffer[current], SerializedSize<Eigen::Affine3d>());
+        return std::make_pair(temp_value, SerializedSize<Eigen::Affine3d>());
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Helper functions
     ////////////////////////////////////////////////////////////////////////////
