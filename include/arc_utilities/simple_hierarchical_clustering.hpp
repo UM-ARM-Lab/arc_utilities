@@ -9,6 +9,10 @@
 #include <arc_utilities/arc_helpers.hpp>
 #include <Eigen/Geometry>
 
+#ifdef ENABLE_PARALLEL
+    #include <omp.h>
+#endif
+
 #ifndef SIMPLE_HIERARCHICAL_CLUSTERING_HPP
 #define SIMPLE_HIERARCHICAL_CLUSTERING_HPP
 
@@ -20,12 +24,33 @@ namespace simple_hierarchical_clustering
 
         SimpleHierarchicalClustering() {}
 
+        static inline size_t GetNumOMPThreads()
+        {
+#ifdef ENABLE_PARALLEL
+            size_t num_threads = 0;
+            #pragma omp parallel
+            {
+                num_threads = (size_t)omp_get_num_threads();
+            }
+            return num_threads;
+#else
+            return 1;
+#endif
+        }
+
         static std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> GetClosestPair(const std::vector<uint8_t>& datapoint_mask, const Eigen::MatrixXd& distance_matrix, const std::vector<std::vector<int64_t>>& clusters)
         {
             // Compute distances between unclustered points <-> unclustered points, unclustered_points <-> clusters, and clusters <-> clusters
             // Compute the minimum unclustered point <-> unclustered point / unclustered_point <-> cluster distance
+#ifdef ENABLE_PARALLEL
+            const size_t num_threads = GetNumOMPThreads();
+            std::vector<double> per_thread_min_distances(num_threads, INFINITY);
+            std::vector<std::pair<int64_t, std::pair<bool, int64_t>>> per_thread_min_element_pairs(num_threads, std::make_pair(-1, std::make_pair(false, -1)));
+            #pragma omp parallel for schedule(guided)
+#else
             double min_distance = INFINITY;
             std::pair<int64_t, std::pair<bool, int64_t>> min_element_pair(-1, std::pair<bool, int64_t>(false, -1));
+#endif
             for (size_t idx = 0; idx < datapoint_mask.size(); idx++)
             {
                 // Make sure we aren't in a cluster already
@@ -75,6 +100,26 @@ namespace simple_hierarchical_clustering
                             }
                         }
                     }
+#ifdef ENABLE_PARALLEL
+                    const size_t thread_num = (size_t)omp_get_thread_num();
+                    double& per_thread_min_distance = per_thread_min_distances[thread_num];
+                    std::pair<int64_t, std::pair<bool, int64_t>>& per_thread_min_element_pair = per_thread_min_element_pairs[thread_num];
+                    // Update the closest index
+                    if (min_point_point_distance < per_thread_min_distance)
+                    {
+                        per_thread_min_distance = min_point_point_distance;
+                        per_thread_min_element_pair.first = idx;
+                        per_thread_min_element_pair.second.first = false;
+                        per_thread_min_element_pair.second.second = min_point_index;
+                    }
+                    if (min_point_cluster_distance < per_thread_min_distance)
+                    {
+                        per_thread_min_distance = min_point_cluster_distance;
+                        per_thread_min_element_pair.first = idx;
+                        per_thread_min_element_pair.second.first = true;
+                        per_thread_min_element_pair.second.second = min_cluster_index;
+                    }
+#else
                     // Update the closest index
                     if (min_point_point_distance < min_distance)
                     {
@@ -90,11 +135,32 @@ namespace simple_hierarchical_clustering
                         min_element_pair.second.first = true;
                         min_element_pair.second.second = min_cluster_index;
                     }
+#endif
                 }
             }
+#ifdef ENABLE_PARALLEL
+            double min_distance = INFINITY;
+            std::pair<int64_t, std::pair<bool, int64_t>> min_element_pair(-1, std::pair<bool, int64_t>(false, -1));
+            for (size_t idx = 0; idx < num_threads; idx++)
+            {
+                const double& current_min_distance = per_thread_min_distances[idx];
+                const std::pair<int64_t, std::pair<bool, int64_t>>& current_min_element_pair = per_thread_min_element_pairs[idx];
+                if (current_min_distance < min_distance)
+                {
+                    min_distance = current_min_distance;
+                    min_element_pair = current_min_element_pair;
+                }
+            }
+#endif
             // Compute the minimum cluster <-> cluster distance
+#ifdef ENABLE_PARALLEL
+            std::vector<double> per_thread_min_cluster_cluster_distances(num_threads, INFINITY);
+            std::vector<std::pair<int64_t, int64_t>> per_thread_min_cluster_pairs(num_threads, std::make_pair(-1, -1));
+            #pragma omp parallel for schedule(guided)
+#else
             double min_cluster_cluster_distance = INFINITY;
             std::pair<int64_t, int64_t> min_cluster_pair(-1, -1);
+#endif
             for (size_t fcdx = 0; fcdx < clusters.size(); fcdx++)
             {
                 const std::vector<int64_t>& first_cluster = clusters[fcdx];
@@ -127,17 +193,43 @@ namespace simple_hierarchical_clustering
                                     }
                                 }
                                 const double cluster_cluster_distance = max_point_point_distance;
+#ifdef ENABLE_PARALLEL
+                                const size_t thread_num = (size_t)omp_get_thread_num();
+                                double& per_thread_min_cluster_cluster_distance = per_thread_min_cluster_cluster_distances[thread_num];
+                                std::pair<int64_t, int64_t>& per_thread_min_cluster_pair = per_thread_min_cluster_pairs[thread_num];
+                                if (cluster_cluster_distance < per_thread_min_cluster_cluster_distance)
+                                {
+                                    per_thread_min_cluster_cluster_distance = cluster_cluster_distance;
+                                    per_thread_min_cluster_pair.first = fcdx;
+                                    per_thread_min_cluster_pair.second = scdx;
+                                }
+#else
                                 if (cluster_cluster_distance < min_cluster_cluster_distance)
                                 {
                                     min_cluster_cluster_distance = cluster_cluster_distance;
                                     min_cluster_pair.first = fcdx;
                                     min_cluster_pair.second = scdx;
                                 }
+#endif
                             }
                         }
                     }
                 }
             }
+#ifdef ENABLE_PARALLEL
+            double min_cluster_cluster_distance = INFINITY;
+            std::pair<int64_t, int64_t> min_cluster_pair(-1, -1);
+            for (size_t idx = 0; idx < num_threads; idx++)
+            {
+                const double& current_min_cluster_cluster_distance = per_thread_min_cluster_cluster_distances[idx];
+                const std::pair<int64_t, int64_t>& current_min_cluster_pair = per_thread_min_cluster_pairs[idx];
+                if (current_min_cluster_cluster_distance < min_cluster_cluster_distance)
+                {
+                    min_cluster_cluster_distance = current_min_cluster_cluster_distance;
+                    min_cluster_pair = current_min_cluster_pair;
+                }
+            }
+#endif
             // Return the minimum-distance pair
             if (min_distance < min_cluster_cluster_distance)
             {
