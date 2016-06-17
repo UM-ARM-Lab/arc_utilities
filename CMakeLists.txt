@@ -56,6 +56,7 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/maybe.hpp
     include/${PROJECT_NAME}/ros_helpers.hpp
     include/${PROJECT_NAME}/abb_irb1600_145_fk_fast.hpp
+    include/${PROJECT_NAME}/arc_exceptions.hpp
     include/${PROJECT_NAME}/arc_helpers.hpp
     include/${PROJECT_NAME}/pretty_print.hpp
     include/${PROJECT_NAME}/zlib_helpers.hpp
