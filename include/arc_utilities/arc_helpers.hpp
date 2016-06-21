@@ -571,10 +571,7 @@ namespace arc_helpers
         const uint64_t start_buffer_size = buffer.size();
         // First, write a uint64_t size header
         const uint64_t size = (uint64_t)vec_to_serialize.size();
-        std::vector<uint8_t> size_header(sizeof(size), 0x00);
-        memcpy(&size_header[0], &size, sizeof(size));
-        // Move to buffer
-        buffer.insert(buffer.end(), size_header.begin(), size_header.end());
+        SerializeFixedSizePOD<uint64_t>(size, buffer);
         // Serialize the contained items
         for (size_t idx = 0; idx < size; idx++)
         {
@@ -592,14 +589,14 @@ namespace arc_helpers
     {
         // First, try to load the header
         assert(current < buffer.size());
-        assert((current + sizeof(uint64_t)) <= buffer.size());
+        uint64_t current_position = current;
         // Load the header
-        uint64_t size = 0u;
-        memcpy(&size, &buffer[current], sizeof(uint64_t));
+        const std::pair<uint64_t, uint64_t> deserialized_size = DeserializeFixedSizePOD<uint64_t>(buffer, current_position);
+        const uint64_t size = deserialized_size.first;
+        current_position += deserialized_size.second;
         // Deserialize the items
         std::vector<T, Allocator> deserialized;
         deserialized.reserve(size);
-        uint64_t current_position = current + sizeof(uint64_t);
         for (uint64_t idx = 0; idx < size; idx++)
         {
             const std::pair<T, uint64_t> deserialized_item = item_deserializer(buffer, current_position);
