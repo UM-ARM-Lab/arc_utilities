@@ -16,6 +16,8 @@ int main(int argc, char* argv[])
               << "  0 | 3 | 6\n\n";
 
     arc_dijkstras::Graph<Eigen::Vector2d> graph(9);
+    graph.AddNode(Eigen::Vector2d(0,0));
+    graph.AddNode(Eigen::Vector2d(1,1));
     for (double x = -1; x <= 1; x += 1)
     {
         for (double y = -1; y <= 1; y += 1)
@@ -25,7 +27,7 @@ int main(int argc, char* argv[])
     }
 
     // Y-direction edges
-    graph.AddEdgesBetweenNodes(0, 1, 1.0);
+    graph.AddEdgeBetweenNodes(0, 1, 1.0);
     graph.AddEdgesBetweenNodes(1, 2, 1.0);
     graph.AddEdgesBetweenNodes(3, 4, 1.0);
     graph.AddEdgesBetweenNodes(4, 5, 1.0);
@@ -70,7 +72,21 @@ int main(int argc, char* argv[])
     std::cout << "Distance              : " << PrettyPrint::PrettyPrint(dijkstras_result_8connected.second.second) << std::endl;
 
 
+
+
+
+
+
+
+
+
     std::cout << "Serialization test... ";
+
+    arc_dijkstras::Graph<Eigen::Vector2d> serialization_test_graph(2);
+    serialization_test_graph.AddNode(Eigen::Vector2d(0,0));
+    serialization_test_graph.AddNode(Eigen::Vector2d(1,1));
+    serialization_test_graph.AddEdgesBetweenNodes(0, 1, 1.0);
+
     // Define the graph value serialization function
     const auto value_serializer_fn = [] (const Eigen::Vector2d& value, std::vector<uint8_t>& buffer)
     {
@@ -112,7 +128,7 @@ int main(int argc, char* argv[])
 
     // Serialze the graph
     std::vector<uint8_t> buffer;
-    graph.SerializeSelf(buffer, value_serializer_fn);
+    serialization_test_graph.SerializeSelf(buffer, value_serializer_fn);
 
     auto deserialized_result = arc_dijkstras::Graph<Eigen::Vector2d>::Deserialize(buffer, 0, value_deserializer_fn);
     assert(deserialized_result.first.CheckGraphLinkage());
