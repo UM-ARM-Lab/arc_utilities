@@ -42,6 +42,35 @@ int main(int argc, char* argv[])
 
     assert(graph.CheckGraphLinkage());
 
+
+    auto dijkstras_result_4connected = arc_dijkstras::SimpleDijkstrasAlgorithm<Eigen::Vector2d, std::allocator<Eigen::Vector2d>>::PerformDijkstrasAlgorithm(graph, 0);
+
+    std::cout << "4-connected edges\n"
+              << "Node index            : 0, 1, 2, 3, 4, 5, 6, 7, 8\n";
+    std::cout << "Previous graph indices: " << PrettyPrint::PrettyPrint(dijkstras_result_4connected.second.first) << std::endl;
+    std::cout << "Distance              : " << PrettyPrint::PrettyPrint(dijkstras_result_4connected.second.second) << std::endl;
+
+    // Diagonal edges
+    graph.AddEdgesBetweenNodes(0, 4, std::sqrt(2));
+    graph.AddEdgesBetweenNodes(1, 5, std::sqrt(2));
+    graph.AddEdgesBetweenNodes(3, 7, std::sqrt(2));
+    graph.AddEdgesBetweenNodes(4, 8, std::sqrt(2));
+
+    graph.AddEdgesBetweenNodes(1, 3, std::sqrt(2));
+    graph.AddEdgesBetweenNodes(2, 4, std::sqrt(2));
+    graph.AddEdgesBetweenNodes(4, 6, std::sqrt(2));
+    graph.AddEdgesBetweenNodes(5, 7, std::sqrt(2));
+
+    assert(graph.CheckGraphLinkage());
+    auto dijkstras_result_8connected = arc_dijkstras::SimpleDijkstrasAlgorithm<Eigen::Vector2d, std::allocator<Eigen::Vector2d>>::PerformDijkstrasAlgorithm(graph, 0);
+
+    std::cout << "\n8-connected edges\n"
+              << "Node index            : 0, 1, 2, 3, 4, 5, 6, 7, 8\n";
+    std::cout << "Previous graph indices: " << PrettyPrint::PrettyPrint(dijkstras_result_8connected.second.first) << std::endl;
+    std::cout << "Distance              : " << PrettyPrint::PrettyPrint(dijkstras_result_8connected.second.second) << std::endl;
+
+
+    std::cout << "Serialization test... ";
     // Define the graph value serialization function
     const auto value_serializer_fn = [] (const Eigen::Vector2d& value, std::vector<uint8_t>& buffer)
     {
@@ -85,36 +114,10 @@ int main(int argc, char* argv[])
     std::vector<uint8_t> buffer;
     graph.SerializeSelf(buffer, value_serializer_fn);
 
-    arc_dijkstras::Graph<Eigen::Vector2d> serialization_test;
     auto deserialized_result = arc_dijkstras::Graph<Eigen::Vector2d>::Deserialize(buffer, 0, value_deserializer_fn);
     assert(deserialized_result.first.CheckGraphLinkage());
 
-
-    auto dijkstras_result_4connected = arc_dijkstras::SimpleDijkstrasAlgorithm<Eigen::Vector2d, std::allocator<Eigen::Vector2d>>::PerformDijkstrasAlgorithm(graph, 0);
-
-    std::cout << "4-connected edges\n"
-              << "Node index            : 0, 1, 2, 3, 4, 5, 6, 7, 8\n";
-    std::cout << "Previous graph indices: " << PrettyPrint::PrettyPrint(dijkstras_result_4connected.second.first) << std::endl;
-    std::cout << "Distance              : " << PrettyPrint::PrettyPrint(dijkstras_result_4connected.second.second) << std::endl;
-
-    // Diagonal edges
-    graph.AddEdgesBetweenNodes(0, 4, std::sqrt(2));
-    graph.AddEdgesBetweenNodes(1, 5, std::sqrt(2));
-    graph.AddEdgesBetweenNodes(3, 7, std::sqrt(2));
-    graph.AddEdgesBetweenNodes(4, 8, std::sqrt(2));
-
-    graph.AddEdgesBetweenNodes(1, 3, std::sqrt(2));
-    graph.AddEdgesBetweenNodes(2, 4, std::sqrt(2));
-    graph.AddEdgesBetweenNodes(4, 6, std::sqrt(2));
-    graph.AddEdgesBetweenNodes(5, 7, std::sqrt(2));
-
-    assert(graph.CheckGraphLinkage());
-    auto dijkstras_result_8connected = arc_dijkstras::SimpleDijkstrasAlgorithm<Eigen::Vector2d, std::allocator<Eigen::Vector2d>>::PerformDijkstrasAlgorithm(graph, 0);
-
-    std::cout << "\n8-connected edges\n"
-              << "Node index            : 0, 1, 2, 3, 4, 5, 6, 7, 8\n";
-    std::cout << "Previous graph indices: " << PrettyPrint::PrettyPrint(dijkstras_result_8connected.second.first) << std::endl;
-    std::cout << "Distance              : " << PrettyPrint::PrettyPrint(dijkstras_result_8connected.second.second) << std::endl;
+    std::cout << "passed" << std::endl;
 
     return 0;
 }
