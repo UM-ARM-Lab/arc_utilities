@@ -109,7 +109,7 @@ namespace arc_dijkstras
             }
     };
 
-    std::ostream& operator<< (std::ostream& stream, const GraphEdge& edge)
+    inline std::ostream& operator<< (std::ostream& stream, const GraphEdge& edge)
     {
         stream << edge.GetFromIndex() << " " << edge.GetToIndex() << " " << edge.GetWeight();
         return stream;
