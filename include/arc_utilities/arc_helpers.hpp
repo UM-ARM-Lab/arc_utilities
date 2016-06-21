@@ -649,10 +649,7 @@ namespace arc_helpers
         const uint64_t start_buffer_size = buffer.size();
         // First, write a uint64_t size header
         const uint64_t size = (uint64_t)map_to_serialize.size();
-        std::vector<uint8_t> size_header(sizeof(size), 0x00);
-        memcpy(&size_header[0], &size, sizeof(size));
-        // Move to buffer
-        buffer.insert(buffer.end(), size_header.begin(), size_header.end());
+        SerializeFixedSizePOD<uint64_t>(size, buffer);
         // Serialize the contained items
         typename std::map<Key, T, Compare, Allocator>::const_iterator itr;
         for (itr = map_to_serialize.begin(); itr != map_to_serialize.end(); ++itr)
@@ -670,13 +667,13 @@ namespace arc_helpers
     {
         // First, try to load the header
         assert(current < buffer.size());
-        assert((current + sizeof(uint64_t)) <= buffer.size());
+        uint64_t current_position = current;
         // Load the header
-        uint64_t size = 0u;
-        memcpy(&size, &buffer[current], sizeof(uint64_t));
+        const std::pair<uint64_t, uint64_t> deserialized_size = DeserializeFixedSizePOD<uint64_t>(buffer, current_position);
+        const uint64_t size = deserialized_size.first;
+        current_position += deserialized_size.second;
         // Deserialize the items
         std::map<Key, T, Compare, Allocator> deserialized;
-        uint64_t current_position = current + sizeof(uint64_t);
         for (uint64_t idx = 0; idx < size; idx++)
         {
             std::pair<std::pair<Key, T>, uint64_t> deserialized_pair = DeserializePair(buffer, current_position, key_deserializer, value_deserializer);
@@ -715,9 +712,7 @@ namespace arc_helpers
         current_position += deserialized_second.second;
         // Build the resulting pair
         // TODO: Why can't I used make_pair here?
-        std::pair<First, Second> deserialized;
-        deserialized.first = deserialized_first.first;
-        deserialized.second = deserialized_second.first;
+        std::pair<First, Second> deserialized(deserialized_first.first, deserialized_second.first);
         // Figure out how many bytes were read
         const uint64_t bytes_read = current_position - current;
         return std::make_pair(deserialized, bytes_read);

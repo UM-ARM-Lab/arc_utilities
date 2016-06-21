@@ -59,10 +59,10 @@ namespace arc_dijkstras
             {
                 assert(current < buffer.size());
                 uint64_t current_position = current;
-                const std::pair<int64_t, uint64_t> deserialized_from_index = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+                const std::pair<int64_t, uint64_t> deserialized_from_index = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
                 from_index_ = deserialized_from_index.first;
                 current_position += deserialized_from_index.second;
-                const std::pair<int64_t, uint64_t> deserialized_to_index = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+                const std::pair<int64_t, uint64_t> deserialized_to_index = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
                 to_index_ = deserialized_to_index.first;
                 current_position += deserialized_to_index.second;
                 const std::pair<double, uint64_t> deserialized_weight = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
@@ -170,6 +170,7 @@ namespace arc_dijkstras
 
             uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
             {
+                assert(current < buffer.size());
                 uint64_t current_position = current;
                 // Deserialize the value
                 const std::pair<NodeValueType, uint64_t> value_deserialized = value_deserializer(buffer, current_position);
@@ -347,13 +348,13 @@ namespace arc_dijkstras
                         const GraphEdge& current_edge = in_edges[in_edge_idx];
                         // Check from index to make sure it's in bounds
                         const int64_t from_index = current_edge.GetFromIndex();
-                        if (from_index < 0 || (size_t)from_index >= nodes.size())
+                        if (from_index < 0 || from_index >= (int64_t)nodes.size())
                         {
                             return false;
                         }
                         // Check to index to make sure it matches our own index
                         const int64_t to_index = current_edge.GetToIndex();
-                        if ((size_t)to_index != idx)
+                        if (to_index != (int64_t)idx)
                         {
                             return false;
                         }
@@ -370,7 +371,7 @@ namespace arc_dijkstras
                         for (size_t from_node_out_edge_idx = 0; from_node_out_edge_idx < from_node_out_edges.size(); from_node_out_edge_idx++)
                         {
                             const GraphEdge& current_from_node_out_edge = from_node_out_edges[from_node_out_edge_idx];
-                            if ((size_t)current_from_node_out_edge.GetToIndex() == idx)
+                            if (current_from_node_out_edge.GetToIndex() == (int64_t)idx)
                             {
                                 from_node_connection_valid = true;
                             }
@@ -387,13 +388,13 @@ namespace arc_dijkstras
                         const GraphEdge& current_edge = out_edges[out_edge_idx];
                         // Check from index to make sure it matches our own index
                         const int64_t from_index = current_edge.GetFromIndex();
-                        if ((size_t)from_index != idx)
+                        if (from_index != (int64_t)idx)
                         {
                             return false;
                         }
                         // Check to index to make sure it's in bounds
                         const int64_t to_index = current_edge.GetToIndex();
-                        if (to_index < 0 || (size_t)to_index >= nodes.size())
+                        if (to_index < 0 || to_index >= (int64_t)nodes.size())
                         {
                             return false;
                         }
@@ -410,7 +411,7 @@ namespace arc_dijkstras
                         for (size_t to_node_in_edge_idx = 0; to_node_in_edge_idx < to_node_in_edges.size(); to_node_in_edge_idx++)
                         {
                             const GraphEdge& current_to_node_in_edge = to_node_in_edges[to_node_in_edge_idx];
-                            if ((size_t)current_to_node_in_edge.GetFromIndex() == idx)
+                            if (current_to_node_in_edge.GetFromIndex() == (int64_t)idx)
                             {
                                 to_node_connection_valid = true;
                             }
@@ -437,14 +438,14 @@ namespace arc_dijkstras
             const GraphNode<NodeValueType, Allocator>& GetNodeImmutable(const int64_t index) const
             {
                 assert(index >= 0);
-                assert((size_t)index < nodes_.size());
+                assert(index < (int64_t)nodes_.size());
                 return nodes_[(size_t)index];
             }
 
             GraphNode<NodeValueType, Allocator>& GetNodeMutable(const int64_t index)
             {
                 assert(index >= 0);
-                assert((size_t)index < nodes_.size());
+                assert(index < (int64_t)nodes_.size());
                 return nodes_[(size_t)index];
             }
 
@@ -463,9 +464,9 @@ namespace arc_dijkstras
             void AddEdgeBetweenNodes(const int64_t from_index, const int64_t to_index, const double edge_weight)
             {
                 assert(from_index >= 0);
-                assert(from_index < nodes_.size());
+                assert(from_index < (int64_t)nodes_.size());
                 assert(to_index >= 0);
-                assert(to_index < nodes_.size());
+                assert(to_index < (int64_t)nodes_.size());
                 assert(from_index != to_index);
                 const GraphEdge new_edge(from_index, to_index, edge_weight);
                 GetNodeMutable(from_index).AddOutEdge(new_edge);
@@ -475,9 +476,9 @@ namespace arc_dijkstras
             void AddEdgesBetweenNodes(const int64_t first_index, const int64_t second_index, const double edge_weight)
             {
                 assert(first_index >= 0);
-                assert((size_t)first_index < nodes_.size());
+                assert(first_index < (int64_t)nodes_.size());
                 assert(second_index >= 0);
-                assert((size_t)second_index < nodes_.size());
+                assert(second_index < (int64_t)nodes_.size());
                 assert(first_index != second_index);
                 const GraphEdge first_edge(first_index, second_index, edge_weight);
                 GetNodeMutable(first_index).AddOutEdge(first_edge);
@@ -511,7 +512,7 @@ namespace arc_dijkstras
             static std::pair<Graph<NodeValueType, Allocator>, std::pair<std::vector<int64_t>, std::vector<double>>> PerformDijkstrasAlgorithm(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index)
             {
                 assert(start_index >= (int64_t)0);
-                assert((size_t)start_index < graph.GetNodesImmutable().size());
+                assert(start_index < (int64_t)graph.GetNodesImmutable().size());
                 Graph<NodeValueType, Allocator> working_copy = graph;
                 // Setup
                 std::vector<int64_t> previous_index_map(working_copy.GetNodesImmutable().size(), -1);
