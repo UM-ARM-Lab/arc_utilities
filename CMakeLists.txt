@@ -68,14 +68,20 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/simple_kmeans_clustering.hpp
     include/${PROJECT_NAME}/simple_hierarchical_clustering.hpp
     include/${PROJECT_NAME}/simple_hausdorff_distance.hpp
+    include/${PROJECT_NAME}/dijkstras.hpp
     src/${PROJECT_NAME}/zlib_helpers.cpp)
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
 
 # Simple test node for voxel_grid
 add_executable(test_arc_utilities src/test_arc_utilities.cpp)
-add_dependencies(test_arc_utilities ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
-target_link_libraries(test_arc_utilities ${catkin_LIBRARIES})
+add_dependencies(test_arc_utilities ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+target_link_libraries(test_arc_utilities ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+# Simple test node for Dijkstras
+add_executable(test_dijkstras src/test_dijkstras.cpp)
+add_dependencies(test_dijkstras ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+target_link_libraries(test_dijkstras ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 #############
 ## Install ##
@@ -83,12 +89,12 @@ target_link_libraries(test_arc_utilities ${catkin_LIBRARIES})
 
 ## Mark library for installation
 install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  PATTERN ".svn" EXCLUDE
+    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+    PATTERN ".svn" EXCLUDE
 )
