@@ -347,13 +347,13 @@ namespace arc_dijkstras
                         const GraphEdge& current_edge = in_edges[in_edge_idx];
                         // Check from index to make sure it's in bounds
                         const int64_t from_index = current_edge.GetFromIndex();
-                        if (from_index < 0 || from_index >= nodes.size())
+                        if (from_index < 0 || (size_t)from_index >= nodes.size())
                         {
                             return false;
                         }
                         // Check to index to make sure it matches our own index
                         const int64_t to_index = current_edge.GetToIndex();
-                        if (to_index != idx)
+                        if ((size_t)to_index != idx)
                         {
                             return false;
                         }
@@ -363,14 +363,14 @@ namespace arc_dijkstras
                             return false;
                         }
                         // Check to make sure that the from index node is linked to us
-                        const GraphNode<NodeValueType, Allocator>& from_node = nodes[from_index];
+                        const GraphNode<NodeValueType, Allocator>& from_node = nodes[(size_t)from_index];
                         const std::vector<GraphEdge>& from_node_out_edges = from_node.GetOutEdgesImmutable();
                         bool from_node_connection_valid = false;
                         // Make sure at least one out edge of the from index node corresponds to the current node
                         for (size_t from_node_out_edge_idx = 0; from_node_out_edge_idx < from_node_out_edges.size(); from_node_out_edge_idx++)
                         {
                             const GraphEdge& current_from_node_out_edge = from_node_out_edges[from_node_out_edge_idx];
-                            if (current_from_node_out_edge.GetToIndex() == idx)
+                            if ((size_t)current_from_node_out_edge.GetToIndex() == idx)
                             {
                                 from_node_connection_valid = true;
                             }
@@ -387,13 +387,13 @@ namespace arc_dijkstras
                         const GraphEdge& current_edge = out_edges[out_edge_idx];
                         // Check from index to make sure it matches our own index
                         const int64_t from_index = current_edge.GetFromIndex();
-                        if (from_index != idx)
+                        if ((size_t)from_index != idx)
                         {
                             return false;
                         }
                         // Check to index to make sure it's in bounds
                         const int64_t to_index = current_edge.GetToIndex();
-                        if (to_index < 0 || to_index >= nodes.size())
+                        if (to_index < 0 || (size_t)to_index >= nodes.size())
                         {
                             return false;
                         }
@@ -403,14 +403,14 @@ namespace arc_dijkstras
                             return false;
                         }
                         // Check to make sure that the to index node is linked to us
-                        const GraphNode<NodeValueType, Allocator>& to_node = nodes[to_index];
+                        const GraphNode<NodeValueType, Allocator>& to_node = nodes[(size_t)to_index];
                         const std::vector<GraphEdge>& to_node_in_edges = to_node.GetInEdgesImmutable();
                         bool to_node_connection_valid = false;
                         // Make sure at least one in edge of the to index node corresponds to the current node
                         for (size_t to_node_in_edge_idx = 0; to_node_in_edge_idx < to_node_in_edges.size(); to_node_in_edge_idx++)
                         {
                             const GraphEdge& current_to_node_in_edge = to_node_in_edges[to_node_in_edge_idx];
-                            if (current_to_node_in_edge.GetFromIndex() == idx)
+                            if ((size_t)current_to_node_in_edge.GetFromIndex() == idx)
                             {
                                 to_node_connection_valid = true;
                             }
