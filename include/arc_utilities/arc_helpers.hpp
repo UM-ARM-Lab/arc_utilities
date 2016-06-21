@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <random>
 #include <array>
+#include <map>
 
 #ifdef ENABLE_PARALLEL
 #include <omp.h>
@@ -540,6 +541,40 @@ namespace arc_helpers
         }
     };
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////                                       PROTOTYPES ONLY                                         /////
+    ///// Specializations for specific types - if you want a specialization for a new type, add it here /////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    template<typename T>
+    inline uint64_t SerializeFixedSizePOD(const T& item_to_serialize, std::vector<uint8_t>& buffer);
+
+    template<typename T>
+    inline std::pair<T, uint64_t> DeserializeFixedSizePOD(const std::vector<uint8_t>& buffer, const uint64_t current);
+
+    template<typename T, typename Allocator=std::allocator<T>>
+    inline uint64_t SerializeVector(const std::vector<T, Allocator>& vec_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& item_serializer);
+
+    template<typename T, typename Allocator=std::allocator<T>>
+    inline std::pair<std::vector<T, Allocator>, uint64_t> DeserializeVector(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& item_deserializer);
+
+    template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, T>>>
+    inline uint64_t SerializeMap(const std::map<Key, T, Compare, Allocator>& map_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const Key&, std::vector<uint8_t>&)>& key_serializer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& value_serializer);
+
+    template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, T>>>
+    inline std::pair<std::vector<T, Allocator>, uint64_t> DeserializeMap(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<Key, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& key_deserializer, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer);
+
+    template<typename First, typename Second>
+    inline uint64_t SerializePair(const std::pair<First, Second>& pair_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const First&, std::vector<uint8_t>&)>& first_serializer, const std::function<uint64_t(const Second&, std::vector<uint8_t>&)>& second_serializer);
+
+    template<typename First, typename Second>
+    inline const std::pair<std::pair<First, Second>, uint64_t> DeserializePair(std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<First, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& first_deserializer, const std::function<std::pair<Second, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& second_deserializer);
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////                                   IMPLEMENTATIONS ONLY                                        /////
+    ///// Specializations for specific types - if you want a specialization for a new type, add it here /////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     template<typename T>
     inline uint64_t SerializeFixedSizePOD(const T& item_to_serialize, std::vector<uint8_t>& buffer)
     {
@@ -606,6 +641,83 @@ namespace arc_helpers
             deserialized.push_back(deserialized_item.first);
             current_position += deserialized_item.second;
         }
+        // Figure out how many bytes were read
+        const uint64_t bytes_read = current_position - current;
+        return std::make_pair(deserialized, bytes_read);
+    }
+
+    template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, T>>>
+    inline uint64_t SerializeMap(const std::map<Key, T, Compare, Allocator>& map_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const Key&, std::vector<uint8_t>&)>& key_serializer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& value_serializer)
+    {
+        const uint64_t start_buffer_size = buffer.size();
+        // First, write a uint64_t size header
+        const uint64_t size = (uint64_t)map_to_serialize.size();
+        std::vector<uint8_t> size_header(sizeof(size), 0x00);
+        memcpy(&size_header[0], &size, sizeof(size));
+        // Move to buffer
+        buffer.insert(buffer.end(), size_header.begin(), size_header.end());
+        // Serialize the contained items
+        typename std::map<Key, T, Compare, Allocator>::const_iterator itr;
+        for (itr = map_to_serialize.begin(); itr != map_to_serialize.end(); ++itr)
+        {
+            SerializePair<Key, T>(*itr, buffer, key_serializer, value_serializer);
+        }
+        // Figure out how many bytes were written
+        const uint64_t end_buffer_size = buffer.size();
+        const uint64_t bytes_written = end_buffer_size - start_buffer_size;
+        return bytes_written;
+    }
+
+    template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, T>>>
+    inline std::pair<std::vector<T, Allocator>, uint64_t> DeserializeMap(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<Key, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& key_deserializer, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+    {
+        // First, try to load the header
+        assert(current < buffer.size());
+        assert((current + sizeof(uint64_t)) <= buffer.size());
+        // Load the header
+        uint64_t size = 0u;
+        memcpy(&size, &buffer[current], sizeof(uint64_t));
+        // Deserialize the items
+        std::map<Key, T, Compare, Allocator> deserialized;
+        uint64_t current_position = current + sizeof(uint64_t);
+        for (uint64_t idx = 0; idx < size; idx++)
+        {
+            std::pair<std::pair<Key, T>, uint64_t> deserialized_pair = DeserializePair(buffer, current_position, key_deserializer, value_deserializer);
+            deserialized.insert(deserialized_pair.first);
+            current_position += deserialized_pair.second;
+        }
+        // Figure out how many bytes were read
+        const uint64_t bytes_read = current_position - current;
+        return std::make_pair(deserialized, bytes_read);
+    }
+
+    template<typename First, typename Second>
+    inline uint64_t SerializePair(const std::pair<First, Second>& pair_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const First&, std::vector<uint8_t>&)>& first_serializer, const std::function<uint64_t(const Second&, std::vector<uint8_t>&)>& second_serializer)
+    {
+        const uint64_t start_buffer_size = buffer.size();
+        uint64_t running_total = 0u;
+        // Write each element of the pair into the buffer
+        running_total += first_serializer(pair_to_serialize.first, buffer);
+        running_total += second_serializer(pair_to_serialize.second, buffer);
+        // Figure out how many bytes were written
+        const uint64_t end_buffer_size = buffer.size();
+        const uint64_t bytes_written = end_buffer_size - start_buffer_size;
+        assert(bytes_written == running_total);
+        return bytes_written;
+    }
+
+    template<typename First, typename Second>
+    inline const std::pair<std::pair<First, Second>, uint64_t> DeserializePair(std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<First, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& first_deserializer, const std::function<std::pair<Second, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& second_deserializer)
+    {
+        assert(current < buffer.size());
+        // Deserialize each item in the pair individually
+        uint64_t current_position = current;
+        const std::pair<First, uint64_t> deserialized_first = first_deserializer(buffer, current_position);
+        current_position += deserialized_first.second;
+        const std::pair<Second, uint64_t> deserialized_second = second_deserializer(buffer, current_position);
+        current_position += deserialized_second.second;
+        // Build the resulting pair
+        const std::pair<First, Second> deserialized = std::make_pair<First, Second>(deserialized_first.first, deserialized_second.first);
         // Figure out how many bytes were read
         const uint64_t bytes_read = current_position - current;
         return std::make_pair(deserialized, bytes_read);
