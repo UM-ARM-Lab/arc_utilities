@@ -41,6 +41,55 @@ int main(int argc, char* argv[])
     graph.AddEdgesBetweenNodes(5, 8, 1.0);
 
     assert(graph.CheckGraphLinkage());
+
+    // Define the graph value serialization function
+    const auto value_serializer_fn = [] (const Eigen::Vector2d& value, std::vector<uint8_t>& buffer)
+    {
+//        return 0UL;
+
+        const uint64_t start_buffer_size = buffer.size();
+        uint64_t running_total = 0;
+
+        running_total += arc_helpers::SerializeFixedSizePOD<double>(value(0), buffer);
+        running_total += arc_helpers::SerializeFixedSizePOD<double>(value(1), buffer);
+
+        const uint64_t end_buffer_size = buffer.size();
+        const uint64_t bytes_written = end_buffer_size - start_buffer_size;
+
+        assert(running_total == bytes_written);
+
+        return bytes_written;
+    };
+
+    // Define the graph value serialization function
+    const auto value_deserializer_fn = [] (const std::vector<uint8_t>& buffer, const int64_t current)
+    {
+//        return std::make_pair(Eigen::Vector2d(), 0UL);
+
+        uint64_t current_position = current;
+
+        // Deserialze 2 doubles
+        std::pair<double, uint64_t> x = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+        current_position += x.second;
+        std::pair<double, uint64_t> y = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+        current_position += y.second;
+
+        const Eigen::Vector2d deserialized(x.first, y.first);
+
+        // Figure out how many bytes were read
+        const uint64_t bytes_read = current_position - current;
+        return std::make_pair(deserialized, bytes_read);
+    };
+
+    // Serialze the graph
+    std::vector<uint8_t> buffer;
+    graph.SerializeSelf(buffer, value_serializer_fn);
+
+    arc_dijkstras::Graph<Eigen::Vector2d> serialization_test;
+    auto deserialized_result = arc_dijkstras::Graph<Eigen::Vector2d>::Deserialize(buffer, 0, value_deserializer_fn);
+    assert(deserialized_result.first.CheckGraphLinkage());
+
+
     auto dijkstras_result_4connected = arc_dijkstras::SimpleDijkstrasAlgorithm<Eigen::Vector2d, std::allocator<Eigen::Vector2d>>::PerformDijkstrasAlgorithm(graph, 0);
 
     std::cout << "4-connected edges\n"
