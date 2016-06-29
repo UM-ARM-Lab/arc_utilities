@@ -144,7 +144,17 @@ namespace EigenHelpersConversions
         return vector_geom;
     }
 
-    inline EigenHelpers::VectorVector3d VectorGeometryPointToEigenVector3d(const std::vector<geometry_msgs::Point>& vector_geom)
+    inline std::vector<geometry_msgs::Point> VectorEigenVector3dToVectorGeometryPoint(const EigenHelpers::VectorVector3d& vector_eigen)
+    {
+        std::vector<geometry_msgs::Point> vector_geom(vector_eigen.size());
+        for (size_t idx = 0; idx < vector_eigen.size(); idx++)
+        {
+            vector_geom[idx] = EigenVector3dToGeometryPoint(vector_eigen[idx]);
+        }
+        return vector_geom;
+    }
+
+    inline EigenHelpers::VectorVector3d VectorGeometryPointToVectorEigenVector3d(const std::vector<geometry_msgs::Point>& vector_geom)
     {
         EigenHelpers::VectorVector3d vector_eigen(vector_geom.size());
         for (size_t idx = 0; idx < vector_geom.size(); idx++)

@@ -64,6 +64,12 @@ namespace arc_helpers
         }
     }
 
+    template <class T>
+    inline T ClampValue(const T& val, const T& min, const T& max)
+    {
+        return std::min(max, std::max(min, val));
+    }
+
     template<typename Datatype, typename Allocator=std::allocator<Datatype>>
     static Eigen::MatrixXd BuildDistanceMatrix(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
     {

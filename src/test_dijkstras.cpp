@@ -16,8 +16,6 @@ int main(int argc, char* argv[])
               << "  0 | 3 | 6\n\n";
 
     arc_dijkstras::Graph<Eigen::Vector2d> graph(9);
-    graph.AddNode(Eigen::Vector2d(0,0));
-    graph.AddNode(Eigen::Vector2d(1,1));
     for (double x = -1; x <= 1; x += 1)
     {
         for (double y = -1; y <= 1; y += 1)
@@ -71,16 +69,7 @@ int main(int argc, char* argv[])
     std::cout << "Previous graph indices: " << PrettyPrint::PrettyPrint(dijkstras_result_8connected.second.first) << std::endl;
     std::cout << "Distance              : " << PrettyPrint::PrettyPrint(dijkstras_result_8connected.second.second) << std::endl;
 
-
-
-
-
-
-
-
-
-
-    std::cout << "Serialization test... ";
+    std::cout << "\nSerialization test... ";
 
     arc_dijkstras::Graph<Eigen::Vector2d> serialization_test_graph(2);
     serialization_test_graph.AddNode(Eigen::Vector2d(0,0));
@@ -90,8 +79,6 @@ int main(int argc, char* argv[])
     // Define the graph value serialization function
     const auto value_serializer_fn = [] (const Eigen::Vector2d& value, std::vector<uint8_t>& buffer)
     {
-//        return 0UL;
-
         const uint64_t start_buffer_size = buffer.size();
         uint64_t running_total = 0;
 
@@ -109,8 +96,6 @@ int main(int argc, char* argv[])
     // Define the graph value serialization function
     const auto value_deserializer_fn = [] (const std::vector<uint8_t>& buffer, const int64_t current)
     {
-//        return std::make_pair(Eigen::Vector2d(), 0UL);
-
         uint64_t current_position = current;
 
         // Deserialze 2 doubles
