@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <functional>
+#include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
 #include <Eigen/Cholesky>
 #include <type_traits>
@@ -448,7 +449,7 @@ namespace arc_helpers
     {
     protected:
         const Eigen::VectorXd mean_;
-        const Eigen::MatrixXd chol_decomp_;
+        const Eigen::MatrixXd norm_transform_;
 
         std::normal_distribution<double> unit_gaussian_dist_;
 
@@ -463,14 +464,38 @@ namespace arc_helpers
                 draw(idx) = unit_gaussian_dist_(prng);
             }
 
-            return chol_decomp_ * draw + mean_;
+            return norm_transform_ * draw + mean_;
+        }
+
+        static Eigen::MatrixXd CalculateNormTransform(const Eigen::MatrixXd& covariance)
+        {
+            Eigen::MatrixXd norm_transform;
+
+            Eigen::LLT<Eigen::MatrixXd> chol_solver(covariance);
+
+            if (chol_solver.info() == Eigen::Success)
+            {
+                // Use cholesky solver
+                norm_transform = chol_solver.matrixL();
+            }
+            else
+            {
+                // Use eigen solver
+                Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver(covariance);
+                norm_transform = eigen_solver.eigenvectors() * eigen_solver.eigenvalues().cwiseMax(0.0).cwiseSqrt().asDiagonal();
+            }
+
+            return norm_transform;
         }
 
     public:
-        inline MultivariteGaussianDistribution(const Eigen::VectorXd& mean, const Eigen::MatrixXd& covariance) : mean_(mean), chol_decomp_(covariance.llt().matrixL().transpose()), unit_gaussian_dist_(0.0, 1.0)
+        inline MultivariteGaussianDistribution(const Eigen::VectorXd& mean, const Eigen::MatrixXd& covariance) : mean_(mean), norm_transform_(CalculateNormTransform(covariance)), unit_gaussian_dist_(0.0, 1.0)
         {
             assert(mean.rows() == covariance.rows());
             assert(covariance.cols() == covariance.rows());
+
+            assert(!(norm_transform_.unaryExpr([] (const double &val) { return std::isnan(val); })).any() && "NaN Found in norm_transform in MultivariateGaussianDistribution");
+            assert(!(norm_transform_.unaryExpr([] (const double &val) { return std::isinf(val); })).any() && "Inf Found in norm_transform in MultivariateGaussianDistribution");
         }
 
         template<typename Generator>
