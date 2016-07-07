@@ -741,16 +741,19 @@ namespace EigenHelpers
             sum_weights = (double)values.size();
         }
         // Do weighted averaging
-        double average = 0.0;
-        for (size_t idx = 0; idx < values.size(); idx++)
+        const double initial_weight = (use_weights) ? fabs(weights[0]) : 1.0;
+        const double& initial_element = values[0];
+        double average = initial_element * initial_weight;
+        for (size_t idx = 1; idx < values.size(); idx++)
         {
             double ew = 1.0;
             if (use_weights)
             {
                 ew = fabs(weights[idx]);
             }
+            const double prev_average = average;
             const double current = values[idx];
-            average += (ew / sum_weights) * current;
+            average = prev_average + ((ew / sum_weights) * (current - prev_average));
         }
         return average;
     }
@@ -780,16 +783,19 @@ namespace EigenHelpers
             sum_weights = (double)angles.size();
         }
         // Do weighted averaging
-        double average = angles[0];
-        for (size_t idx = 0; idx < angles.size(); idx++)
+        const double initial_weight = (use_weights) ? fabs(weights[0]) : 1.0;
+        const double& initial_angle = angles[0];
+        double average = initial_angle * initial_weight;
+        for (size_t idx = 1; idx < angles.size(); idx++)
         {
             double ew = 1.0;
             if (use_weights)
             {
                 ew = fabs(weights[idx]);
             }
-            const double current = angles[idx] - angles[0];
-            average += (ew / sum_weights) * current;
+            const double prev_average = average;
+            const double current = angles[idx];
+            average = prev_average + ((ew / sum_weights) * (current - prev_average));
         }
         return average;
     }
@@ -819,18 +825,23 @@ namespace EigenHelpers
             sum_weights = (double)vectors.size();
         }
         // Do the weighted averaging
-        Eigen::Vector3d sum_vector(0.0, 0.0, 0.0);
-        for (size_t idx = 0; idx < vectors.size(); idx++)
+
+        // Do the weighted averaging
+        const double initial_weight = (use_weights) ? fabs(weights[0]) : 1.0;
+        const Eigen::Vector3d& initial_element = vectors[0];
+        Eigen::Vector3d avg_vector = initial_element * initial_weight;
+        for (size_t idx = 1; idx < vectors.size(); idx++)
         {
             double ew = 1.0;
             if (use_weights)
             {
                 ew = fabs(weights[idx]);
             }
+            const Eigen::Vector3d prev_avg_vector = avg_vector;
             const Eigen::Vector3d& current = vectors[idx];
-            sum_vector += (ew / sum_weights) * current;
+            avg_vector = prev_avg_vector + ((ew / sum_weights) * (current - prev_avg_vector));
         }
-        return sum_vector;
+        return avg_vector;
     }
 
     inline Eigen::VectorXd AverageEigenVectorXd(const std::vector<Eigen::VectorXd>& vectors, const std::vector<double>& weights=std::vector<double>())
@@ -858,19 +869,21 @@ namespace EigenHelpers
             sum_weights = (double)vectors.size();
         }
         // Do the weighted averaging
-        Eigen::VectorXd sum_vector = Eigen::VectorXd::Zero(vectors[0].size());
-        for (size_t idx = 0; idx < vectors.size(); idx++)
+        const double initial_weight = (use_weights) ? fabs(weights[0]) : 1.0;
+        const Eigen::VectorXd& initial_element = vectors[0];
+        Eigen::VectorXd avg_vector = initial_element * initial_weight;
+        for (size_t idx = 1; idx < vectors.size(); idx++)
         {
             double ew = 1.0;
             if (use_weights)
             {
                 ew = fabs(weights[idx]);
             }
-            const Eigen::VectorXd& prev_sum = sum_vector;
+            const Eigen::VectorXd prev_avg_vector = avg_vector;
             const Eigen::VectorXd& current = vectors[idx];
-            sum_vector = prev_sum + ((ew / sum_weights) * (current - prev_sum));
+            avg_vector = prev_avg_vector + ((ew / sum_weights) * (current - prev_avg_vector));
         }
-        return sum_vector;
+        return avg_vector;
     }
 
     /*

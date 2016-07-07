@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <array>
 #include <vector>
 #include <deque>
@@ -119,7 +120,9 @@ namespace PrettyPrint
     {
         UNUSED(add_delimiters);
         UNUSED(separator);
-        return "Vector3d: <x: " + std::to_string(vector_to_print.x()) + " y: " + std::to_string(vector_to_print.y()) + " z: " + std::to_string(vector_to_print.z()) + ">";
+        std::ostringstream strm;
+        strm << std::setprecision(12) << "Vector3d: <x: " << vector_to_print.x() << " y: " << vector_to_print.y() << " z: " << vector_to_print.z() << ">";
+        return strm.str();
     }
 
     template<>
