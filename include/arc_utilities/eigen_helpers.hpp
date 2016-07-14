@@ -82,6 +82,17 @@ namespace EigenHelpers
         return true;
     }
 
+    template <typename Derived>
+    inline Eigen::MatrixXd ClampNorm(const Eigen::MatrixBase<Derived>& item_to_clamp, const double max_norm)
+    {
+        const double current_norm = item_to_clamp.norm();
+        if (current_norm > max_norm)
+        {
+            return item_to_clamp * (max_norm / current_norm);
+        }
+        return item_to_clamp;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Serialization/Deserialization functions
     ////////////////////////////////////////////////////////////////////////////
@@ -252,7 +263,7 @@ namespace EigenHelpers
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    // Helper functions
+    // Kinematics functions
     ////////////////////////////////////////////////////////////////////////////
 
     inline double EnforceContinuousRevoluteBounds(const double value)
