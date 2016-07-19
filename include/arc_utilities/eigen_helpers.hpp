@@ -290,7 +290,7 @@ namespace EigenHelpers
         }
     }
 
-    inline Eigen::Vector3d SafeNorm(const Eigen::Vector3d& vec)
+    inline Eigen::VectorXd SafeNormal(const Eigen::VectorXd& vec)
     {
         const double norm = vec.norm();
         if (norm > std::numeric_limits<double>::epsilon())
@@ -300,6 +300,82 @@ namespace EigenHelpers
         else
         {
             return vec;
+        }
+    }
+
+    inline double SquaredNorm(const std::vector<double>& vec)
+    {
+        double squared_norm = 0.0;
+        for (size_t idx = 0; idx < vec.size(); idx++)
+        {
+            const double element = vec[idx];
+            squared_norm += (element * element);
+        }
+        return squared_norm;
+    }
+
+    inline double Norm(const std::vector<double>& vec)
+    {
+        return sqrt(SquaredNorm(vec));
+    }
+
+    inline std::vector<double> Multiply(const std::vector<double>& vec, const double scalar)
+    {
+        std::vector<double> multiplied(vec.size(), 0.0);
+        for (size_t idx = 0; idx < multiplied.size(); idx++)
+        {
+            const double element = vec[idx];
+            multiplied[idx] = element * scalar;
+        }
+        return multiplied;
+    }
+
+    inline std::vector<double> Divide(const std::vector<double>& vec, const double scalar)
+    {
+        std::vector<double> divided(vec.size(), 0.0);
+        for (size_t idx = 0; idx < divided.size(); idx++)
+        {
+            const double element = vec[idx];
+            divided[idx] = element / scalar;
+        }
+        return divided;
+    }
+
+    inline std::vector<double> Add(const std::vector<double>& vec1, const std::vector<double>& vec2)
+    {
+        if (vec1.size() == vec2.size())
+        {
+            std::vector<double> added(vec1.size(), 0.0);
+            for (size_t idx = 0; idx < added.size(); idx++)
+            {
+                const double element1 = vec1[idx];
+                const double element2 = vec2[idx];
+                added[idx] = element1 + element2;
+            }
+            return added;
+        }
+        else
+        {
+            return std::vector<double>();
+        }
+    }
+
+    inline std::vector<double> Sub(const std::vector<double>& vec1, const std::vector<double>& vec2)
+    {
+        if (vec1.size() == vec2.size())
+        {
+            std::vector<double> subed(vec1.size(), 0.0);
+            for (size_t idx = 0; idx < subed.size(); idx++)
+            {
+                const double element1 = vec1[idx];
+                const double element2 = vec2[idx];
+                subed[idx] = element1 - element2;
+            }
+            return subed;
+        }
+        else
+        {
+            return std::vector<double>();
         }
     }
 
@@ -689,9 +765,31 @@ namespace EigenHelpers
         return eigen_vector;
     }
 
+    inline Eigen::VectorXd StdVectorDoubleToEigenVectorXd(const std::vector<double>& vector)
+    {
+        Eigen::VectorXd eigen_vector(vector.size());
+        for (size_t idx = 0; idx < vector.size(); idx++)
+        {
+            const double val = vector[idx];
+            eigen_vector((ssize_t)idx) = val;
+        }
+        return eigen_vector;
+    }
+
     inline std::vector<double> EigenVector3dToStdVectorDouble(const Eigen::Vector3d& point)
     {
         return std::vector<double>{point.x(), point.y(), point.z()};
+    }
+
+    inline std::vector<double> EigenVectorXdToStdVectorDouble(const Eigen::VectorXd& eigen_vector)
+    {
+        std::vector<double> vector((size_t)eigen_vector.size());
+        for (size_t idx = 0; idx < (size_t)eigen_vector.size(); idx++)
+        {
+            const double val = eigen_vector[(ssize_t)idx];
+            vector[idx] = val;
+        }
+        return vector;
     }
 
     // Takes <x, y, z, w> as is the ROS custom!
