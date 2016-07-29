@@ -1,10 +1,19 @@
 #include <ros/ros.h>
+#include <ros/callback_queue.h>
 
 #ifndef ROS_HELPERS_HPP
 #define ROS_HELPERS_HPP
 
 namespace ROSHelpers
 {
+    inline Spin(const double loop_rate)
+    {
+        while (ros::ok())
+        {
+            ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(loop_rate));
+        }
+    }
+
     template <typename T>
     inline T GetParam(ros::NodeHandle& nh, const std::string& param_name, const T& default_val)
     {
