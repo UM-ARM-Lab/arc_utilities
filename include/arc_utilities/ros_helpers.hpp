@@ -6,11 +6,11 @@
 
 namespace ROSHelpers
 {
-    inline Spin(const double loop_rate)
+    inline Spin(const double loop_period)
     {
         while (ros::ok())
         {
-            ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(loop_rate));
+            ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(loop_period));
         }
     }
 
