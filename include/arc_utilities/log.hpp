@@ -16,9 +16,21 @@
        ).str()                              \
    )
 
+#define LOG_STREAM(log, message)            \
+    (log).logMessage(                       \
+        static_cast<std::ostringstream&>(   \
+            std::ostringstream().flush()    \
+            << std::setprecision(12)        \
+            << message                      \
+       ).str()                              \
+   )
+
 #define LOG_COND(log, cond, message)        \
     if ((cond)) LOG(log, message)
 
+
+#define LOG_COND_STREAM(log, cond, message) \
+    if ((cond)) LOG_STREAM(log, message)
 
 // TODO: confirm that I havn't made any mistakes in this file
 namespace Log

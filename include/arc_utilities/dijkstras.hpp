@@ -314,7 +314,7 @@ namespace arc_dijkstras
 
             uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
             {
-                std::function<std::pair<GraphNode<NodeValueType, Allocator>, uint64_t>(const std::vector<uint8_t>&, const uint64_t)> graph_state_deserializer = std::bind(GraphNode<NodeValueType, Allocator>::Deserialize, std::placeholders::_1, std::placeholders::_2, value_deserializer);
+                const std::function<std::pair<GraphNode<NodeValueType, Allocator>, uint64_t>(const std::vector<uint8_t>&, const uint64_t)> graph_state_deserializer = std::bind(GraphNode<NodeValueType, Allocator>::Deserialize, std::placeholders::_1, std::placeholders::_2, value_deserializer);
                 const std::pair<std::vector<GraphNode<NodeValueType, Allocator>>, uint64_t> deserialized_nodes = arc_helpers::DeserializeVector<GraphNode<NodeValueType, Allocator>>(buffer, current, graph_state_deserializer);
                 nodes_ = deserialized_nodes.first;
                 return deserialized_nodes.second;
@@ -508,8 +508,9 @@ namespace arc_dijkstras
             {}
 
         public:
+            typedef std::pair<Graph<NodeValueType, Allocator>, std::pair<std::vector<int64_t>, std::vector<double>>> DijkstrasResult;
 
-            static std::pair<Graph<NodeValueType, Allocator>, std::pair<std::vector<int64_t>, std::vector<double>>> PerformDijkstrasAlgorithm(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index)
+            static DijkstrasResult PerformDijkstrasAlgorithm(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index)
             {
                 assert(start_index >= (int64_t)0);
                 assert(start_index < (int64_t)graph.GetNodesImmutable().size());
@@ -581,6 +582,45 @@ namespace arc_dijkstras
                     }
                 }
                 return std::make_pair(working_copy, std::make_pair(previous_index_map, distances));
+            }
+
+            // These functions have not been tested.  Use with care.
+            static uint64_t SerializeDijstrasResult(const DijkstrasResult& result, std::vector<uint8_t>& buffer, const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer)
+            {
+                const uint64_t start_buffer_size = buffer.size();
+                // Serialize the graph
+                result.first.SerializeSelf(buffer, value_serializer);
+                // Serialize the previous index
+                SerializeVector(result.second.first, std::bind(arc_helpers::SerializeFixedSizePOD<uint64_t>, std::placeholders::_1, std::placeholders::_2));
+                // Serialze the distances
+                SerializeVector(result.second.second, std::bind(arc_helpers::SerializeFixedSizePOD<uint64_t>, std::placeholders::_1, std::placeholders::_2));
+                // Figure out how many bytes were written
+                const uint64_t end_buffer_size = buffer.size();
+                const uint64_t bytes_written = end_buffer_size - start_buffer_size;
+                return bytes_written;
+            }
+
+            // These functions have not been tested.  Use with care.
+            static std::pair<DijkstrasResult, uint64_t> DijstrasResult(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+            {
+                assert(current < buffer.size());
+                uint64_t current_position = current;
+                // Deserialize the graph itself
+                std::pair<DijkstrasResult, uint64_t> deserialized;
+                const std::pair<Graph<NodeValueType, Allocator>, uint64_t> graph_deserialized = Graph<NodeValueType, Allocator>::Deserialize(buffer, current_position, value_deserializer);
+                deserialized.first.first = graph_deserialized.first;
+                current_position += graph_deserialized.second;
+                // Deserialize the previous index
+                const std::pair<std::vector<int64_t>, uint64_t> prev_index_deserialized = arc_helpers::DeserializeVector<int64_t>(buffer, current_position, std::bind(arc_helpers::DeserializeFixedSizePOD<uint64_t>, std::placeholders::_1, std::placeholders::_2));
+                deserialized.first.second.first = prev_index_deserialized.first;
+                current_position += prev_index_deserialized.second;
+                // Deserialize the distances
+                const std::pair<std::vector<double>, uint64_t> distance_deserialized = arc_helpers::DeserializeVector<double>(buffer, current_position, std::bind(arc_helpers::DeserializeFixedSizePOD<double>, std::placeholders::_1, std::placeholders::_2));
+                deserialized.first.second.second = distance_deserialized.first;
+                current_position += distance_deserialized.second;
+                // Figure out how many bytes were read
+                deserialized.second = current_position - current;
+                return deserialized;
             }
     };
 
