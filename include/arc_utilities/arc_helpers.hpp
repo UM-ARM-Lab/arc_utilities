@@ -65,6 +65,20 @@ namespace arc_helpers
         }
     }
 
+    template <typename T>
+    inline bool GetBit(const T current, const uint32_t bit_position)
+    {
+        const uint32_t mask = arc_helpers::SetBit((T)0, bit_position, true);
+        if ((mask & current) > 0)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     template <class T>
     inline T ClampValue(const T& val, const T& min, const T& max)
     {
@@ -743,10 +757,18 @@ namespace arc_helpers
         current_position += deserialized_second.second;
         // Build the resulting pair
         // TODO: Why can't I used make_pair here?
-        std::pair<First, Second> deserialized(deserialized_first.first, deserialized_second.first);
+        const std::pair<First, Second> deserialized(deserialized_first.first, deserialized_second.first);
         // Figure out how many bytes were read
         const uint64_t bytes_read = current_position - current;
         return std::make_pair(deserialized, bytes_read);
+    }
+
+    inline void ConditionalPrint(const std::string& msg, const int32_t msg_level, const int32_t print_level)
+    {
+        if (unlikely(msg_level <= print_level))
+        {
+            std::cout << msg << std::endl;
+        }
     }
 }
 

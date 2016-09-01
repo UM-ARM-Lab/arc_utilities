@@ -266,6 +266,20 @@ namespace EigenHelpers
     // Kinematics functions
     ////////////////////////////////////////////////////////////////////////////
 
+    inline Eigen::Vector3d RotateVector(const Eigen::Quaterniond& quat, const Eigen::Vector3d& vec)
+    {
+        const Eigen::Quaterniond temp(0.0, vec.x(), vec.y(), vec.z());
+        const Eigen::Quaterniond res = quat * (temp * quat.inverse());
+        return Eigen::Vector3d(res.x(), res.y(), res.z());
+    }
+
+    inline Eigen::Vector3d RotateVectorReverse(const Eigen::Quaterniond& quat, const Eigen::Vector3d& vec)
+    {
+        const Eigen::Quaterniond temp(0.0, vec.x(), vec.y(), vec.z());
+        const Eigen::Quaterniond res = quat.inverse() * (temp * quat);
+        return Eigen::Vector3d(res.x(), res.y(), res.z());
+    }
+
     inline double EnforceContinuousRevoluteBounds(const double value)
     {
         if ((value <= -M_PI) || (value > M_PI))
@@ -332,13 +346,8 @@ namespace EigenHelpers
 
     inline std::vector<double> Divide(const std::vector<double>& vec, const double scalar)
     {
-        std::vector<double> divided(vec.size(), 0.0);
-        for (size_t idx = 0; idx < divided.size(); idx++)
-        {
-            const double element = vec[idx];
-            divided[idx] = element / scalar;
-        }
-        return divided;
+        const double inv_scalar = 1.0 / scalar;
+        return Multiply(vec, inv_scalar);
     }
 
     inline std::vector<double> Add(const std::vector<double>& vec1, const std::vector<double>& vec2)
@@ -643,15 +652,40 @@ namespace EigenHelpers
     // Distance functions
     ////////////////////////////////////////////////////////////////////////////
 
+    inline double SquaredDistance(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2)
+    {
+        const double xd = v2.x() - v1.x();
+        const double yd = v2.y() - v1.y();
+        return ((xd * xd) + (yd * yd));
+    }
+
+    inline double Distance(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2)
+    {
+        return sqrt(SquaredDistance(v1, v2));
+    }
+
+    inline double SquaredDistance(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
+    {
+        const double xd = v2.x() - v1.x();
+        const double yd = v2.y() - v1.y();
+        const double zd = v2.z() - v1.z();
+        return ((xd * xd) + (yd * yd) + (zd * zd));
+    }
+
     inline double Distance(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
     {
-        return (v2 - v1).norm();
+        return sqrt(SquaredDistance(v1, v2));
+    }
+
+    inline double SquaredDistance(const Eigen::VectorXd& v1, const Eigen::VectorXd& v2)
+    {
+        assert(v1.size() == v2.size());
+        return (v2 - v1).squaredNorm();
     }
 
     inline double Distance(const Eigen::VectorXd& v1, const Eigen::VectorXd& v2)
     {
-        assert(v1.size() == v2.size());
-        return (v2 - v1).norm();
+        return sqrt(SquaredDistance(v1, v2));
     }
 
     inline double Distance(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2)
