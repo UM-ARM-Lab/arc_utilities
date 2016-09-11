@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     };
 
     // Define the graph value serialization function
-    const auto value_deserializer_fn = [] (const std::vector<uint8_t>& buffer, const int64_t current)
+    const auto value_deserializer_fn = [] (const std::vector<uint8_t>& buffer, const uint64_t current)
     {
         uint64_t current_position = current;
 

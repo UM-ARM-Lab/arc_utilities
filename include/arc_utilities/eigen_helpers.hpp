@@ -1165,6 +1165,44 @@ namespace EigenHelpers
     // Other auxiliary functions
     ////////////////////////////////////////////////////////////////////////////
 
+    /*
+     * Returns a pair of <centroid point, normal vector> defining the plane
+     */
+    inline std::pair<Eigen::VectorXd, Eigen::VectorXd> FitPlaneToPoints(const std::vector<Eigen::VectorXd>& points)
+    {
+        assert(points.size() >= 3);
+        // Subtract out the centroid
+        const Eigen::VectorXd centroid = EigenHelpers::AverageEigenVectorXd(points);
+        Eigen::MatrixXd centered_points(centroid.size(), points.size());
+        for (size_t idx = 0; idx < points.size(); idx++)
+        {
+            const Eigen::VectorXd& current_point = points[idx];
+            centered_points.block(0, (ssize_t)idx, centroid.size(), 1) = (current_point - centroid);
+        }
+        // Compute SVD of the centered points
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(centered_points, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        // Get results of SVD
+        const Eigen::JacobiSVD<Eigen::MatrixXd>::SingularValuesType& singular_values = svd.singularValues();
+        const Eigen::JacobiSVD<Eigen::MatrixXd>::MatrixUType& u_matrix = svd.matrixU();
+        // Get the left singular vector corresponding to the minimum singular value
+        double minimum_singular_value = INFINITY;
+        ssize_t best_singular_value_index = -1;
+        for (ssize_t idx = 0; idx < singular_values.size(); idx++)
+        {
+            const std::complex<double> current_singular_value = singular_values(idx);
+            if (current_singular_value.real() < minimum_singular_value)
+            {
+                minimum_singular_value = current_singular_value.real();
+                best_singular_value_index = idx;
+            }
+        }
+        assert(best_singular_value_index >= 0);
+        // The corresponding left singular vector is the normal vector of the best-fit plane
+        const Eigen::VectorXd best_left_singular_vector = u_matrix.col(best_singular_value_index);
+        const Eigen::VectorXd normal_vector = EigenHelpers::SafeNormal(best_left_singular_vector);
+        return std::make_pair(centroid, normal_vector);
+    }
+
     inline double SuggestedRcond()
     {
         return 0.001;

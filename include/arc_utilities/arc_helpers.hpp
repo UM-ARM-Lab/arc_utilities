@@ -97,8 +97,8 @@ namespace arc_helpers
             for (size_t jdx = idx; jdx < data.size(); jdx++)
             {
                 const double distance = distance_fn(data[idx], data[jdx]);
-                distance_matrix(idx, jdx) = distance;
-                distance_matrix(jdx, idx) = distance;
+                distance_matrix((ssize_t)idx, (ssize_t)jdx) = distance;
+                distance_matrix((ssize_t)jdx, (ssize_t)idx) = distance;
             }
         }
         return distance_matrix;
@@ -769,6 +769,20 @@ namespace arc_helpers
         {
             std::cout << msg << std::endl;
         }
+    }
+
+    inline bool CheckAllStringsForSubstring(const std::vector<std::string>& strings, const std::string& substring)
+    {
+        for (size_t idx = 0; idx < strings.size(); idx++)
+        {
+            const std::string& candidate_string = strings[idx];
+            const size_t found = candidate_string.find(substring);
+            if (found == std::string::npos)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }
 
