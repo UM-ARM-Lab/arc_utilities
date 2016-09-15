@@ -64,12 +64,12 @@ namespace simple_hierarchical_clustering
                         // Make sure the other point isn't us, and isn't already in a cluster
                         if ((idx != jdx) && (datapoint_mask[jdx] == 0))
                         {
-                            const double& current_distance = distance_matrix(idx, jdx);
+                            const double& current_distance = distance_matrix((ssize_t)idx, (ssize_t)jdx);
                             // Update the closest point
                             if (current_distance < min_point_point_distance)
                             {
                                 min_point_point_distance = current_distance;
-                                min_point_index = jdx;
+                                min_point_index = (int64_t)jdx;
                             }
                         }
                     }
@@ -86,7 +86,7 @@ namespace simple_hierarchical_clustering
                             for (size_t cpdx = 0; cpdx < clusters[cdx].size(); cpdx++)
                             {
                                 const int64_t& current_cluster_point_index = clusters[cdx][cpdx];
-                                const double& new_distance = distance_matrix(idx, current_cluster_point_index);
+                                const double& new_distance = distance_matrix((ssize_t)idx, (ssize_t)current_cluster_point_index);
                                 if (new_distance > current_distance)
                                 {
                                     current_distance = new_distance;
@@ -96,7 +96,7 @@ namespace simple_hierarchical_clustering
                             if (current_distance < min_point_cluster_distance)
                             {
                                 min_point_cluster_distance = current_distance;
-                                min_cluster_index = cdx;
+                                min_cluster_index = (int64_t)cdx;
                             }
                         }
                     }
@@ -124,14 +124,14 @@ namespace simple_hierarchical_clustering
                     if (min_point_point_distance < min_distance)
                     {
                         min_distance = min_point_point_distance;
-                        min_element_pair.first = idx;
+                        min_element_pair.first = (int64_t)idx;
                         min_element_pair.second.first = false;
                         min_element_pair.second.second = min_point_index;
                     }
                     if (min_point_cluster_distance < min_distance)
                     {
                         min_distance = min_point_cluster_distance;
-                        min_element_pair.first = idx;
+                        min_element_pair.first = (int64_t)idx;
                         min_element_pair.second.first = true;
                         min_element_pair.second.second = min_cluster_index;
                     }
@@ -207,8 +207,8 @@ namespace simple_hierarchical_clustering
                                 if (cluster_cluster_distance < min_cluster_cluster_distance)
                                 {
                                     min_cluster_cluster_distance = cluster_cluster_distance;
-                                    min_cluster_pair.first = fcdx;
-                                    min_cluster_pair.second = scdx;
+                                    min_cluster_pair.first = (int64_t)fcdx;
+                                    min_cluster_pair.second = (int64_t)scdx;
                                 }
 #endif
                             }
@@ -292,8 +292,8 @@ namespace simple_hierarchical_clustering
                         // Add a cluster
                         cluster_indices.push_back(std::vector<int64_t>{first_element_index, second_element_index});
                         // Mask out the indices
-                        datapoint_mask[first_element_index] = 1u;
-                        datapoint_mask[second_element_index] = 1u;
+                        datapoint_mask[(size_t)first_element_index] = 1u;
+                        datapoint_mask[(size_t)second_element_index] = 1u;
                     }
                     // If both elements are clusters, merge the clusters
                     else if ((first_element.first == true) && (second_element.first == true))
@@ -305,8 +305,8 @@ namespace simple_hierarchical_clustering
                         const int64_t second_cluster_index = second_element.second;
                         assert(second_cluster_index >= 0);
                         // Merge the second cluster into the first
-                        std::vector<int64_t>& first_cluster = cluster_indices[first_cluster_index];
-                        std::vector<int64_t>& second_cluster = cluster_indices[second_cluster_index];
+                        std::vector<int64_t>& first_cluster = cluster_indices[(size_t)first_cluster_index];
+                        std::vector<int64_t>& second_cluster = cluster_indices[(size_t)second_cluster_index];
                         first_cluster.insert(first_cluster.end(), second_cluster.begin(), second_cluster.end());
                         // Empty the second cluster (we don't remove, because this triggers move)
                         second_cluster.clear();
@@ -334,10 +334,10 @@ namespace simple_hierarchical_clustering
                         assert(cluster_index >= 0);
                         assert(element_index >= 0);
                         // Add the element to the cluster
-                        std::vector<int64_t>& cluster = cluster_indices[cluster_index];
+                        std::vector<int64_t>& cluster = cluster_indices[(size_t)cluster_index];
                         cluster.push_back(element_index);
                         // Mask out the element index
-                        datapoint_mask[element_index] = 1u;
+                        datapoint_mask[(size_t)element_index] = 1u;
                     }
                 }
                 else
@@ -357,7 +357,7 @@ namespace simple_hierarchical_clustering
                     for (size_t cdx = 0; cdx < current_cluster.size(); cdx++)
                     {
                         const int64_t index = current_cluster[cdx];
-                        new_cluster.push_back(data[index]);
+                        new_cluster.push_back(data[(size_t)index]);
                     }
                     clusters.push_back(new_cluster);
                 }

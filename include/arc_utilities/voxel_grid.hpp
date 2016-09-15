@@ -69,11 +69,11 @@ namespace VoxelGrid
             {
                 throw std::invalid_argument("cell_x_size must be positive and non-zero");
             }
-            if (isnan(cell_x_size))
+            if (std::isnan(cell_x_size))
             {
                 throw std::invalid_argument("cell_x_size must not be NaN");
             }
-            if (isinf(cell_x_size) != 0)
+            if (std::isinf(cell_x_size) != 0)
             {
                 throw std::invalid_argument("cell_x_size must not be INF");
             }
@@ -81,11 +81,11 @@ namespace VoxelGrid
             {
                 throw std::invalid_argument("cell_y_size must be positive and non-zero");
             }
-            if (isnan(cell_y_size))
+            if (std::isnan(cell_y_size))
             {
                 throw std::invalid_argument("cell_y_size must not be NaN");
             }
-            if (isinf(cell_y_size) != 0)
+            if (std::isinf(cell_y_size) != 0)
             {
                 throw std::invalid_argument("cell_y_size must not be INF");
             }
@@ -93,11 +93,11 @@ namespace VoxelGrid
             {
                 throw std::invalid_argument("cell_z_size must be positive and non-zero");
             }
-            if (isnan(cell_z_size))
+            if (std::isnan(cell_z_size))
             {
                 throw std::invalid_argument("cell_z_size must not be NaN");
             }
-            if (isinf(cell_z_size) != 0)
+            if (std::isinf(cell_z_size) != 0)
             {
                 throw std::invalid_argument("cell_z_size must not be INF");
             }
@@ -113,27 +113,27 @@ namespace VoxelGrid
             {
                 throw std::invalid_argument("z_size must be positive and non-zero");
             }
-            if (isnan(x_size))
+            if (std::isnan(x_size))
             {
                 throw std::invalid_argument("x_size must not be NaN");
             }
-            if (isnan(y_size))
+            if (std::isnan(y_size))
             {
                 throw std::invalid_argument("y_size must not be NaN");
             }
-            if (isnan(z_size))
+            if (std::isnan(z_size))
             {
                 throw std::invalid_argument("z_size must not be NaN");
             }
-            if (isinf(x_size) != 0)
+            if (std::isinf(x_size) != 0)
             {
                 throw std::invalid_argument("x_size must not be INF");
             }
-            if (isinf(y_size) != 0)
+            if (std::isinf(y_size) != 0)
             {
                 throw std::invalid_argument("y_size must not be INF");
             }
-            if (isinf(z_size) != 0)
+            if (std::isinf(z_size) != 0)
             {
                 throw std::invalid_argument("z_size must not be INF");
             }
@@ -145,11 +145,11 @@ namespace VoxelGrid
             {
                 throw std::invalid_argument("cell_x_size must be positive and non-zero");
             }
-            if (isnan(cell_x_size))
+            if (std::isnan(cell_x_size))
             {
                 throw std::invalid_argument("cell_x_size must not be NaN");
             }
-            if (isinf(cell_x_size) != 0)
+            if (std::isinf(cell_x_size) != 0)
             {
                 throw std::invalid_argument("cell_x_size must not be INF");
             }
@@ -157,11 +157,11 @@ namespace VoxelGrid
             {
                 throw std::invalid_argument("cell_y_size must be positive and non-zero");
             }
-            if (isnan(cell_y_size))
+            if (std::isnan(cell_y_size))
             {
                 throw std::invalid_argument("cell_y_size must not be NaN");
             }
-            if (isinf(cell_y_size) != 0)
+            if (std::isinf(cell_y_size) != 0)
             {
                 throw std::invalid_argument("cell_y_size must not be INF");
             }
@@ -169,11 +169,11 @@ namespace VoxelGrid
             {
                 throw std::invalid_argument("cell_z_size must be positive and non-zero");
             }
-            if (isnan(cell_z_size))
+            if (std::isnan(cell_z_size))
             {
                 throw std::invalid_argument("cell_z_size must not be NaN");
             }
-            if (isinf(cell_z_size) != 0)
+            if (std::isinf(cell_z_size) != 0)
             {
                 throw std::invalid_argument("cell_z_size must not be INF");
             }

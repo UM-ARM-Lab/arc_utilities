@@ -65,6 +65,20 @@ namespace arc_helpers
         }
     }
 
+    template <typename T>
+    inline bool GetBit(const T current, const uint32_t bit_position)
+    {
+        const uint32_t mask = arc_helpers::SetBit((T)0, bit_position, true);
+        if ((mask & current) > 0)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     template <class T>
     inline T ClampValue(const T& val, const T& min, const T& max)
     {
@@ -83,8 +97,8 @@ namespace arc_helpers
             for (size_t jdx = idx; jdx < data.size(); jdx++)
             {
                 const double distance = distance_fn(data[idx], data[jdx]);
-                distance_matrix(idx, jdx) = distance;
-                distance_matrix(jdx, idx) = distance;
+                distance_matrix((ssize_t)idx, (ssize_t)jdx) = distance;
+                distance_matrix((ssize_t)jdx, (ssize_t)idx) = distance;
             }
         }
         return distance_matrix;
@@ -743,10 +757,32 @@ namespace arc_helpers
         current_position += deserialized_second.second;
         // Build the resulting pair
         // TODO: Why can't I used make_pair here?
-        std::pair<First, Second> deserialized(deserialized_first.first, deserialized_second.first);
+        const std::pair<First, Second> deserialized(deserialized_first.first, deserialized_second.first);
         // Figure out how many bytes were read
         const uint64_t bytes_read = current_position - current;
         return std::make_pair(deserialized, bytes_read);
+    }
+
+    inline void ConditionalPrint(const std::string& msg, const int32_t msg_level, const int32_t print_level)
+    {
+        if (unlikely(msg_level <= print_level))
+        {
+            std::cout << msg << std::endl;
+        }
+    }
+
+    inline bool CheckAllStringsForSubstring(const std::vector<std::string>& strings, const std::string& substring)
+    {
+        for (size_t idx = 0; idx < strings.size(); idx++)
+        {
+            const std::string& candidate_string = strings[idx];
+            const size_t found = candidate_string.find(substring);
+            if (found == std::string::npos)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }
 
