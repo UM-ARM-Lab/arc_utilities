@@ -330,7 +330,7 @@ namespace EigenHelpers
 
     inline double Norm(const std::vector<double>& vec)
     {
-        return sqrt(SquaredNorm(vec));
+        return std::sqrt(SquaredNorm(vec));
     }
 
     inline std::vector<double> Multiply(const std::vector<double>& vec, const double scalar)
@@ -344,10 +344,48 @@ namespace EigenHelpers
         return multiplied;
     }
 
+    inline std::vector<double> Multiply(const std::vector<double>& vec1, const std::vector<double>& vec2)
+    {
+        if (vec1.size() == vec2.size())
+        {
+            std::vector<double> multiplied(vec1.size(), 0.0);
+            for (size_t idx = 0; idx < multiplied.size(); idx++)
+            {
+                const double element1 = vec1[idx];
+                const double element2 = vec2[idx];
+                multiplied[idx] = element1 * element2;
+            }
+            return multiplied;
+        }
+        else
+        {
+            return std::vector<double>();
+        }
+    }
+
     inline std::vector<double> Divide(const std::vector<double>& vec, const double scalar)
     {
         const double inv_scalar = 1.0 / scalar;
         return Multiply(vec, inv_scalar);
+    }
+
+    inline std::vector<double> Divide(const std::vector<double>& vec1, const std::vector<double>& vec2)
+    {
+        if (vec1.size() == vec2.size())
+        {
+            std::vector<double> divided(vec1.size(), 0.0);
+            for (size_t idx = 0; idx < divided.size(); idx++)
+            {
+                const double element1 = vec1[idx];
+                const double element2 = vec2[idx];
+                divided[idx] = element1 / element2;
+            }
+            return divided;
+        }
+        else
+        {
+            return std::vector<double>();
+        }
     }
 
     inline std::vector<double> Add(const std::vector<double>& vec1, const std::vector<double>& vec2)
@@ -570,10 +608,10 @@ namespace EigenHelpers
             std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
         }
         // Safety check inputs
-        size_t len = v1.size();
-        if (len == v2.size())
+        const size_t len = v1.size();
+        if (len != v2.size())
         {
-            std::cerr << "Vectors to interpolate are different sizes" << std::endl;
+            std::cerr << "Vectors to interpolate are different sizes (" << v1.size() << " versus " << v2.size() << ")" << std::endl;
             return std::vector<double>();
         }
         // Interpolate

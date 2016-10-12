@@ -784,6 +784,36 @@ namespace arc_helpers
         }
         return true;
     }
+
+    template <typename Key, typename Value, typename Compare=std::less<Key>, typename Allocator=std::allocator<std::pair<const Key, Value>>>
+    inline std::vector<Key> GetKeys(const std::map<Key, Value, Compare, Allocator>& map)
+    {
+        std::vector<Key> keys;
+        keys.reserve(map.size());
+        typename std::map<Key, Value, Compare, Allocator>::const_iterator itr;
+        for (itr = map.begin(); itr != map.end(); ++itr)
+        {
+            const Key cur_key = itr->first;
+            keys.push_back(cur_key);
+        }
+        keys.shrink_to_fit();
+        return keys;
+    }
+
+    template <typename Key, typename Value, typename Compare=std::less<Key>, typename Allocator=std::allocator<std::pair<const Key, Value>>>
+    inline std::vector<std::pair<const Key, Value>, Allocator> GetKeysAndValues(const std::map<Key, Value, Compare, Allocator>& map)
+    {
+        std::vector<std::pair<const Key, Value>, Allocator> keys_and_values;
+        keys_and_values.reserve(map.size());
+        typename std::map<Key, Value, Compare, Allocator>::const_iterator itr;
+        for (itr = map.begin(); itr != map.end(); ++itr)
+        {
+            const std::pair<Key, Value> cur_pair(itr->first, itr->second);
+            keys_and_values.push_back(cur_pair);
+        }
+        keys_and_values.shrink_to_fit();
+        return keys_and_values;
+    }
 }
 
 #endif // ARC_HELPERS_HPP
