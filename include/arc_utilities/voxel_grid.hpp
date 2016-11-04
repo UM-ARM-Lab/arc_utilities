@@ -41,6 +41,9 @@ namespace VoxelGrid
         double cell_x_size_;
         double cell_y_size_;
         double cell_z_size_;
+        double inv_cell_x_size_;
+        double inv_cell_y_size_;
+        double inv_cell_z_size_;
         double x_size_;
         double y_size_;
         double z_size_;
@@ -197,6 +200,9 @@ namespace VoxelGrid
             cell_x_size_ = fabs(cell_x_size);
             cell_y_size_ = fabs(cell_y_size);
             cell_z_size_ = fabs(cell_z_size);
+            inv_cell_x_size_ = 1.0 / cell_x_size_;
+            inv_cell_y_size_ = 1.0 / cell_y_size_;
+            inv_cell_z_size_ = 1.0 / cell_z_size_;
             num_x_cells_ = num_x_cells;
             num_y_cells_ = num_y_cells;
             num_z_cells_ = num_z_cells;
@@ -211,6 +217,8 @@ namespace VoxelGrid
         }
 
     public:
+
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const double x_size, const double y_size, double const z_size, const T& default_value)
         {
@@ -294,11 +302,14 @@ namespace VoxelGrid
 
         VoxelGrid()
         {
-            origin_transform_.setIdentity();
+            origin_transform_ = Eigen::Affine3d::Identity();
             inverse_origin_transform_ = origin_transform_.inverse();
             cell_x_size_ = 0.0;
             cell_y_size_ = 0.0;
             cell_z_size_ = 0.0;
+            inv_cell_x_size_ = 0.0;
+            inv_cell_y_size_ = 0.0;
+            inv_cell_z_size_ = 0.0;
             x_size_ = 0.0;
             y_size_ = 0.0;
             z_size_ = 0.0;
@@ -615,9 +626,9 @@ namespace VoxelGrid
         {
             assert(initialized_);
             const Eigen::Vector3d point_in_grid_frame = inverse_origin_transform_ * location;
-            const int64_t x_cell = (int64_t)(point_in_grid_frame.x() / cell_x_size_);
-            const int64_t y_cell = (int64_t)(point_in_grid_frame.y() / cell_y_size_);
-            const int64_t z_cell = (int64_t)(point_in_grid_frame.z() / cell_z_size_);
+            const int64_t x_cell = (int64_t)(point_in_grid_frame.x() * inv_cell_x_size_);
+            const int64_t y_cell = (int64_t)(point_in_grid_frame.y() * inv_cell_y_size_);
+            const int64_t z_cell = (int64_t)(point_in_grid_frame.z() * inv_cell_z_size_);
             if (IndexInBounds(x_cell, y_cell, z_cell))
             {
                 return std::vector<int64_t>{x_cell, y_cell, z_cell};
