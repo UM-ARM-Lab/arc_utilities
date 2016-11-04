@@ -9,7 +9,7 @@
 #include <mutex>
 #include <Eigen/Geometry>
 
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_HAUSDORFF_DISTANCE
     #include <omp.h>
 #endif
 
@@ -26,7 +26,7 @@ namespace simple_hausdorff_distance
 
         static inline size_t GetNumOMPThreads()
         {
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_HAUSDORFF_DISTANCE
             size_t num_threads = 0;
             #pragma omp parallel
             {
@@ -45,9 +45,9 @@ namespace simple_hausdorff_distance
         {
             // Compute the Hausdorff distance - the "maximum minimum" distance
             double maximum_minimum_distance = 0.0;
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_HAUSDORFF_DISTANCE
             std::vector<double> thread_temp_storage(GetNumOMPThreads(), 0.0);
-            #pragma omp parallel for schedule(guided)
+            #pragma omp parallel for
 #endif
             for (size_t idx = 0; idx < first_distribution.size(); idx++)
             {
@@ -62,7 +62,7 @@ namespace simple_hausdorff_distance
                         minimum_distance = current_distance;
                     }
                 }
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_HAUSDORFF_DISTANCE
                 const size_t current_thread_id = (size_t)omp_get_thread_num();
                 if (minimum_distance > thread_temp_storage[current_thread_id])
                 {
@@ -75,7 +75,7 @@ namespace simple_hausdorff_distance
                 }
 #endif
             }
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_HAUSDORFF_DISTANCE
             for (size_t idx = 0; idx < thread_temp_storage.size(); idx++)
             {
                 const double& temp_minimum_distance = thread_temp_storage[idx];
