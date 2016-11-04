@@ -9,7 +9,7 @@
 #include <arc_utilities/arc_helpers.hpp>
 #include <Eigen/Geometry>
 
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
     #include <omp.h>
 #endif
 
@@ -26,7 +26,7 @@ namespace simple_hierarchical_clustering
 
         static inline size_t GetNumOMPThreads()
         {
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
             size_t num_threads = 0;
             #pragma omp parallel
             {
@@ -42,11 +42,11 @@ namespace simple_hierarchical_clustering
         {
             // Compute distances between unclustered points <-> unclustered points, unclustered_points <-> clusters, and clusters <-> clusters
             // Compute the minimum unclustered point <-> unclustered point / unclustered_point <-> cluster distance
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
             const size_t num_threads = GetNumOMPThreads();
             std::vector<double> per_thread_min_distances(num_threads, INFINITY);
             std::vector<std::pair<int64_t, std::pair<bool, int64_t>>> per_thread_min_element_pairs(num_threads, std::make_pair(-1, std::make_pair(false, -1)));
-            #pragma omp parallel for schedule(guided)
+            #pragma omp parallel for
 #else
             double min_distance = INFINITY;
             std::pair<int64_t, std::pair<bool, int64_t>> min_element_pair(-1, std::pair<bool, int64_t>(false, -1));
@@ -100,7 +100,7 @@ namespace simple_hierarchical_clustering
                             }
                         }
                     }
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
                     const size_t thread_num = (size_t)omp_get_thread_num();
                     double& per_thread_min_distance = per_thread_min_distances[thread_num];
                     std::pair<int64_t, std::pair<bool, int64_t>>& per_thread_min_element_pair = per_thread_min_element_pairs[thread_num];
@@ -138,7 +138,7 @@ namespace simple_hierarchical_clustering
 #endif
                 }
             }
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
             double min_distance = INFINITY;
             std::pair<int64_t, std::pair<bool, int64_t>> min_element_pair(-1, std::pair<bool, int64_t>(false, -1));
             for (size_t idx = 0; idx < num_threads; idx++)
@@ -153,10 +153,10 @@ namespace simple_hierarchical_clustering
             }
 #endif
             // Compute the minimum cluster <-> cluster distance
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
             std::vector<double> per_thread_min_cluster_cluster_distances(num_threads, INFINITY);
             std::vector<std::pair<int64_t, int64_t>> per_thread_min_cluster_pairs(num_threads, std::make_pair(-1, -1));
-            #pragma omp parallel for schedule(guided)
+            #pragma omp parallel for
 #else
             double min_cluster_cluster_distance = INFINITY;
             std::pair<int64_t, int64_t> min_cluster_pair(-1, -1);
@@ -193,7 +193,7 @@ namespace simple_hierarchical_clustering
                                     }
                                 }
                                 const double cluster_cluster_distance = max_point_point_distance;
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
                                 const size_t thread_num = (size_t)omp_get_thread_num();
                                 double& per_thread_min_cluster_cluster_distance = per_thread_min_cluster_cluster_distances[thread_num];
                                 std::pair<int64_t, int64_t>& per_thread_min_cluster_pair = per_thread_min_cluster_pairs[thread_num];
@@ -216,7 +216,7 @@ namespace simple_hierarchical_clustering
                     }
                 }
             }
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
             double min_cluster_cluster_distance = INFINITY;
             std::pair<int64_t, int64_t> min_cluster_pair(-1, -1);
             for (size_t idx = 0; idx < num_threads; idx++)
