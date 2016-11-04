@@ -333,6 +333,16 @@ namespace EigenHelpers
         return std::sqrt(SquaredNorm(vec));
     }
 
+    inline std::vector<double> Abs(const std::vector<double>& vec)
+    {
+        std::vector<double> absed(vec.size(), 0.0);
+        for (size_t idx = 0; idx < absed.size(); idx++)
+        {
+            absed[idx] = std::abs(vec[idx]);
+        }
+        return absed;
+    }
+
     inline std::vector<double> Multiply(const std::vector<double>& vec, const double scalar)
     {
         std::vector<double> multiplied(vec.size(), 0.0);
