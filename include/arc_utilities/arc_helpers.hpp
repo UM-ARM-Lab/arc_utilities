@@ -9,7 +9,7 @@
 #include <array>
 #include <map>
 
-#ifdef ENABLE_PARALLEL
+#ifdef ENABLE_PARALLEL_DISTANCE_MATRIX
 #include <omp.h>
 #endif
 
@@ -86,11 +86,11 @@ namespace arc_helpers
     }
 
     template<typename Datatype, typename Allocator=std::allocator<Datatype>>
-    static Eigen::MatrixXd BuildDistanceMatrix(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
+    inline Eigen::MatrixXd BuildDistanceMatrix(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
     {
         Eigen::MatrixXd distance_matrix(data.size(), data.size());
-#ifdef ENABLE_PARALLEL
-        #pragma omp parallel for schedule(guided)
+#ifdef ENABLE_PARALLEL_DISTANCE_MATRIX
+        #pragma omp parallel for
 #endif
         for (size_t idx = 0; idx < data.size(); idx++)
         {
