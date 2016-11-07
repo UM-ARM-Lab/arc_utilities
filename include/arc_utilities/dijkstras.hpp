@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
-
+#include <Eigen/Geometry>
 #include <arc_utilities/arc_helpers.hpp>
 
 namespace arc_dijkstras
@@ -78,6 +78,11 @@ namespace arc_dijkstras
                 return (from_index_ == other.GetFromIndex() && to_index_ == other.GetToIndex() && weight_ == other.GetWeight());
             }
 
+            std::string Print() const
+            {
+                return std::string("(" + std::to_string(from_index_) + "->" + std::to_string(to_index_) + ") : " + std::to_string(weight_));
+            }
+
             int64_t GetFromIndex() const
             {
                 return from_index_;
@@ -111,7 +116,7 @@ namespace arc_dijkstras
 
     inline std::ostream& operator<< (std::ostream& stream, const GraphEdge& edge)
     {
-        stream << edge.GetFromIndex() << " " << edge.GetToIndex() << " " << edge.GetWeight();
+        stream << edge.Print();
         return stream;
     }
 
@@ -126,6 +131,8 @@ namespace arc_dijkstras
             std::vector<GraphEdge> out_edges_;
 
         public:
+
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
             static uint64_t Serialize(const GraphNode<NodeValueType, Allocator>& node, std::vector<uint8_t>& buffer, const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer)
             {
@@ -193,6 +200,30 @@ namespace arc_dijkstras
                 return bytes_read;
             }
 
+            std::string Print() const
+            {
+                std::ostringstream strm;
+                strm << "Node : " << distance_ << " In Edges : ";
+                if (in_edges_.size() > 0)
+                {
+                    strm << in_edges_[0].Print();
+                    for (size_t idx = 1; idx < in_edges_.size(); idx++)
+                    {
+                        strm << ", " << in_edges_[idx].Print();
+                    }
+                }
+                strm << " Out Edges : ";
+                if (out_edges_.size() > 0)
+                {
+                    strm << out_edges_[0].Print();
+                    for (size_t idx = 1; idx < out_edges_.size(); idx++)
+                    {
+                        strm << ", " << out_edges_[idx].Print();
+                    }
+                }
+                return strm.str();
+            }
+
             const NodeValueType& GetValueImmutable() const
             {
                 return value_;
@@ -255,9 +286,9 @@ namespace arc_dijkstras
             }
 
             void SetOutEdges(const std::vector<GraphEdge>& new_out_edges)
-        {
-            out_edges_ = new_out_edges;
-        }
+            {
+                out_edges_ = new_out_edges;
+            }
     };
 
     template<typename NodeValueType, typename Allocator=std::allocator<NodeValueType>>
@@ -318,6 +349,21 @@ namespace arc_dijkstras
                 const std::pair<std::vector<GraphNode<NodeValueType, Allocator>>, uint64_t> deserialized_nodes = arc_helpers::DeserializeVector<GraphNode<NodeValueType, Allocator>>(buffer, current, graph_state_deserializer);
                 nodes_ = deserialized_nodes.first;
                 return deserialized_nodes.second;
+            }
+
+            std::string Print() const
+            {
+                std::ostringstream strm;
+                strm << "Graph - Nodes : ";
+                if (nodes_.size() > 0)
+                {
+                    strm << nodes_[0].Print();
+                    for (size_t idx = 1; idx < nodes_.size(); idx++)
+                    {
+                        strm << "\n" << nodes_[idx].Print();
+                    }
+                }
+                return strm.str();
             }
 
             void ShrinkToFit()
