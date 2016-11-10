@@ -68,6 +68,7 @@ namespace arc_helpers
     template <typename T>
     inline bool GetBit(const T current, const uint32_t bit_position)
     {
+        // Type safety checks are performed in the SetBit() function
         const uint32_t mask = arc_helpers::SetBit((T)0, bit_position, true);
         if ((mask & current) > 0)
         {
@@ -83,6 +84,260 @@ namespace arc_helpers
     inline T ClampValue(const T& val, const T& min, const T& max)
     {
         return std::min(max, std::max(min, val));
+    }
+
+    inline constexpr float ColorChannelFromHex(uint8_t hexval)
+    {
+        return (float)hexval / 255.0f;
+    }
+
+    inline float TrimColorValue(const float val)
+    {
+        return ClampValue<float>(val, 0.0f, 1.0f);
+    }
+
+    inline uint8_t ColorChannelToHex(float colorval)
+    {
+        return (uint8_t)round(TrimColorValue(colorval) * 255.0f);
+    }
+
+    class RGBAColor
+    {
+    public:
+
+        float r;
+        float g;
+        float b;
+        float a;
+
+        RGBAColor(const float r, const float g, const float b, const float a) : r(TrimColorValue(r)), g(TrimColorValue(g)), b(TrimColorValue(b)), a(TrimColorValue(a)) {}
+
+        RGBAColor(const float r, const float g, const float b) : r(TrimColorValue(r)), g(TrimColorValue(g)), b(TrimColorValue(b)), a(1.0f) {}
+
+        RGBAColor(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a) : r(ColorChannelFromHex(r)), g(ColorChannelFromHex(g)), b(ColorChannelFromHex(b)), a(ColorChannelFromHex(a)) {}
+
+        RGBAColor(const uint8_t r, const uint8_t g, const uint8_t b, const float a) : r(ColorChannelFromHex(r)), g(ColorChannelFromHex(g)), b(ColorChannelFromHex(b)), a(TrimColorValue(a)) {}
+
+        RGBAColor() : r(0.0f), g(0.0f), b(0.0f), a(0.0f) {}
+
+        inline float GetR() const
+        {
+            return r;
+        }
+
+        inline float GetG() const
+        {
+            return g;
+        }
+
+        inline float GetB() const
+        {
+            return b;
+        }
+
+        inline float GetA() const
+        {
+            return a;
+        }
+
+        inline void SetR(const float new_r)
+        {
+            r = TrimColorValue(new_r);
+        }
+
+        inline void SetG(const float new_g)
+        {
+            g = TrimColorValue(new_g);
+        }
+
+        inline void SetB(const float new_b)
+        {
+            b = TrimColorValue(new_b);
+        }
+
+        inline void SetA(const float new_a)
+        {
+            a = TrimColorValue(new_a);
+        }
+
+        inline uint8_t GetRHex() const
+        {
+            return ColorChannelToHex(r);
+        }
+
+        inline uint8_t GetGHex() const
+        {
+            return ColorChannelToHex(g);
+        }
+
+        inline uint8_t GetBHex() const
+        {
+            return ColorChannelToHex(b);
+        }
+
+        inline uint8_t GetAHex() const
+        {
+            return ColorChannelToHex(a);
+        }
+
+        inline void SetRHex(const uint8_t hex_r)
+        {
+            r = ColorChannelFromHex(hex_r);
+        }
+
+        inline void SetGHex(const uint8_t hex_g)
+        {
+            g = ColorChannelFromHex(hex_g);
+        }
+
+        inline void SetBHex(const uint8_t hex_b)
+        {
+            b = ColorChannelFromHex(hex_b);
+        }
+
+        inline void SetAHex(const uint8_t hex_a)
+        {
+            a = ColorChannelFromHex(hex_a);
+        }
+    };
+
+    template<typename ColorType>
+    class RGBAColorBuilder
+    {
+    private:
+
+        RGBAColorBuilder() {}
+
+    public:
+
+        static inline ColorType MakeFromFloatColors(const float r, const float g, const float b, const float a=1.0f)
+        {
+            ColorType color;
+            color.r = TrimColorValue(r);
+            color.g = TrimColorValue(g);
+            color.b = TrimColorValue(b);
+            color.a = TrimColorValue(a);
+            return color;
+        }
+
+        static inline ColorType MakeFromHexColors(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a=0xff)
+        {
+            return MakeFromFloatColors(ColorChannelFromHex(r), ColorChannelFromHex(g), ColorChannelFromHex(b), ColorChannelFromHex(a));
+        }
+
+        static inline ColorType MakeFromMixedColors(const uint8_t r, const uint8_t g, const uint8_t b, const float a=1.0f)
+        {
+            return MakeFromFloatColors(ColorChannelFromHex(r), ColorChannelFromHex(g), ColorChannelFromHex(b), TrimColorValue(a));
+        }
+    };
+
+    template<typename ColorTypeA, typename ColorTypeB>
+    inline ColorTypeB ConvertColor(const ColorTypeA& color)
+    {
+        ColorTypeB cvt_color;
+        cvt_color.r = TrimColorValue(color.r);
+        cvt_color.g = TrimColorValue(color.g);
+        cvt_color.b = TrimColorValue(color.b);
+        cvt_color.a = TrimColorValue(color.a);
+        return cvt_color;
+    }
+
+    template<typename ColorType>
+    inline ColorType GenerateUniqueColor(const uint32_t color_code, const float alpha=1.0f)
+    {
+        // For color_code < 22, we pick from a table
+        if (color_code == 0)
+        {
+            return RGBAColorBuilder<ColorType>::MakeFromFloatColors(1.0f, 1.0f, 1.0f, 0.0f);
+        }
+        else if (color_code <= 20)
+        {
+            // CHECK TO MAKE SURE RGB/RBG IS CORRECT!
+            if (color_code == 1)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xff, 0x00, 0xb3, alpha);
+            }
+            else if (color_code == 2)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x80, 0x75, 0x3e, alpha);
+            }
+            else if (color_code == 3)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xff, 0x00, 0x68, alpha);
+            }
+            else if (color_code == 4)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xa6, 0xd7, 0xbd, alpha);
+            }
+            else if (color_code == 5)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xc1, 0x20, 0x00, alpha);
+            }
+            else if (color_code == 6)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xce, 0x62, 0xa2, alpha);
+            }
+            else if (color_code == 7)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x81, 0x66, 0x70, alpha);
+            }
+            else if (color_code == 8)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x00, 0x34, 0x7d, alpha);
+            }
+            else if (color_code == 9)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xf6, 0x8e, 0x76, alpha);
+            }
+            else if (color_code == 10)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x00, 0x8a, 0x53, alpha);
+            }
+            else if (color_code == 11)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xff, 0x5c, 0x7a, alpha);
+            }
+            else if (color_code == 12)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x53, 0x7a, 0x37, alpha);
+            }
+            else if (color_code == 13)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xff, 0x00, 0x8e, alpha);
+            }
+            else if (color_code == 14)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xb3, 0x51, 0x28, alpha);
+            }
+            else if (color_code == 15)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xf4, 0x00, 0xc8, alpha);
+            }
+            else if (color_code == 16)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x7f, 0x0d, 0x18, alpha);
+            }
+            else if (color_code == 17)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x93, 0x00, 0xaa, alpha);
+            }
+            else if (color_code == 18)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x59, 0x15, 0x33, alpha);
+            }
+            else if (color_code == 19)
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xf1, 0x13, 0x3a, alpha);
+            }
+            else
+            {
+                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x23, 0x16, 0x2c, alpha);
+            }
+        }
+        else
+        {
+            return RGBAColorBuilder<ColorType>::MakeFromFloatColors(0.0f, 0.0f, 0.0f, alpha);
+        }
     }
 
     template<typename Datatype, typename Allocator=std::allocator<Datatype>>
