@@ -820,6 +820,25 @@ namespace EigenHelpers
     // Conversion functions
     ////////////////////////////////////////////////////////////////////////////
 
+    inline Eigen::Quaterniond QuaternionFromRPY(const double R, const double P, const double Y)
+    {
+        const Eigen::AngleAxisd roll(R, Eigen::Vector3d::UnitX());
+        const Eigen::AngleAxisd pitch(P, Eigen::Vector3d::UnitY());
+        const Eigen::AngleAxisd yaw(Y, Eigen::Vector3d::UnitZ());
+        const Eigen::Quaterniond quat(roll * pitch * yaw);
+        return quat;
+    }
+
+    /* URDF RPY IS ACTUALLY APPLIED Y*P*R */
+    inline Eigen::Quaterniond QuaternionFromUrdfRPY(const double R, const double P, const double Y)
+    {
+        const Eigen::AngleAxisd roll(R, Eigen::Vector3d::UnitX());
+        const Eigen::AngleAxisd pitch(P, Eigen::Vector3d::UnitY());
+        const Eigen::AngleAxisd yaw(Y, Eigen::Vector3d::UnitZ());
+        const Eigen::Quaterniond quat(yaw * pitch * roll);
+        return quat;
+    }
+
     inline Eigen::Vector3d EulerAnglesFromRotationMatrix(const Eigen::Matrix<double, 3, 3>& rot_matrix)
     {
         const Eigen::Vector3d euler_angles = rot_matrix.eulerAngles(0, 1, 2); // Use XYZ angles
