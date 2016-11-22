@@ -6,6 +6,7 @@
 #include <arc_utilities/eigen_helpers.hpp>
 #include <arc_utilities/pretty_print.hpp>
 #include <arc_utilities/abb_irb1600_145_fk_fast.hpp>
+#include <arc_utilities/iiwa_14_fk_fast.hpp>
 
 int main(int argc, char** argv)
 {
@@ -19,9 +20,12 @@ int main(int argc, char** argv)
     std::cout << PrettyPrint::PrettyPrint(Eigen::Vector3d(0.0, 0.0, 0.0)) << std::endl;
     std::cout << PrettyPrint::PrettyPrint(std::vector<bool>{true, false, true, false}) << std::endl;
     std::cout << "...done" << std::endl;
-    std::vector<double> base_config = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    EigenHelpers::VectorAffine3d link_transforms = ABB_IRB1600_145_FK_FAST::GetLinkTransforms(base_config);
-    std::cout << "Link transforms:\n" << PrettyPrint::PrettyPrint(link_transforms, false, "\n") << std::endl;
+    const std::vector<double> abb_irb_1600_145_base_config = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    const EigenHelpers::VectorAffine3d abb_irb_1600_145_link_transforms = ABB_IRB1600_145_FK_FAST::GetLinkTransforms(abb_irb_1600_145_base_config);
+    std::cout << "ABB IRB1600-145 Link transforms:\n" << PrettyPrint::PrettyPrint(abb_irb_1600_145_link_transforms, false, "\n") << std::endl;
+    const std::vector<double> iiwa_14_base_config = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    const EigenHelpers::VectorAffine3d iiwa_14_link_transforms = IIWA_14_FK_FAST::GetLinkTransforms(iiwa_14_base_config);
+    std::cout << "IIWA 14 Link transforms:\n" << PrettyPrint::PrettyPrint(iiwa_14_link_transforms, false, "\n") << std::endl;
 
     // Test Vector3d averaging
     EigenHelpers::VectorVector3d testvecs(8, Eigen::Vector3d::Zero());

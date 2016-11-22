@@ -8,6 +8,7 @@
 #include <random>
 #include <array>
 #include <map>
+#include <unordered_map>
 
 #ifdef ENABLE_PARALLEL_DISTANCE_MATRIX
 #include <omp.h>
@@ -77,6 +78,34 @@ namespace arc_helpers
         else
         {
             return false;
+        }
+    }
+
+    template <typename Key, typename Value, typename Compare=std::less<Key>, typename Allocator=std::allocator<std::pair<const Key, Value>>>
+    inline Value RetrieveOrDefault(const std::map<Key, Value, Compare, Allocator>& map, const Key& key, const Value& default_val)
+    {
+        const auto found_itr = map.find(key);
+        if (found_itr != map.end())
+        {
+            return found_itr->second;
+        }
+        else
+        {
+            return default_val;
+        }
+    }
+
+    template <typename Key, typename Value, typename Hash=std::hash<Key>, typename Predicate=std::equal_to<Key>, typename Allocator=std::allocator<std::pair<const Key, Value>>>
+    inline Value RetrieveOrDefault(const std::unordered_map<Key, Value, Hash, Predicate, Allocator>& map, const Key& key, const Value& default_val)
+    {
+        const auto found_itr = map.find(key);
+        if (found_itr != map.end())
+        {
+            return found_itr->second;
+        }
+        else
+        {
+            return default_val;
         }
     }
 
