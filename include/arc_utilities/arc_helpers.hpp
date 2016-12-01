@@ -929,6 +929,50 @@ namespace arc_helpers
         return std::make_pair(temp_item, sizeof(temp_item));
     }
 
+    template<typename CharType>
+    inline uint64_t SerializeString(const std::basic_string<CharType>& str_to_serialize, std::vector<uint8_t>& buffer)
+    {
+        const uint64_t start_buffer_size = buffer.size();
+        // First, write a uint64_t size header
+        const uint64_t size = (uint64_t)str_to_serialize.size();
+        SerializeFixedSizePOD<uint64_t>(size, buffer);
+        // Serialize the contained items
+        for (size_t idx = 0; idx < size; idx++)
+        {
+            const CharType& current = str_to_serialize[idx];
+            SerializeFixedSizePOD<CharType>(current, buffer);
+        }
+        // Figure out how many bytes were written
+        const uint64_t end_buffer_size = buffer.size();
+        const uint64_t bytes_written = end_buffer_size - start_buffer_size;
+        return bytes_written;
+    }
+
+    template<typename CharType>
+    inline std::pair<std::basic_string<CharType>, uint64_t> DeserializeString(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        // First, try to load the header
+        assert(current < buffer.size());
+        uint64_t current_position = current;
+        // Load the header
+        const std::pair<uint64_t, uint64_t> deserialized_size = DeserializeFixedSizePOD<uint64_t>(buffer, current_position);
+        const uint64_t size = deserialized_size.first;
+        current_position += deserialized_size.second;
+        // Deserialize the items
+        std::basic_string<CharType> deserialized;
+        deserialized.reserve(size);
+        for (uint64_t idx = 0; idx < size; idx++)
+        {
+            const std::pair<CharType, uint64_t> deserialized_char = DeserializeFixedSizePOD<CharType>(buffer, current_position);
+            deserialized.push_back(deserialized_char.first);
+            current_position += deserialized_char.second;
+        }
+        deserialized.shrink_to_fit();
+        // Figure out how many bytes were read
+        const uint64_t bytes_read = current_position - current;
+        return std::make_pair(deserialized, bytes_read);
+    }
+
     template<typename T, typename Allocator>
     inline uint64_t SerializeVector(const std::vector<T, Allocator>& vec_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& item_serializer)
     {
@@ -967,6 +1011,7 @@ namespace arc_helpers
             deserialized.push_back(deserialized_item.first);
             current_position += deserialized_item.second;
         }
+        deserialized.shrink_to_fit();
         // Figure out how many bytes were read
         const uint64_t bytes_read = current_position - current;
         return std::make_pair(deserialized, bytes_read);
