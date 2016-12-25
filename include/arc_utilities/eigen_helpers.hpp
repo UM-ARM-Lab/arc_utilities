@@ -762,7 +762,7 @@ namespace EigenHelpers
         return vdist + qdist;
     }
 
-    inline double Distance(const std::vector<double>& p1, const std::vector<double>& p2)
+    inline double SquaredDistance(const std::vector<double>& p1, const std::vector<double>& p2)
     {
         if (p1.size() == p2.size())
         {
@@ -771,7 +771,19 @@ namespace EigenHelpers
             {
                 distance += (p2[idx] - p1[idx]) * (p2[idx] - p1[idx]);
             }
-            return sqrt(distance);
+            return distance;
+        }
+        else
+        {
+            return INFINITY;
+        }
+    }
+
+    inline double Distance(const std::vector<double>& p1, const std::vector<double>& p2)
+    {
+        if (p1.size() == p2.size())
+        {
+            return sqrt(SquaredDistance(p1, p2));
         }
         else
         {

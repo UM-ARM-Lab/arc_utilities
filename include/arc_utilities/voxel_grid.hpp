@@ -367,10 +367,9 @@ namespace VoxelGrid
         {
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
             CoreInitialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
-            Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
-            Eigen::Quaterniond origin_rotation;
-            origin_rotation.setIdentity();
-            origin_transform_ = origin_translation * origin_rotation;
+            const Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
+            const Eigen::Affine3d origin_transform = origin_translation * Eigen::Quaterniond::Identity();
+            origin_transform_ = origin_transform;
             inverse_origin_transform_ = origin_transform_.inverse();
             initialized_ = true;
         }

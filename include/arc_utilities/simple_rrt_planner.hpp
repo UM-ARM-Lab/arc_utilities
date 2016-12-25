@@ -27,6 +27,8 @@ namespace simple_rrt_planner
 
     public:
 
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
         static uint64_t Serialize(const SimpleRRTPlannerState<T, Allocator>& state, std::vector<uint8_t>& buffer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& value_serializer)
         {
             return state.SerializeSelf(buffer, value_serializer);
@@ -180,6 +182,8 @@ namespace simple_rrt_planner
         T value_;
 
     public:
+
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         SimpleRRTPlannerPointerState() : initialized_(false)
         {

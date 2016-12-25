@@ -72,16 +72,16 @@ namespace EigenHelpersConversions
 
     inline Eigen::Affine3d GeometryPoseToEigenAffine3d(const geometry_msgs::Pose& pose)
     {
-        Eigen::Translation3d trans(pose.position.x, pose.position.y, pose.position.z);
-        Eigen::Quaterniond quat(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
-        Eigen::Affine3d eigen_pose = trans * quat;
+        const Eigen::Translation3d trans(pose.position.x, pose.position.y, pose.position.z);
+        const Eigen::Quaterniond quat(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+        const Eigen::Affine3d eigen_pose = trans * quat;
         return eigen_pose;
     }
 
     inline geometry_msgs::Pose EigenAffine3dToGeometryPose(const Eigen::Affine3d& transform)
     {
-        Eigen::Vector3d trans = transform.translation();
-        Eigen::Quaterniond quat(transform.rotation());
+        const Eigen::Vector3d trans = transform.translation();
+        const Eigen::Quaterniond quat(transform.rotation());
         geometry_msgs::Pose geom_pose;
         geom_pose.position.x = trans.x();
         geom_pose.position.y = trans.y();
@@ -103,16 +103,16 @@ namespace EigenHelpersConversions
 
     inline Eigen::Affine3d GeometryTransformToEigenAffine3d(const geometry_msgs::Transform& transform)
     {
-        Eigen::Translation3d trans(transform.translation.x, transform.translation.y, transform.translation.z);
-        Eigen::Quaterniond quat(transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z);
-        Eigen::Affine3d eigen_transform = trans * quat;
+        const Eigen::Translation3d trans(transform.translation.x, transform.translation.y, transform.translation.z);
+        const Eigen::Quaterniond quat(transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z);
+        const Eigen::Affine3d eigen_transform = trans * quat;
         return eigen_transform;
     }
 
     inline geometry_msgs::Transform EigenAffine3dToGeometryTransform(const Eigen::Affine3d& transform)
     {
-        Eigen::Vector3d trans = transform.translation();
-        Eigen::Quaterniond quat(transform.rotation());
+        const Eigen::Vector3d trans = transform.translation();
+        const Eigen::Quaterniond quat(transform.rotation());
         geometry_msgs::Transform geom_transform;
         geom_transform.translation.x = trans.x();
         geom_transform.translation.y = trans.y();
