@@ -20,10 +20,10 @@ namespace simple_rrt_planner
     {
     protected:
 
-        bool initialized_;
-        int64_t parent_index_;
-        std::vector<int64_t> child_indices_;
         T value_;
+        std::vector<int64_t> child_indices_;
+        int64_t parent_index_;
+        bool initialized_;
 
     public:
 
@@ -41,7 +41,7 @@ namespace simple_rrt_planner
             return std::make_pair(temp_state, bytes_read);
         }
 
-        SimpleRRTPlannerState() : initialized_(false), parent_index_(-1)
+        SimpleRRTPlannerState() : parent_index_(-1), initialized_(false)
         {
             child_indices_.clear();
         }
@@ -177,9 +177,9 @@ namespace simple_rrt_planner
     {
     protected:
 
-        bool initialized_;
-        std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>> parent_;
         T value_;
+        std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>> parent_;
+        bool initialized_;
 
     public:
 

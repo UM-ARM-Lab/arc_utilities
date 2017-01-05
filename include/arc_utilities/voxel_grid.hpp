@@ -36,9 +36,10 @@ namespace VoxelGrid
     {
     protected:
 
-        bool initialized_;
         Eigen::Affine3d origin_transform_;
         Eigen::Affine3d inverse_origin_transform_;
+        T default_value_;
+        T oob_value_;
         std::vector<T, Allocator> data_;
         double cell_x_size_;
         double cell_y_size_;
@@ -54,8 +55,7 @@ namespace VoxelGrid
         int64_t num_x_cells_;
         int64_t num_y_cells_;
         int64_t num_z_cells_;
-        T default_value_;
-        T oob_value_;
+        bool initialized_;
 
         inline int64_t GetDataIndex(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
         {
@@ -318,6 +318,8 @@ namespace VoxelGrid
         {
             origin_transform_ = Eigen::Affine3d::Identity();
             inverse_origin_transform_ = origin_transform_.inverse();
+            arc_helpers::RequireAlignment(origin_transform_, 16u);
+            arc_helpers::RequireAlignment(inverse_origin_transform_, 16u);
             cell_x_size_ = 0.0;
             cell_y_size_ = 0.0;
             cell_z_size_ = 0.0;
@@ -351,6 +353,8 @@ namespace VoxelGrid
             CoreInitialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
             origin_transform_ = origin_transform;
             inverse_origin_transform_ = origin_transform_.inverse();
+            arc_helpers::RequireAlignment(origin_transform_, 16u);
+            arc_helpers::RequireAlignment(inverse_origin_transform_, 16u);
             initialized_ = true;
         }
 
@@ -371,6 +375,8 @@ namespace VoxelGrid
             const Eigen::Affine3d origin_transform = origin_translation * Eigen::Quaterniond::Identity();
             origin_transform_ = origin_transform;
             inverse_origin_transform_ = origin_transform_.inverse();
+            arc_helpers::RequireAlignment(origin_transform_, 16u);
+            arc_helpers::RequireAlignment(inverse_origin_transform_, 16u);
             initialized_ = true;
         }
 

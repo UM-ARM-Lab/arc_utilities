@@ -43,6 +43,33 @@
 
 namespace arc_helpers
 {
+    template<typename T>
+    inline bool CheckAlignment(const T& item, const uint64_t desired_alignment)
+    {
+        const T* item_ptr = &item;
+        const uintptr_t item_ptr_val = (uintptr_t)item_ptr;
+        if ((item_ptr_val % desired_alignment) == 0)
+        {
+            //std::cout << "Item @ " << item_ptr_val << " aligned to " << desired_alignment << " bytes" << std::endl;
+            return true;
+        }
+        else
+        {
+            //std::cout << "Item @ " << item_ptr_val << " not aligned to " << desired_alignment << " bytes" << std::endl;
+            return false;
+        }
+    }
+
+    template<typename T>
+    inline bool RequireAlignment(const T& item, const uint64_t desired_alignment)
+    {
+        if (CheckAlignment(item, desired_alignment) == false)
+        {
+            std::cout << "Item not aligned at desired alignment of " << desired_alignment << std::endl;
+            assert(false);
+        }
+    }
+
     template <typename T>
     inline T SetBit(const T current, const uint32_t bit_position, const bool bit_value)
     {

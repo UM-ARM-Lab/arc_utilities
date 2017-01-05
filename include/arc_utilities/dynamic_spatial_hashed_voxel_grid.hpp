@@ -20,6 +20,8 @@ namespace VoxelGrid
     {
         Eigen::Vector3d base;
 
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
         CHUNK_REGION() : base(Eigen::Vector3d(0.0, 0.0, 0.0)) {}
 
         CHUNK_REGION(const double base_x, const double base_y, const double base_z) : base(Eigen::Vector3d(base_x, base_y, base_z)) {}
@@ -45,21 +47,21 @@ namespace VoxelGrid
     protected:
 
         CHUNK_REGION region_;
+        T initial_value_;
+        std::vector<T, Allocator> data_;
         double cell_x_size_;
         double cell_y_size_;
         double cell_z_size_;
-        int64_t num_x_cells_;
-        int64_t num_y_cells_;
-        int64_t num_z_cells_;
         double chunk_x_size_;
         double chunk_y_size_;
         double chunk_z_size_;
+        int64_t num_x_cells_;
+        int64_t num_y_cells_;
+        int64_t num_z_cells_;
         int64_t stride1_;
         int64_t stride2_;
         bool chunk_initialized_;
         bool cell_initialized_;
-        std::vector<T, Allocator> data_;
-        T initial_value_;
 
         inline void SafetyCheckSizes(const double chunk_x_size, const double chunk_y_size, const double chunk_z_size) const
         {
@@ -188,6 +190,8 @@ namespace VoxelGrid
         }
 
     public:
+
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         DynamicSpatialHashedVoxelGridChunk(const CHUNK_REGION& region, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& initial_value)
         {
@@ -454,22 +458,22 @@ namespace VoxelGrid
     {
     protected:
 
-        bool initialized_;
         Eigen::Affine3d origin_transform_;
         Eigen::Affine3d inverse_origin_transform_;
+        T default_value_;
         std::unordered_map<CHUNK_REGION, DynamicSpatialHashedVoxelGridChunk<T, Allocator>> chunks_;
         double chunk_x_size_;
         double chunk_y_size_;
         double chunk_z_size_;
+        double cell_x_size_;
+        double cell_y_size_;
+        double cell_z_size_;
         int64_t chunk_num_x_cells_;
         int64_t chunk_num_y_cells_;
         int64_t chunk_num_z_cells_;
         int64_t chunk_stride1_;
         int64_t chunk_stride2_;
-        double cell_x_size_;
-        double cell_y_size_;
-        double cell_z_size_;
-        T default_value_;
+        bool initialized_;
 
         inline void SafetyCheckSizes(const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells,const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells) const
         {
@@ -542,6 +546,8 @@ namespace VoxelGrid
         }
 
     public:
+
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         DynamicSpatialHashedVoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
         {
