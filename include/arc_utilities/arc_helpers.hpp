@@ -445,7 +445,7 @@ namespace arc_helpers
         return distance_matrix;
     }
 
-    template<typename Item, typename ItemAlloc, typename Value>
+    template<typename Item, typename Value, typename ItemAlloc=std::allocator<Item>>
     std::vector<std::pair<int64_t, double>> GetKNearestNeighbors(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
     {
         if (items.size() > K)
