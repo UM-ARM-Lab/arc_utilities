@@ -445,64 +445,81 @@ namespace arc_helpers
         return distance_matrix;
     }
 
-    template<typename Item, typename ItemAlloc>
-    std::vector<std::pair<int64_t, double>> GetKNearestNeighbors(const std::vector<Item, ItemAlloc>& items, const Item& current, const std::function<double(const Item&, const Item&)>& distance_fn, const int64_t K)
+    template<typename Item, typename ItemAlloc, typename Value>
+    std::vector<std::pair<int64_t, double>> GetKNearestNeighbors(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
     {
-        std::function<bool(const std::pair<int64_t, double>&, const std::pair<int64_t, double>&)> compare_fn = [] (const std::pair<int64_t, double>& index1, const std::pair<int64_t, double>& index2) { return index1.second < index2.second; };
-        std::vector<std::vector<std::pair<int64_t, double>>> per_thread_nearests(GetNumOMPThreads(), std::vector<std::pair<int64_t, double>>(K, std::make_pair(-1, std::numeric_limits<double>::infinity())));
-#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
-        #pragma omp parallel for
-#endif
-        for (size_t idx = 0; idx < items.size(); idx++)
+        if (items.size() > K)
         {
-            const Item& item = items[idx];
-            const double distance = distance_fn(current, item);
+            std::function<bool(const std::pair<int64_t, double>&, const std::pair<int64_t, double>&)> compare_fn = [] (const std::pair<int64_t, double>& index1, const std::pair<int64_t, double>& index2) { return index1.second < index2.second; };
+            std::vector<std::vector<std::pair<int64_t, double>>> per_thread_nearests(GetNumOMPThreads(), std::vector<std::pair<int64_t, double>>(K, std::make_pair(-1, std::numeric_limits<double>::infinity())));
+    #ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
+            #pragma omp parallel for
+    #endif
+            for (size_t idx = 0; idx < items.size(); idx++)
+            {
+                const Item& item = items[idx];
+                const double distance = distance_fn(item, current);
 #ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
-            #if defined(_OPENMP)
-            const size_t thread_num = (size_t)omp_get_thread_num();
-            #else
-            const size_t thread_num = 0;
-            #endif
+                #if defined(_OPENMP)
+                const size_t thread_num = (size_t)omp_get_thread_num();
+                #else
+                const size_t thread_num = 0;
+                #endif
 #else
-            const size_t thread_num = 0;
+                const size_t thread_num = 0;
 #endif
-            std::vector<std::pair<int64_t, double>>& current_thread_nearests = per_thread_nearests[thread_num];
-            auto itr = std::max_element(current_thread_nearests.begin(), current_thread_nearests.end(), compare_fn);
-            const double worst_distance = itr->second;
-            if (worst_distance > distance)
-            {
-                itr->first = (int64_t)idx;
-                itr->second = distance;
-            }
-        }
-        std::vector<std::pair<int64_t, double>> k_nearests;
-        k_nearests.reserve(K);
-        for (size_t thread_idx = 0; thread_idx < per_thread_nearests.size(); thread_idx++)
-        {
-            const std::vector<std::pair<int64_t, double>>& thread_nearests = per_thread_nearests[thread_idx];
-            for (size_t nearest_idx = 0; nearest_idx < thread_nearests.size(); nearest_idx++)
-            {
-                const std::pair<int64_t, double> current_ith_nearest = thread_nearests[nearest_idx];
-                if (!std::isinf(current_ith_nearest.second) && current_ith_nearest.first != -1)
+                std::vector<std::pair<int64_t, double>>& current_thread_nearests = per_thread_nearests[thread_num];
+                auto itr = std::max_element(current_thread_nearests.begin(), current_thread_nearests.end(), compare_fn);
+                const double worst_distance = itr->second;
+                if (worst_distance > distance)
                 {
-                    if (k_nearests.size() < K)
+                    itr->first = (int64_t)idx;
+                    itr->second = distance;
+                }
+            }
+            std::vector<std::pair<int64_t, double>> k_nearests;
+            k_nearests.reserve(K);
+            for (size_t thread_idx = 0; thread_idx < per_thread_nearests.size(); thread_idx++)
+            {
+                const std::vector<std::pair<int64_t, double>>& thread_nearests = per_thread_nearests[thread_idx];
+                for (size_t nearest_idx = 0; nearest_idx < thread_nearests.size(); nearest_idx++)
+                {
+                    const std::pair<int64_t, double> current_ith_nearest = thread_nearests[nearest_idx];
+                    if (!std::isinf(current_ith_nearest.second) && current_ith_nearest.first != -1)
                     {
-                        k_nearests.push_back(current_ith_nearest);
-                    }
-                    else
-                    {
-                        auto itr = std::max_element(k_nearests.begin(), k_nearests.end(), compare_fn);
-                        const double worst_distance = itr->second;
-                        if (worst_distance > current_ith_nearest.second)
+                        if (k_nearests.size() < K)
                         {
-                            itr->first = current_ith_nearest.first;
-                            itr->second = current_ith_nearest.second;
+                            k_nearests.push_back(current_ith_nearest);
+                        }
+                        else
+                        {
+                            auto itr = std::max_element(k_nearests.begin(), k_nearests.end(), compare_fn);
+                            const double worst_distance = itr->second;
+                            if (worst_distance > current_ith_nearest.second)
+                            {
+                                itr->first = current_ith_nearest.first;
+                                itr->second = current_ith_nearest.second;
+                            }
                         }
                     }
                 }
             }
+            return k_nearests;
         }
-        return k_nearests;
+        else
+        {
+            std::vector<std::pair<int64_t, double>> k_nearests(items.size(), std::make_pair(-1, std::numeric_limits<double>::infinity()));
+#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
+            #pragma omp parallel for
+#endif
+            for (size_t idx = 0; idx < items.size(); idx++)
+            {
+                const Item& item = items[idx];
+                const double distance = distance_fn(item, current);
+                k_nearests[idx] = std::make_pair((int64_t)idx, distance);
+            }
+            return k_nearests;
+        }
     }
 
     class SplitMix64PRNG
