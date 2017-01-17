@@ -504,6 +504,7 @@ namespace arc_helpers
                     }
                 }
             }
+            k_nearests.shrink_to_fit();
             return k_nearests;
         }
         else
