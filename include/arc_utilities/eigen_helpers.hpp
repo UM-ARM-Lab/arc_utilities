@@ -64,6 +64,20 @@ namespace EigenHelpers
         }
     }
 
+    inline bool CloseEnough(const double p1, const double p2, const double threshold)
+    {
+        const double real_threshold = std::abs(threshold);
+        const double abs_delta = std::abs(p2 - p1);
+        if (abs_delta <= real_threshold)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     inline bool CloseEnough(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double threshold)
     {
         double real_threshold = fabs(threshold);
@@ -826,6 +840,55 @@ namespace EigenHelpers
     inline double AddContinuousRevoluteValues(const double start, const double change)
     {
         return EnforceContinuousRevoluteBounds(start + change);
+    }
+
+    inline double GetContinuousRevoluteRange(const double start, const double end)
+    {
+        const double raw_range = ContinuousRevoluteSignedDistance(start, end);
+        if (raw_range >= 0.0)
+        {
+            return raw_range;
+        }
+        else
+        {
+            return (2.0 * M_PI) + raw_range;
+        }
+    }
+
+    inline bool CheckInContinuousRevoluteRange(const double start, const double range, const double val)
+    {
+        const double real_val = EnforceContinuousRevoluteBounds(val);
+        const double real_start = EnforceContinuousRevoluteBounds(start);
+        const double delta = ContinuousRevoluteSignedDistance(real_start, real_val);
+        if (delta >= 0.0)
+        {
+            if (delta <= range)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            const double real_delta = (2.0 * M_PI) + delta;
+            if (real_delta <= range)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+    inline bool CheckInContinuousRevoluteBounds(const double start, const double end, const double val)
+    {
+        const double range = GetContinuousRevoluteRange(start, end);
+        return CheckInContinuousRevoluteRange(start, range, val);
     }
 
     ////////////////////////////////////////////////////////////////////////////
