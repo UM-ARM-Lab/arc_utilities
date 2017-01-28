@@ -937,7 +937,7 @@ namespace EigenHelpers
             std::cerr << "Vector3d source vector is not 3 elements in size" << std::endl;
             assert(false);
         }
-        Eigen::Vector3d eigen_vector(vector[0], vector[1], vector[2]);
+        const Eigen::Vector3d eigen_vector(vector[0], vector[1], vector[2]);
         return eigen_vector;
     }
 
