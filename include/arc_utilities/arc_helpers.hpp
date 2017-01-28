@@ -437,7 +437,34 @@ namespace arc_helpers
         {
             for (size_t jdx = idx; jdx < data.size(); jdx++)
             {
-                const double distance = distance_fn(data[idx], data[jdx]);
+                if (idx != jdx)
+                {
+                    const double distance = distance_fn(data[idx], data[jdx]);
+                    distance_matrix((ssize_t)idx, (ssize_t)jdx) = distance;
+                    distance_matrix((ssize_t)jdx, (ssize_t)idx) = distance;
+                }
+                else
+                {
+                    distance_matrix((ssize_t)idx, (ssize_t)jdx) = 0.0;
+                    distance_matrix((ssize_t)jdx, (ssize_t)idx) = 0.0;
+                }
+            }
+        }
+        return distance_matrix;
+    }
+
+    template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator=std::allocator<FirstDatatype>, typename SecondAllocator=std::allocator<SecondDatatype>>
+    inline Eigen::MatrixXd BuildDistanceMatrix(const std::vector<FirstDatatype, FirstAllocator>& data1, const std::vector<SecondDatatype, SecondAllocator>& data2, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
+    {
+        Eigen::MatrixXd distance_matrix(data1.size(), data1.size());
+#ifdef ENABLE_PARALLEL_DISTANCE_MATRIX
+        #pragma omp parallel for
+#endif
+        for (size_t idx = 0; idx < data1.size(); idx++)
+        {
+            for (size_t jdx = 0; jdx < data2.size(); jdx++)
+            {
+                const double distance = distance_fn(data1[idx], data2[jdx]);
                 distance_matrix((ssize_t)idx, (ssize_t)jdx) = distance;
                 distance_matrix((ssize_t)jdx, (ssize_t)idx) = distance;
             }
@@ -694,6 +721,55 @@ namespace arc_helpers
             return next();
         }
     };
+
+
+    // SEE https://people.sc.fsu.edu/~jburkardt/presentations/truncated_normal.pdf FOR DETAILS
+    inline double EvaluateGaussianCDF(const double mean, const double std_dev, const double val)
+    {
+        return 0.5 * (1.0 - erf( ( (val - mean) / std_dev ) / sqrt(2.0) ) );
+    }
+
+    inline double EvaluateTruncatedGaussianCDF(const double mean, const double lower_bound, const double upper_bound, const double std_dev, const double val)
+    {
+        if (val <= lower_bound)
+        {
+            return 0.0;
+        }
+        else if (val >= upper_bound)
+        {
+            return 1.0;
+        }
+        else
+        {
+            const double cdf_lower_bound = EvaluateGaussianCDF(mean, std_dev, lower_bound);
+            const double numerator = EvaluateGaussianCDF(mean, std_dev, val) - cdf_lower_bound;
+            const double denominator = EvaluateGaussianCDF(mean, std_dev, upper_bound) - cdf_lower_bound;
+            return numerator / denominator;
+        }
+    }
+
+    inline double IntegrateGaussian(const double mean, const double std_dev, const double lower_limit, const double upper_limit)
+    {
+        assert(lower_limit <= upper_limit);
+        const double upper_limit_cdf = EvaluateGaussianCDF(mean, std_dev, upper_limit);
+        const double lower_limit_cdf = EvaluateGaussianCDF(mean, std_dev, lower_limit);
+        const double probability = upper_limit_cdf - lower_limit_cdf;
+        //const std::string msg = "Integrated Gaussian with mean " + std::to_string(mean) + " std.dev. " + std::to_string(std_dev) + " over range [" + std::to_string(lower_limit) + "," + std::to_string(upper_limit) + "] to be " + std::to_string(probability);
+        //std::cout << msg << std::endl;
+        return probability;
+    }
+
+    inline double IntegrateTruncatedGaussian(const double mean, const double lower_bound, const double upper_bound, const double std_dev, const double lower_limit, const double upper_limit)
+    {
+        assert(lower_bound <= upper_bound);
+        assert(lower_limit <= upper_limit);
+        const double lower_limit_cdf = EvaluateTruncatedGaussianCDF(mean, lower_bound, upper_bound, std_dev, lower_limit);
+        const double upper_limit_cdf = EvaluateTruncatedGaussianCDF(mean, lower_bound, upper_bound, std_dev, upper_limit);
+        const double probability = upper_limit_cdf - lower_limit_cdf;
+        //const std::string msg = "Integrated truncated Gaussian with mean " + std::to_string(mean) + " std.dev. " + std::to_string(std_dev) + " and bounds [" + std::to_string(lower_bound) + "," + std::to_string(upper_bound) + "] over range [" + std::to_string(lower_limit) + "," + std::to_string(upper_limit) + "] to be " + std::to_string(probability);
+        //std::cout << msg << std::endl;
+        return probability;
+    }
 
     class TruncatedNormalDistribution
     {
@@ -1231,7 +1307,7 @@ namespace arc_helpers
     {
         if (unlikely(msg_level <= print_level))
         {
-            std::cout << msg << std::endl;
+            std::cout << "[" << msg_level << "/" << print_level << "] " << msg << std::endl;
         }
     }
 

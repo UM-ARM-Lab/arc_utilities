@@ -7,6 +7,7 @@
 #include <arc_utilities/pretty_print.hpp>
 #include <arc_utilities/abb_irb1600_145_fk_fast.hpp>
 #include <arc_utilities/iiwa_14_fk_fast.hpp>
+#include <arc_utilities/simple_dtw.hpp>
 
 int main(int argc, char** argv)
 {
@@ -43,12 +44,20 @@ int main(int argc, char** argv)
     auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
     std::mt19937_64 prng(seed);
     arc_helpers::TruncatedNormalDistribution dist(0.0, 1.0, -5.0, 5.0);
-    std::vector<double> test_trunc_normals(100000, 0.0);
+    std::vector<double> test_trunc_normals(1000, 0.0);
     for (size_t idx = 0; idx < test_trunc_normals.size(); idx++)
     {
         test_trunc_normals[idx] = dist(prng);
     }
     std::cout << "Truncated normal test:\n" << PrettyPrint::PrettyPrint(test_trunc_normals, false, ",") << std::endl;
+
+    // Test DTW
+    std::vector<double> reversed_test_trunc_normals = test_trunc_normals;
+    std::reverse(reversed_test_trunc_normals.begin(), reversed_test_trunc_normals.end());
+    std::function<double(const double&, const double&)> double_distance_fn = [] (const double& d1, const double& d2) { return std::abs(d1 - d2); };
+    const double test_dist = simple_dtw::ComputeDTWDistance(test_trunc_normals, test_trunc_normals, double_distance_fn);
+    const double reversed_test_dist = simple_dtw::ComputeDTWDistance(test_trunc_normals, reversed_test_trunc_normals, double_distance_fn);
+    std::cout << "DTW distance test = " << test_dist << ", reversed = " << reversed_test_dist << std::endl;
 
     // Test weighted dot product functions
     Eigen::Vector3d weights(1.0, 2.0, 3.0);
