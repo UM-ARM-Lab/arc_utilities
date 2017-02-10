@@ -24,15 +24,19 @@ namespace simple_hausdorff_distance
 
         SimpleHausdorffDistance() {}
 
-        static inline size_t GetNumOMPThreads()
+        static inline size_t GetNumOMPThreads(void)
         {
 #ifdef ENABLE_PARALLEL_HAUSDORFF_DISTANCE
+        #if defined(_OPENMP)
             size_t num_threads = 0;
             #pragma omp parallel
             {
                 num_threads = (size_t)omp_get_num_threads();
             }
             return num_threads;
+        #else
+            return 1;
+        #endif
 #else
             return 1;
 #endif
@@ -40,51 +44,50 @@ namespace simple_hausdorff_distance
 
     public:
 
-        template<typename Datatype, typename Allocator=std::allocator<Datatype>>
-        static double ComputeDistance(const std::vector<Datatype, Allocator>& first_distribution, const std::vector<Datatype, Allocator>& second_distribution, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
+        template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator=std::allocator<FirstDatatype>, typename SecondAllocator=std::allocator<SecondDatatype>>
+        static double ComputeDistance(const std::vector<FirstDatatype, FirstAllocator>& first_distribution, const std::vector<SecondDatatype, SecondAllocator>& second_distribution, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
         {
             // Compute the Hausdorff distance - the "maximum minimum" distance
-            double maximum_minimum_distance = 0.0;
+            std::vector<double> per_thread_storage(GetNumOMPThreads(), 0.0);
 #ifdef ENABLE_PARALLEL_HAUSDORFF_DISTANCE
-            std::vector<double> thread_temp_storage(GetNumOMPThreads(), 0.0);
             #pragma omp parallel for
 #endif
             for (size_t idx = 0; idx < first_distribution.size(); idx++)
             {
-                const Datatype& first = first_distribution[idx];
+                const FirstDatatype& first = first_distribution[idx];
                 double minimum_distance = INFINITY;
                 for (size_t jdx = 0; jdx < second_distribution.size(); jdx++)
                 {
-                    const Datatype& second = second_distribution[jdx];
-                    const double& current_distance = distance_fn(first, second);
+                    const SecondDatatype& second = second_distribution[jdx];
+                    const double current_distance = distance_fn(first, second);
                     if (current_distance < minimum_distance)
                     {
                         minimum_distance = current_distance;
                     }
                 }
 #ifdef ENABLE_PARALLEL_HAUSDORFF_DISTANCE
+                #if defined(_OPENMP)
                 const size_t current_thread_id = (size_t)omp_get_thread_num();
-                if (minimum_distance > thread_temp_storage[current_thread_id])
-                {
-                    thread_temp_storage[current_thread_id] = minimum_distance;
-                }
+                #else
+                const size_t current_thread_id = 0;
+                #endif
 #else
-                if (minimum_distance > maximum_minimum_distance)
-                {
-                    maximum_minimum_distance = minimum_distance;
-                }
+                const size_t current_thread_id = 0;
 #endif
+                if (minimum_distance > per_thread_storage[current_thread_id])
+                {
+                    per_thread_storage[current_thread_id] = minimum_distance;
+                }
             }
-#ifdef ENABLE_PARALLEL_HAUSDORFF_DISTANCE
-            for (size_t idx = 0; idx < thread_temp_storage.size(); idx++)
+            double maximum_minimum_distance = 0.0;
+            for (size_t idx = 0; idx < per_thread_storage.size(); idx++)
             {
-                const double& temp_minimum_distance = thread_temp_storage[idx];
+                const double temp_minimum_distance = per_thread_storage[idx];
                 if (temp_minimum_distance > maximum_minimum_distance)
                 {
                     maximum_minimum_distance = temp_minimum_distance;
                 }
             }
-#endif
             return maximum_minimum_distance;
         }
     };

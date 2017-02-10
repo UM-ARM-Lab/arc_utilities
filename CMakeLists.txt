@@ -68,6 +68,7 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/simple_kmeans_clustering.hpp
     include/${PROJECT_NAME}/simple_hierarchical_clustering.hpp
     include/${PROJECT_NAME}/simple_hausdorff_distance.hpp
+    include/${PROJECT_NAME}/simple_dtw.hpp
     include/${PROJECT_NAME}/dijkstras.hpp
     include/${PROJECT_NAME}/shortcut_smoothing.hpp
     src/${PROJECT_NAME}/zlib_helpers.cpp)
