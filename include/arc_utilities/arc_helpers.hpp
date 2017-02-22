@@ -475,6 +475,10 @@ namespace arc_helpers
     template<typename Item, typename Value, typename ItemAlloc=std::allocator<Item>>
     std::vector<std::pair<int64_t, double>> GetKNearestNeighbors(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
     {
+        if (K == 0)
+        {
+            return std::vector<std::pair<int64_t, double>>();
+        }
         if (items.size() > K)
         {
             std::function<bool(const std::pair<int64_t, double>&, const std::pair<int64_t, double>&)> compare_fn = [] (const std::pair<int64_t, double>& index1, const std::pair<int64_t, double>& index2) { return index1.second < index2.second; };
