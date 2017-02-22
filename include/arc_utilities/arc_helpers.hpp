@@ -1354,6 +1354,32 @@ namespace arc_helpers
         keys_and_values.shrink_to_fit();
         return keys_and_values;
     }
+
+    template <typename Key, typename Value, typename Compare=std::less<Key>, typename Allocator=std::allocator<std::pair<const Key, Value>>>
+    inline std::map<Key, Value, Compare, Allocator> MakeFromKeysAndValues(const std::vector<std::pair<const Key, Value>, Allocator>& keys_and_values)
+    {
+        std::map<Key, Value, Compare, Allocator> map;
+        for (size_t idx = 0; idx < keys_and_values.size(); idx++)
+        {
+            const std::pair<Key, Value>& cur_pair = keys_and_values[idx];
+            map[cur_pair.first] = cur_pair.second;
+        }
+        return map;
+    }
+
+    template <typename Key, typename Value, typename Compare=std::less<Key>, typename KeyVectorAllocator=std::allocator<Key>, typename ValueVectorAllocator=std::allocator<Value>, typename PairAllocator=std::allocator<std::pair<const Key, Value>>>
+    inline std::map<Key, Value, Compare, PairAllocator> MakeFromKeysAndValues(const std::vector<Key, KeyVectorAllocator>& keys, const std::vector<Value, ValueVectorAllocator>& values)
+    {
+        assert(keys.size() == values.size());
+        std::map<Key, Value, Compare, PairAllocator> map;
+        for (size_t idx = 0; idx < keys.size(); idx++)
+        {
+            const Key& cur_key = keys[idx];
+            const Value& cur_value = values[idx];
+            map[cur_key] = cur_value;
+        }
+        return map;
+    }
 }
 
 #endif // ARC_HELPERS_HPP
