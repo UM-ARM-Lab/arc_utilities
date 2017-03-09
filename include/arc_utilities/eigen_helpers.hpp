@@ -1337,12 +1337,87 @@ namespace EigenHelpers
     // Other auxiliary functions
     ////////////////////////////////////////////////////////////////////////////
 
+    class Hyperplane
+    {
+    protected:
+
+        Eigen::VectorXd plane_origin_;
+        Eigen::VectorXd plane_normal_;
+
+    public:
+
+        Hyperplane(const Eigen::VectorXd& origin, const Eigen::VectorXd& normal)
+        {
+            assert(origin.size() == normal.size());
+            plane_origin_ = origin;
+            plane_normal_ = normal;
+        }
+
+        Hyperplane() {}
+
+        const Eigen::VectorXd& GetOrigin() const
+        {
+            return plane_origin_;
+        }
+
+        const Eigen::VectorXd& GetNormal() const
+        {
+            return plane_normal_;
+        }
+
+        double GetNormedDotProduct(const Eigen::VectorXd& point) const
+        {
+            assert(point.size() == plane_origin_.size());
+            const Eigen::VectorXd check_vector = point - plane_origin_;
+            const Eigen::VectorXd check_vector_normed = EigenHelpers::SafeNormal(check_vector);
+            const double dot_product = check_vector_normed.dot(plane_normal_);
+            return dot_product;
+        }
+
+        double GetRawDotProduct(const Eigen::VectorXd& point) const
+        {
+            assert(point.size() == plane_origin_.size());
+            const Eigen::VectorXd check_vector = point - plane_origin_;
+            const double dot_product = check_vector.dot(plane_normal_);
+            return dot_product;
+        }
+
+        Eigen::VectorXd RejectVectorOntoPlane(const Eigen::VectorXd& vector) const
+        {
+            return VectorProjection(plane_normal_, vector);
+        }
+
+        double GetSquaredDistanceToPlane(const Eigen::VectorXd& point) const
+        {
+            const Eigen::VectorXd origin_to_point_vector = point - plane_origin_;
+            return VectorProjection(plane_normal_, origin_to_point_vector).squaredNorm();
+        }
+
+        double GetDistanceToPlane(const Eigen::VectorXd& point) const
+        {
+            const Eigen::VectorXd origin_to_point_vector = point - plane_origin_;
+            return VectorProjection(plane_normal_, origin_to_point_vector).norm();
+        }
+
+        Eigen::VectorXd ProjectVectorOntoPlane(const Eigen::VectorXd& vector) const
+        {
+            return VectorRejection(plane_normal_, vector);
+        }
+
+        Eigen::VectorXd ProjectPointOntoPlane(const Eigen::VectorXd& point) const
+        {
+            const Eigen::VectorXd origin_to_point_vector = point - plane_origin_;
+            const Eigen::VectorXd projected_to_point_vector = VectorRejection(plane_normal_, origin_to_point_vector);
+            const Eigen::VectorXd projected_point = plane_origin_ + projected_to_point_vector;
+            return projected_point;
+        }
+    };
+
     /*
      * Returns a pair of <centroid point, normal vector> defining the plane
      */
-    inline std::pair<Eigen::VectorXd, Eigen::VectorXd> FitPlaneToPoints(const std::vector<Eigen::VectorXd>& points)
+    inline Hyperplane FitPlaneToPoints(const std::vector<Eigen::VectorXd>& points)
     {
-        assert(points.size() >= 3);
         // Subtract out the centroid
         const Eigen::VectorXd centroid = EigenHelpers::AverageEigenVectorXd(points);
         Eigen::MatrixXd centered_points(centroid.size(), points.size());
@@ -1372,7 +1447,7 @@ namespace EigenHelpers
         // The corresponding left singular vector is the normal vector of the best-fit plane
         const Eigen::VectorXd best_left_singular_vector = u_matrix.col(best_singular_value_index);
         const Eigen::VectorXd normal_vector = EigenHelpers::SafeNormal(best_left_singular_vector);
-        return std::make_pair(centroid, normal_vector);
+        return Hyperplane(centroid, normal_vector);
     }
 
     inline double SuggestedRcond()
