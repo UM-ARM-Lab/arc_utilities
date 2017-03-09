@@ -891,6 +891,36 @@ namespace EigenHelpers
         return CheckInContinuousRevoluteRange(start, range, val);
     }
 
+    inline double CalculateTotalDistance(const EigenHelpers::VectorVector3d& points)
+    {
+        double distance = 0;
+
+        for (size_t idx = 1; idx < points.size(); ++idx)
+        {
+            const double delta = (points[idx] - points[idx-1]).norm();
+            distance += delta;
+        }
+
+        return distance;
+    }
+
+    inline std::vector<double> CalculateCumulativeDistances(const EigenHelpers::VectorVector3d& points)
+    {
+        std::vector<double> distances(points.size());
+
+        if (points.size() > 0)
+        {
+            distances[0] = 0.0;
+            for (size_t idx = 1; idx < points.size(); ++idx)
+            {
+                const double delta = (points[idx] - points[idx-1]).norm();
+                distances[idx] = distances[idx-1] + delta;
+            }
+        }
+
+        return distances;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Conversion functions
     ////////////////////////////////////////////////////////////////////////////
