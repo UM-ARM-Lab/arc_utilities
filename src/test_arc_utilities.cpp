@@ -8,6 +8,7 @@
 #include <arc_utilities/abb_irb1600_145_fk_fast.hpp>
 #include <arc_utilities/iiwa_14_fk_fast.hpp>
 #include <arc_utilities/simple_dtw.hpp>
+#include <unsupported/Eigen/AlignedVector3>
 
 int main(int argc, char** argv)
 {
@@ -18,7 +19,7 @@ int main(int argc, char** argv)
     }
     std::cout << "Testing PrettyPrints..." << std::endl;
     std::cout << PrettyPrint::PrettyPrint(Eigen::Affine3d::Identity()) << std::endl;
-    std::cout << PrettyPrint::PrettyPrint(Eigen::Vector3d(0.0, 0.0, 0.0)) << std::endl;
+    std::cout << PrettyPrint::PrettyPrint(EigenHelpers::Vector3d(0.0, 0.0, 0.0)) << std::endl;
     std::cout << PrettyPrint::PrettyPrint(std::vector<bool>{true, false, true, false}) << std::endl;
     std::cout << "...done" << std::endl;
     const std::vector<double> abb_irb_1600_145_base_config = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -29,17 +30,17 @@ int main(int argc, char** argv)
     std::cout << "IIWA 14 Link transforms:\n" << PrettyPrint::PrettyPrint(iiwa_14_link_transforms, false, "\n") << std::endl;
 
     // Test Vector3d averaging
-    EigenHelpers::VectorVector3d testvecs(8, Eigen::Vector3d::Zero());
-    testvecs[0] = Eigen::Vector3d(-1.0, -1.0, -1.0);
-    testvecs[1] = Eigen::Vector3d(-1.0, -1.0, 1.0);
-    testvecs[2] = Eigen::Vector3d(-1.0, 1.0, -1.0);
-    testvecs[3] = Eigen::Vector3d(-1.0, 1.0, 1.0);
-    testvecs[4] = Eigen::Vector3d(1.0, -1.0, -1.0);
-    testvecs[5] = Eigen::Vector3d(1.0, -1.0, 1.0);
-    testvecs[6] = Eigen::Vector3d(1.0, 1.0, -1.0);
-    testvecs[7] = Eigen::Vector3d(1.0, 1.0, 1.0);
+    EigenHelpers::VectorVector3d testvecs(8, EigenHelpers::Vector3d::Zero());
+    testvecs[0] = EigenHelpers::Vector3d(-1.0, -1.0, -1.0);
+    testvecs[1] = EigenHelpers::Vector3d(-1.0, -1.0, 1.0);
+    testvecs[2] = EigenHelpers::Vector3d(-1.0, 1.0, -1.0);
+    testvecs[3] = EigenHelpers::Vector3d(-1.0, 1.0, 1.0);
+    testvecs[4] = EigenHelpers::Vector3d(1.0, -1.0, -1.0);
+    testvecs[5] = EigenHelpers::Vector3d(1.0, -1.0, 1.0);
+    testvecs[6] = EigenHelpers::Vector3d(1.0, 1.0, -1.0);
+    testvecs[7] = EigenHelpers::Vector3d(1.0, 1.0, 1.0);
     std::cout << "Individual vectors: " << PrettyPrint::PrettyPrint(testvecs) << std::endl;
-    Eigen::Vector3d averagevec = EigenHelpers::AverageEigenVector3d(testvecs);
+    EigenHelpers::Vector3d averagevec = EigenHelpers::AverageEigenVector3d(testvecs);
     std::cout << "Average vector: " << PrettyPrint::PrettyPrint(averagevec) << std::endl;
     auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
     std::mt19937_64 prng(seed);
@@ -60,15 +61,15 @@ int main(int argc, char** argv)
     std::cout << "DTW distance test = " << test_dist << ", reversed = " << reversed_test_dist << std::endl;
 
     // Test weighted dot product functions
-    Eigen::Vector3d weights(1.0, 2.0, 3.0);
+    EigenHelpers::Vector3d weights(1.0, 2.0, 3.0);
     std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvecs[0]) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvecs[0], weights) << std::endl;
     std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvecs[7]) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvecs[7], weights) << std::endl;
     std::cout << "Weighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvecs[0], testvecs[7], weights) << std::endl;
-    std::cout << "Unweighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvecs[0], testvecs[7], Eigen::Vector3d::Ones()) << std::endl;
+    std::cout << "Unweighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvecs[0], testvecs[7], EigenHelpers::Vector3d::Ones()) << std::endl;
     std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvecs[1]) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvecs[1], weights) << std::endl;
     std::cout << "Vector: " << PrettyPrint::PrettyPrint(testvecs[2]) << " Weighted norm: " << EigenHelpers::WeightedNorm(testvecs[2], weights) << std::endl;
     std::cout << "Weighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvecs[1], testvecs[2], weights) << std::endl;
-    std::cout << "Unweighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvecs[1], testvecs[2], Eigen::Vector3d::Ones()) << std::endl;
+    std::cout << "Unweighted angle between vectors: " << EigenHelpers::WeightedAngleBetweenVectors(testvecs[1], testvecs[2], EigenHelpers::Vector3d::Ones()) << std::endl;
 
     // Test multivariate gaussian
     std::cout << "MVN Gaussian test:\n";
@@ -84,5 +85,17 @@ int main(int argc, char** argv)
         std::cout << mvn_gaussians[idx].transpose() << std::endl;
     }
 
+    // Test aligned vector3 support
+    const Eigen::Vector3d base_vector(1.0, 2.0, 3.0);
+    const Eigen::Vector4d manual_vector(1.0, 2.0, 3.0, 1.0);
+    const Eigen::Aligned4Vector3<double> base_aligned_vector(1.0, 2.0, 3.0);
+    const Eigen::Affine3d base_transform = Eigen::Translation3d(10.0, 10.0, 10.0) * Eigen::Quaterniond::Identity();
+    const Eigen::Vector3d base_result = base_transform * base_vector;
+    std::cout << "Base " << base_result.x() << ", " << base_result.y() << ", " << base_result.z() << std::endl;
+    const auto manual_result_vector = base_transform * manual_vector;
+    std::cout << "Manual aligned vector " << manual_result_vector << std::endl;
+    //const auto result_vector = base_transform * base_aligned_vector;
+    const Eigen::Aligned4Vector3<double> result_vector(base_transform * base_aligned_vector);
+    std::cout << "Base aligned vector " << result_vector << ", " << typeid(result_vector).name() << std::endl;
     return 0;
 }

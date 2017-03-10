@@ -18,15 +18,15 @@ namespace VoxelGrid
 {
     struct CHUNK_REGION
     {
-        Eigen::Vector3d base;
+        EigenHelpers::Vector3d base;
 
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-        CHUNK_REGION() : base(Eigen::Vector3d(0.0, 0.0, 0.0)) {}
+        CHUNK_REGION() : base(EigenHelpers::Vector3d(0.0, 0.0, 0.0)) {}
 
-        CHUNK_REGION(const double base_x, const double base_y, const double base_z) : base(Eigen::Vector3d(base_x, base_y, base_z)) {}
+        CHUNK_REGION(const double base_x, const double base_y, const double base_z) : base(EigenHelpers::Vector3d(base_x, base_y, base_z)) {}
 
-        CHUNK_REGION(const Eigen::Vector3d& in_base) : base(in_base) {}
+        CHUNK_REGION(const EigenHelpers::Vector3d& in_base) : base(in_base) {}
 
         bool operator==(const CHUNK_REGION& other) const
         {
@@ -160,9 +160,9 @@ namespace VoxelGrid
             return (x_index * stride1_) + (y_index * stride2_) + z_index;
         }
 
-        inline int64_t GetLocationDataIndex(const Eigen::Vector3d& location) const
+        inline int64_t GetLocationDataIndex(const EigenHelpers::Vector3d& location) const
         {
-            Eigen::Vector3d location_in_chunk = location - region_.base;
+            EigenHelpers::Vector3d location_in_chunk = location - region_.base;
             // First, make sure the location is in the range this chunk covers
             if (location_in_chunk.x() < 0.0 || location_in_chunk.y() < 0.0 || location_in_chunk.z() < 0.0)
             {
@@ -304,7 +304,7 @@ namespace VoxelGrid
             }
         }
 
-        inline std::pair<T&, bool> GetCellMutable(const Eigen::Vector3d& location)
+        inline std::pair<T&, bool> GetCellMutable(const EigenHelpers::Vector3d& location)
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -319,7 +319,7 @@ namespace VoxelGrid
             }
         }
 
-        inline std::pair<const T&, bool> GetCellImmutable(const Eigen::Vector3d& location) const
+        inline std::pair<const T&, bool> GetCellImmutable(const EigenHelpers::Vector3d& location) const
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -348,7 +348,7 @@ namespace VoxelGrid
             return data_[0];
         }
 
-        inline bool SetCellValue(const Eigen::Vector3d& location, const T& value)
+        inline bool SetCellValue(const EigenHelpers::Vector3d& location, const T& value)
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -364,7 +364,7 @@ namespace VoxelGrid
             }
         }
 
-        inline bool SetCellValue(const Eigen::Vector3d& location, T&& value)
+        inline bool SetCellValue(const EigenHelpers::Vector3d& location, T&& value)
         {
             assert(cell_initialized_);
             int64_t data_index = GetLocationDataIndex(location);
@@ -403,14 +403,14 @@ namespace VoxelGrid
             {
                 if (chunk_initialized_)
                 {
-                    Eigen::Vector3d point_in_chunk_frame(chunk_x_size_ * 0.5, chunk_y_size_ * 0.5, chunk_z_size_ * 0.5);
-                    Eigen::Vector3d point_in_grid_frame = region_.base + point_in_chunk_frame;
+                    EigenHelpers::Vector3d point_in_chunk_frame(chunk_x_size_ * 0.5, chunk_y_size_ * 0.5, chunk_z_size_ * 0.5);
+                    EigenHelpers::Vector3d point_in_grid_frame = region_.base + point_in_chunk_frame;
                     return std::vector<double>{point_in_grid_frame.x(), point_in_grid_frame.y(), point_in_grid_frame.z()};
                 }
                 else
                 {
-                    Eigen::Vector3d point_in_chunk_frame(cell_x_size_ * ((double)x_index + 0.5), cell_y_size_ * ((double)y_index + 0.5), cell_z_size_ * ((double)z_index + 0.5));
-                    Eigen::Vector3d point_in_grid_frame = region_.base + point_in_chunk_frame;
+                    EigenHelpers::Vector3d point_in_chunk_frame(cell_x_size_ * ((double)x_index + 0.5), cell_y_size_ * ((double)y_index + 0.5), cell_z_size_ * ((double)z_index + 0.5));
+                    EigenHelpers::Vector3d point_in_grid_frame = region_.base + point_in_chunk_frame;
                     return std::vector<double>{point_in_grid_frame.x(), point_in_grid_frame.y(), point_in_grid_frame.z()};
                 }
             }
@@ -612,41 +612,41 @@ namespace VoxelGrid
 
         inline std::pair<const T&, FOUND_STATUS> GetImmutable(const double x, const double y, const double z) const
         {
-            Eigen::Vector3d location(x, y, z);
+            EigenHelpers::Vector3d location(x, y, z);
             return GetImmutable(location);
         }
 
         inline std::pair<T&, FOUND_STATUS> GetMutable(const double x, const double y, const double z)
         {
-            Eigen::Vector3d location(x, y, z);
+            EigenHelpers::Vector3d location(x, y, z);
             return GetMutable(location);
         }
 
         inline SET_STATUS SetCellValue(const double x, const double y, const double z, const T& value)
         {
-            Eigen::Vector3d location(x, y, z);
+            EigenHelpers::Vector3d location(x, y, z);
             return SetCellValue(location, value);
         }
 
         inline SET_STATUS SetCellValue(const double x, const double y, const double z, T&& value)
         {
-            Eigen::Vector3d location(x, y, z);
+            EigenHelpers::Vector3d location(x, y, z);
             return SetCellValue(location, value);
         }
 
         inline SET_STATUS SetChunkValue(const double x, const double y, const double z, const T& value)
         {
-            Eigen::Vector3d location(x, y, z);
+            EigenHelpers::Vector3d location(x, y, z);
             return SetCellValue(location, value);
         }
 
         inline SET_STATUS SetChunkValue(const double x, const double y, const double z, T&& value)
         {
-            Eigen::Vector3d location(x, y, z);
+            EigenHelpers::Vector3d location(x, y, z);
             return SetCellValue(location, value);
         }
 
-        inline CHUNK_REGION GetContainingChunkRegion(const Eigen::Vector3d& grid_location) const
+        inline CHUNK_REGION GetContainingChunkRegion(const EigenHelpers::Vector3d& grid_location) const
         {
             assert(initialized_);
             // Given a location in the grid frame, figure out which chunk region it falls into
@@ -663,10 +663,10 @@ namespace VoxelGrid
             return region;
         }
 
-        inline std::pair<const T&, FOUND_STATUS> GetImmutable(const Eigen::Vector3d& location) const
+        inline std::pair<const T&, FOUND_STATUS> GetImmutable(const EigenHelpers::Vector3d& location) const
         {
             assert(initialized_);
-            Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
+            EigenHelpers::Vector3d grid_location = inverse_origin_transform_ * location;
             CHUNK_REGION region = GetContainingChunkRegion(grid_location);
             auto found_chunk_itr = chunks_.find(region);
             if (found_chunk_itr != chunks_.end())
@@ -700,10 +700,10 @@ namespace VoxelGrid
             }
         }
 
-        inline std::pair<T&, FOUND_STATUS> GetMutable(const Eigen::Vector3d& location)
+        inline std::pair<T&, FOUND_STATUS> GetMutable(const EigenHelpers::Vector3d& location)
         {
             assert(initialized_);
-            Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
+            EigenHelpers::Vector3d grid_location = inverse_origin_transform_ * location;
             CHUNK_REGION region = GetContainingChunkRegion(grid_location);
             auto found_chunk_itr = chunks_.find(region);
             if (found_chunk_itr != chunks_.end())
@@ -737,10 +737,10 @@ namespace VoxelGrid
             }
         }
 
-        inline SET_STATUS SetCellValue(const Eigen::Vector3d& location, const T& value)
+        inline SET_STATUS SetCellValue(const EigenHelpers::Vector3d& location, const T& value)
         {
             assert(initialized_);
-            Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
+            EigenHelpers::Vector3d grid_location = inverse_origin_transform_ * location;
             CHUNK_REGION region = GetContainingChunkRegion(grid_location);
             auto found_chunk_itr = chunks_.find(region);
             if (found_chunk_itr != chunks_.end())
@@ -803,10 +803,10 @@ namespace VoxelGrid
             }
         }
 
-        inline SET_STATUS SetCellValue(const Eigen::Vector3d& location, T&& value)
+        inline SET_STATUS SetCellValue(const EigenHelpers::Vector3d& location, T&& value)
         {
             assert(initialized_);
-            Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
+            EigenHelpers::Vector3d grid_location = inverse_origin_transform_ * location;
             CHUNK_REGION region = GetContainingChunkRegion(grid_location);
             auto found_chunk_itr = chunks_.find(region);
             if (found_chunk_itr != chunks_.end())
@@ -869,10 +869,10 @@ namespace VoxelGrid
             }
         }
 
-        inline SET_STATUS SetChunkValue(const Eigen::Vector3d& location, const T& value)
+        inline SET_STATUS SetChunkValue(const EigenHelpers::Vector3d& location, const T& value)
         {
             assert(initialized_);
-            Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
+            EigenHelpers::Vector3d grid_location = inverse_origin_transform_ * location;
             CHUNK_REGION region = GetContainingChunkRegion(grid_location);
             auto found_chunk_itr = chunks_.find(region);
             if (found_chunk_itr != chunks_.end())
@@ -913,10 +913,10 @@ namespace VoxelGrid
             }
         }
 
-        inline SET_STATUS SetChunkValue(const Eigen::Vector3d& location, T&& value)
+        inline SET_STATUS SetChunkValue(const EigenHelpers::Vector3d& location, T&& value)
         {
             assert(initialized_);
-            Eigen::Vector3d grid_location = inverse_origin_transform_ * location;
+            EigenHelpers::Vector3d grid_location = inverse_origin_transform_ * location;
             CHUNK_REGION region = GetContainingChunkRegion(grid_location);
             auto found_chunk_itr = chunks_.find(region);
             if (found_chunk_itr != chunks_.end())
@@ -1004,7 +1004,7 @@ namespace std
         {
             using std::size_t;
             using std::hash;
-            return (std::hash<Eigen::Vector3d>()(region.base));
+            return (std::hash<EigenHelpers::Vector3d>()(region.base));
         }
     };
 }

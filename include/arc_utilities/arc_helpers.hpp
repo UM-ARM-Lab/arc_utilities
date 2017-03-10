@@ -1046,12 +1046,12 @@ namespace arc_helpers
 
         // From Effective Sampling and Distance Metrics for 3D Rigid Body Path Planning, by James Kuffner, ICRA 2004
         template<typename Generator>
-        Eigen::Vector3d GenerateUniformRandomEulerAngles(Generator& prng)
+        EigenHelpers::Vector3d GenerateUniformRandomEulerAngles(Generator& prng)
         {
             const double roll = M_PI * (-2.0 * uniform_unit_dist_(prng) + 1.0);
             const double pitch = acos(1.0 - 2.0 * uniform_unit_dist_(prng)) - M_PI_2;
             const double yaw = M_PI * (-2.0 * uniform_unit_dist_(prng) + 1.0);
-            return Eigen::Vector3d(roll, pitch, yaw);
+            return EigenHelpers::Vector3d(roll, pitch, yaw);
         }
 
     public:
@@ -1072,7 +1072,7 @@ namespace arc_helpers
         }
 
         template<typename Generator>
-        inline Eigen::Vector3d GetEulerAngles(Generator& prng)
+        inline EigenHelpers::Vector3d GetEulerAngles(Generator& prng)
         {
             return GenerateUniformRandomEulerAngles(prng);
         }
@@ -1080,7 +1080,7 @@ namespace arc_helpers
         template<typename Generator>
         inline std::vector<double> GetRawEulerAngles(Generator& prng)
         {
-            const Eigen::Vector3d angles = GenerateUniformRandomEulerAngles(prng);
+            const EigenHelpers::Vector3d angles = GenerateUniformRandomEulerAngles(prng);
             return std::vector<double>{angles.x(), angles.y(), angles.z()};
         }
     };

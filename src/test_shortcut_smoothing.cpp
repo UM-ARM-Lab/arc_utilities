@@ -10,11 +10,11 @@ int main(int argc, char** argv)
     EigenHelpers::VectorVector3d vec(10);
     for (int i = 0; i < 10; ++i)
     {
-        vec[i] = Eigen::Vector3d(i, 0.0, 0.0);
+        vec[i] = EigenHelpers::Vector3d(i, 0.0, 0.0);
     }
 
     const double step_size = 0.1;
-    const auto collision_fn = [] (const Eigen::Vector3d& location) { (void)location; return location.norm() > 4.0; };
+    const auto collision_fn = [] (const EigenHelpers::Vector3d& location) { (void)location; return location.norm() > 4.0; };
 
     auto vec_smoothed = shortcut_smoothing::ShortcutSmooth(vec, 1, 4, step_size, collision_fn);
 

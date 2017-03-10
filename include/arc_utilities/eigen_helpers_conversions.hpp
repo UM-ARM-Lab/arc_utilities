@@ -16,13 +16,13 @@
 
 namespace EigenHelpersConversions
 {
-    inline Eigen::Vector3d GeometryPointToEigenVector3d(const geometry_msgs::Point& point)
+    inline EigenHelpers::Vector3d GeometryPointToEigenVector3d(const geometry_msgs::Point& point)
     {
-        Eigen::Vector3d eigen_point(point.x, point.y, point.z);
+        EigenHelpers::Vector3d eigen_point(point.x, point.y, point.z);
         return eigen_point;
     }
 
-    inline geometry_msgs::Point EigenVector3dToGeometryPoint(const Eigen::Vector3d& point)
+    inline geometry_msgs::Point EigenVector3dToGeometryPoint(const EigenHelpers::Vector3d& point)
     {
         geometry_msgs::Point geom_point;
         geom_point.x = point.x();
@@ -31,7 +31,7 @@ namespace EigenHelpersConversions
         return geom_point;
     }
 
-    inline geometry_msgs::PointStamped EigenVector3dToGeometryPointStamped(const Eigen::Vector3d& point, const std::string& frame_id)
+    inline geometry_msgs::PointStamped EigenVector3dToGeometryPointStamped(const EigenHelpers::Vector3d& point, const std::string& frame_id)
     {
         geometry_msgs::PointStamped point_stamped;
         point_stamped.header.frame_id = frame_id;
@@ -39,13 +39,13 @@ namespace EigenHelpersConversions
         return point_stamped;
     }
 
-    inline Eigen::Vector3d GeometryVector3ToEigenVector3d(const geometry_msgs::Vector3& vector)
+    inline EigenHelpers::Vector3d GeometryVector3ToEigenVector3d(const geometry_msgs::Vector3& vector)
     {
-        Eigen::Vector3d eigen_vector(vector.x, vector.y, vector.z);
+        EigenHelpers::Vector3d eigen_vector(vector.x, vector.y, vector.z);
         return eigen_vector;
     }
 
-    inline geometry_msgs::Vector3 EigenVector3dToGeometryVector3(const Eigen::Vector3d& vector)
+    inline geometry_msgs::Vector3 EigenVector3dToGeometryVector3(const EigenHelpers::Vector3d& vector)
     {
         geometry_msgs::Vector3 geom_vector;
         geom_vector.x = vector.x();
@@ -80,7 +80,7 @@ namespace EigenHelpersConversions
 
     inline geometry_msgs::Pose EigenAffine3dToGeometryPose(const Eigen::Affine3d& transform)
     {
-        const Eigen::Vector3d trans = transform.translation();
+        const EigenHelpers::Vector3d trans = transform.translation();
         const Eigen::Quaterniond quat(transform.rotation());
         geometry_msgs::Pose geom_pose;
         geom_pose.position.x = trans.x();
@@ -111,7 +111,7 @@ namespace EigenHelpersConversions
 
     inline geometry_msgs::Transform EigenAffine3dToGeometryTransform(const Eigen::Affine3d& transform)
     {
-        const Eigen::Vector3d trans = transform.translation();
+        const EigenHelpers::Vector3d trans = transform.translation();
         const Eigen::Quaterniond quat(transform.rotation());
         geometry_msgs::Transform geom_transform;
         geom_transform.translation.x = trans.x();

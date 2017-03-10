@@ -10,16 +10,29 @@
 #include <vector>
 #include <functional>
 #include <type_traits>
+#include <arc_utilities/aligned_eigen_types.hpp>
 
 #ifndef EIGEN_HELPERS_HPP
 #define EIGEN_HELPERS_HPP
 
+namespace EigenHelpers
+{
+    ////////////////////////////////////////////////////////////////////////////
+    // Vector Typedefs
+    ////////////////////////////////////////////////////////////////////////////
+
+//    typedef Eigen::Aligned4Vector3<float> Vector3f;
+//    typedef Eigen::Aligned4Vector3<double> Vector3d;
+    typedef Eigen::Vector3f Vector3f;
+    typedef Eigen::Vector3d Vector3d;
+}
+
 namespace std
 {
     template <>
-    struct hash<Eigen::Vector3d>
+    struct hash<EigenHelpers::Vector3d>
     {
-        std::size_t operator()(const Eigen::Vector3d& vector) const
+        std::size_t operator()(const EigenHelpers::Vector3d& vector) const
         {
             using std::size_t;
             using std::hash;
@@ -36,7 +49,7 @@ namespace EigenHelpers
 
     typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VectorVector2d;
     typedef std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> VectorVector3f;
-    typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VectorVector3d;
+    typedef std::vector<EigenHelpers::Vector3d, Eigen::aligned_allocator<EigenHelpers::Vector3d>> VectorVector3d;
     typedef std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> VectorVector4f;
     typedef std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>> VectorVector4d;
     typedef std::vector<Eigen::Quaternionf, Eigen::aligned_allocator<Eigen::Quaternionf>> VectorQuaternionf;
@@ -44,7 +57,7 @@ namespace EigenHelpers
     typedef std::vector<Eigen::Affine3f, Eigen::aligned_allocator<Eigen::Affine3f>> VectorAffine3f;
     typedef std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> VectorAffine3d;
     typedef std::map<std::string, Eigen::Vector3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3f>>> MapStringVector3f;
-    typedef std::map<std::string, Eigen::Vector3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3d>>> MapStringVector3d;
+    typedef std::map<std::string, EigenHelpers::Vector3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, EigenHelpers::Vector3d>>> MapStringVector3d;
     typedef std::map<std::string, Eigen::Vector4f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4f>>> MapStringVector4f;
     typedef std::map<std::string, Eigen::Vector4d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4d>>> MapStringVector4d;
     typedef std::map<std::string, Eigen::Quaternionf, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Quaternionf>>> MapStringQuaternionf;
@@ -52,7 +65,7 @@ namespace EigenHelpers
     typedef std::map<std::string, Eigen::Affine3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3f>>> MapStringAffine3f;
     typedef std::map<std::string, Eigen::Affine3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3d>>> MapStringAffine3d;
 
-    inline bool Equal(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
+    inline bool Equal(const EigenHelpers::Vector3d& v1, const EigenHelpers::Vector3d& v2)
     {
         if ((v1.x() == v2.x()) && (v1.y() == v2.y()) && (v1.z() == v2.z()))
         {
@@ -78,7 +91,7 @@ namespace EigenHelpers
         }
     }
 
-    inline bool CloseEnough(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double threshold)
+    inline bool CloseEnough(const EigenHelpers::Vector3d& v1, const EigenHelpers::Vector3d& v2, const double threshold)
     {
         double real_threshold = fabs(threshold);
         if (fabs(v1.x() - v2.x()) > real_threshold)
@@ -169,39 +182,39 @@ namespace EigenHelpers
     }
 
     template<>
-    inline uint64_t SerializedSize(const Eigen::Vector3d& value)
+    inline uint64_t SerializedSize(const EigenHelpers::Vector3d& value)
     {
         (void)(value);
         return (uint64_t)(3 * sizeof(double));
     }
 
     template<>
-    inline uint64_t SerializedSize<Eigen::Vector3d>(void)
+    inline uint64_t SerializedSize<EigenHelpers::Vector3d>(void)
     {
         return (uint64_t)(3 * sizeof(double));
     }
 
     template<>
-    inline uint64_t Serialize(const Eigen::Vector3d& value, std::vector<uint8_t>& buffer)
+    inline uint64_t Serialize(const EigenHelpers::Vector3d& value, std::vector<uint8_t>& buffer)
     {
         // Takes a state to serialize and a buffer to serialize into
         // Return number of bytes written to buffer
-        std::vector<uint8_t> temp_buffer(SerializedSize<Eigen::Vector3d>(), 0x00);
-        memcpy(&temp_buffer.front(), value.data(), SerializedSize<Eigen::Vector3d>());
+        std::vector<uint8_t> temp_buffer(SerializedSize<EigenHelpers::Vector3d>(), 0x00);
+        memcpy(&temp_buffer.front(), value.data(), SerializedSize<EigenHelpers::Vector3d>());
         buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
-        return SerializedSize<Eigen::Vector3d>();
+        return SerializedSize<EigenHelpers::Vector3d>();
     }
 
     template<>
-    inline std::pair<Eigen::Vector3d, uint64_t> Deserialize<Eigen::Vector3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    inline std::pair<EigenHelpers::Vector3d, uint64_t> Deserialize<EigenHelpers::Vector3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
     {
         assert(current < buffer.size());
-        assert((current + SerializedSize<Eigen::Vector3d>()) <= buffer.size());
+        assert((current + SerializedSize<EigenHelpers::Vector3d>()) <= buffer.size());
         // Takes a buffer to read from and the starting index in the buffer
         // Return the loaded state and how many bytes we read from the buffer
-        Eigen::Vector3d temp_value;
-        memcpy(temp_value.data(), &buffer[current], SerializedSize<Eigen::Vector3d>());
-        return std::make_pair(temp_value, SerializedSize<Eigen::Vector3d>());
+        EigenHelpers::Vector3d temp_value;
+        memcpy(temp_value.data(), &buffer[current], SerializedSize<EigenHelpers::Vector3d>());
+        return std::make_pair(temp_value, SerializedSize<EigenHelpers::Vector3d>());
     }
 
     template<>
@@ -280,18 +293,18 @@ namespace EigenHelpers
     // Kinematics functions
     ////////////////////////////////////////////////////////////////////////////
 
-    inline Eigen::Vector3d RotateVector(const Eigen::Quaterniond& quat, const Eigen::Vector3d& vec)
+    inline EigenHelpers::Vector3d RotateVector(const Eigen::Quaterniond& quat, const EigenHelpers::Vector3d& vec)
     {
         const Eigen::Quaterniond temp(0.0, vec.x(), vec.y(), vec.z());
         const Eigen::Quaterniond res = quat * (temp * quat.inverse());
-        return Eigen::Vector3d(res.x(), res.y(), res.z());
+        return EigenHelpers::Vector3d(res.x(), res.y(), res.z());
     }
 
-    inline Eigen::Vector3d RotateVectorReverse(const Eigen::Quaterniond& quat, const Eigen::Vector3d& vec)
+    inline EigenHelpers::Vector3d RotateVectorReverse(const Eigen::Quaterniond& quat, const EigenHelpers::Vector3d& vec)
     {
         const Eigen::Quaterniond temp(0.0, vec.x(), vec.y(), vec.z());
         const Eigen::Quaterniond res = quat.inverse() * (temp * quat);
-        return Eigen::Vector3d(res.x(), res.y(), res.z());
+        return EigenHelpers::Vector3d(res.x(), res.y(), res.z());
     }
 
     inline double EnforceContinuousRevoluteBounds(const double value)
@@ -450,7 +463,7 @@ namespace EigenHelpers
         }
     }
 
-    inline Eigen::Matrix3d Skew(const Eigen::Vector3d& vector)
+    inline Eigen::Matrix3d Skew(const EigenHelpers::Vector3d& vector)
     {
         Eigen::Matrix3d skewed;
         skewed << 0.0, -vector.z(), vector.y(),
@@ -459,16 +472,16 @@ namespace EigenHelpers
         return skewed;
     }
 
-    inline Eigen::Vector3d Unskew(const Eigen::Matrix3d& matrix)
+    inline EigenHelpers::Vector3d Unskew(const Eigen::Matrix3d& matrix)
     {
         const Eigen::Matrix3d matrix_symetric = (matrix - matrix.transpose()) / 2.0;
-        const Eigen::Vector3d unskewed(matrix_symetric(2, 1), matrix_symetric(0, 2), matrix_symetric(1, 0));
+        const EigenHelpers::Vector3d unskewed(matrix_symetric(2, 1), matrix_symetric(0, 2), matrix_symetric(1, 0));
         return unskewed;
     }
 
     inline Eigen::Matrix4d TwistHat(const Eigen::Matrix<double, 6, 1>& twist)
     {
-        const Eigen::Vector3d trans_velocity = twist.segment<3>(0);
+        const EigenHelpers::Vector3d trans_velocity = twist.segment<3>(0);
         const Eigen::Matrix3d hatted_rot_velocity = Skew(twist.segment<3>(3));
         Eigen::Matrix4d hatted_twist = Eigen::Matrix4d::Zero();
         hatted_twist.block<3, 3>(0, 0) = hatted_rot_velocity;
@@ -478,8 +491,8 @@ namespace EigenHelpers
 
     inline Eigen::Matrix<double, 6, 1> TwistUnhat(const Eigen::Matrix4d& hatted_twist)
     {
-         const Eigen::Vector3d trans_velocity = hatted_twist.block<3, 1>(0, 3);
-         const Eigen::Vector3d rot_velocity = Unskew(hatted_twist.block<3, 3>(0, 0));
+         const EigenHelpers::Vector3d trans_velocity = hatted_twist.block<3, 1>(0, 3);
+         const EigenHelpers::Vector3d rot_velocity = Unskew(hatted_twist.block<3, 3>(0, 0));
          Eigen::Matrix<double, 6, 1> twist;
          twist.segment<3>(0) = trans_velocity;
          twist.segment<3>(3) = rot_velocity;
@@ -489,7 +502,7 @@ namespace EigenHelpers
     inline Eigen::Matrix<double, 6, 6> AdjointFromTransform(const Eigen::Affine3d& transform)
     {
         const Eigen::Matrix3d rotation = transform.matrix().block<3, 3>(0, 0);
-        const Eigen::Vector3d translation = transform.matrix().block<3, 1>(0, 3);
+        const EigenHelpers::Vector3d translation = transform.matrix().block<3, 1>(0, 3);
         const Eigen::Matrix3d translation_hat = Skew(translation);
         // Assemble the adjoint matrix
         Eigen::Matrix<double, 6, 6> adjoint;
@@ -666,7 +679,7 @@ namespace EigenHelpers
         return q1.slerp(real_ratio, q2);
     }
 
-    inline Eigen::Vector3d Interpolate(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double ratio)
+    inline EigenHelpers::Vector3d Interpolate(const EigenHelpers::Vector3d& v1, const EigenHelpers::Vector3d& v2, const double ratio)
     {
         // Safety check ratio
         double real_ratio = ratio;
@@ -700,11 +713,11 @@ namespace EigenHelpers
             std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
         }
         // Interpolate
-        const Eigen::Vector3d v1 = t1.translation();
+        const EigenHelpers::Vector3d v1 = t1.translation();
         const Eigen::Quaterniond q1(t1.rotation());
-        const Eigen::Vector3d v2 = t2.translation();
+        const EigenHelpers::Vector3d v2 = t2.translation();
         const Eigen::Quaterniond q2(t2.rotation());
-        const Eigen::Vector3d vint = Interpolate(v1, v2, real_ratio);
+        const EigenHelpers::Vector3d vint = Interpolate(v1, v2, real_ratio);
         const Eigen::Quaterniond qint = Interpolate(q1, q2, real_ratio);
         const Eigen::Affine3d tint = ((Eigen::Translation3d)vint) * qint;
         return tint;
@@ -726,7 +739,7 @@ namespace EigenHelpers
         return sqrt(SquaredDistance(v1, v2));
     }
 
-    inline double SquaredDistance(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
+    inline double SquaredDistance(const EigenHelpers::Vector3d& v1, const EigenHelpers::Vector3d& v2)
     {
         const double xd = v2.x() - v1.x();
         const double yd = v2.y() - v1.y();
@@ -734,7 +747,7 @@ namespace EigenHelpers
         return ((xd * xd) + (yd * yd) + (zd * zd));
     }
 
-    inline double Distance(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
+    inline double Distance(const EigenHelpers::Vector3d& v1, const EigenHelpers::Vector3d& v2)
     {
         return sqrt(SquaredDistance(v1, v2));
     }
@@ -767,9 +780,9 @@ namespace EigenHelpers
     {
         assert(alpha >= 0.0);
         assert(alpha <= 1.0);
-        const Eigen::Vector3d v1 = t1.translation();
+        const EigenHelpers::Vector3d v1 = t1.translation();
         const Eigen::Quaterniond q1(t1.rotation());
-        const Eigen::Vector3d v2 = t2.translation();
+        const EigenHelpers::Vector3d v2 = t2.translation();
         const Eigen::Quaterniond q2(t2.rotation());
         const double vdist = Distance(v1, v2) * (1.0 - alpha);
         const double qdist = Distance(q1, q2) * (alpha);
@@ -897,9 +910,9 @@ namespace EigenHelpers
 
     inline Eigen::Quaterniond QuaternionFromRPY(const double R, const double P, const double Y)
     {
-        const Eigen::AngleAxisd roll(R, Eigen::Vector3d::UnitX());
-        const Eigen::AngleAxisd pitch(P, Eigen::Vector3d::UnitY());
-        const Eigen::AngleAxisd yaw(Y, Eigen::Vector3d::UnitZ());
+        const Eigen::AngleAxisd roll(R, EigenHelpers::Vector3d::UnitX());
+        const Eigen::AngleAxisd pitch(P, EigenHelpers::Vector3d::UnitY());
+        const Eigen::AngleAxisd yaw(Y, EigenHelpers::Vector3d::UnitZ());
         const Eigen::Quaterniond quat(roll * pitch * yaw);
         return quat;
     }
@@ -907,37 +920,37 @@ namespace EigenHelpers
     /* URDF RPY IS ACTUALLY APPLIED Y*P*R */
     inline Eigen::Quaterniond QuaternionFromUrdfRPY(const double R, const double P, const double Y)
     {
-        const Eigen::AngleAxisd roll(R, Eigen::Vector3d::UnitX());
-        const Eigen::AngleAxisd pitch(P, Eigen::Vector3d::UnitY());
-        const Eigen::AngleAxisd yaw(Y, Eigen::Vector3d::UnitZ());
+        const Eigen::AngleAxisd roll(R, EigenHelpers::Vector3d::UnitX());
+        const Eigen::AngleAxisd pitch(P, EigenHelpers::Vector3d::UnitY());
+        const Eigen::AngleAxisd yaw(Y, EigenHelpers::Vector3d::UnitZ());
         const Eigen::Quaterniond quat(yaw * pitch * roll);
         return quat;
     }
 
-    inline Eigen::Vector3d EulerAnglesFromRotationMatrix(const Eigen::Matrix<double, 3, 3>& rot_matrix)
+    inline EigenHelpers::Vector3d EulerAnglesFromRotationMatrix(const Eigen::Matrix<double, 3, 3>& rot_matrix)
     {
-        const Eigen::Vector3d euler_angles = rot_matrix.eulerAngles(0, 1, 2); // Use XYZ angles
+        const EigenHelpers::Vector3d euler_angles = rot_matrix.eulerAngles(0, 1, 2); // Use XYZ angles
         return euler_angles;
     }
 
-    inline Eigen::Vector3d EulerAnglesFromQuaternion(const Eigen::Quaterniond& quat)
+    inline EigenHelpers::Vector3d EulerAnglesFromQuaternion(const Eigen::Quaterniond& quat)
     {
         return EulerAnglesFromRotationMatrix(quat.toRotationMatrix());
     }
 
-    inline Eigen::Vector3d EulerAnglesFromAffine3d(const Eigen::Affine3d& trans)
+    inline EigenHelpers::Vector3d EulerAnglesFromAffine3d(const Eigen::Affine3d& trans)
     {
         return EulerAnglesFromRotationMatrix(trans.rotation());
     }
 
-    inline Eigen::Vector3d StdVectorDoubleToEigenVector3d(const std::vector<double>& vector)
+    inline EigenHelpers::Vector3d StdVectorDoubleToEigenVector3d(const std::vector<double>& vector)
     {
         if (vector.size() != 3)
         {
             std::cerr << "Vector3d source vector is not 3 elements in size" << std::endl;
             assert(false);
         }
-        const Eigen::Vector3d eigen_vector(vector[0], vector[1], vector[2]);
+        const EigenHelpers::Vector3d eigen_vector(vector[0], vector[1], vector[2]);
         return eigen_vector;
     }
 
@@ -952,7 +965,7 @@ namespace EigenHelpers
         return eigen_vector;
     }
 
-    inline std::vector<double> EigenVector3dToStdVectorDouble(const Eigen::Vector3d& point)
+    inline std::vector<double> EigenVector3dToStdVectorDouble(const EigenHelpers::Vector3d& point)
     {
         return std::vector<double>{point.x(), point.y(), point.z()};
     }
@@ -1074,7 +1087,7 @@ namespace EigenHelpers
         return average;
     }
 
-    inline Eigen::Vector3d AverageEigenVector3d(const EigenHelpers::VectorVector3d& vectors, const std::vector<double>& weights=std::vector<double>())
+    inline EigenHelpers::Vector3d AverageEigenVector3d(const EigenHelpers::VectorVector3d& vectors, const std::vector<double>& weights=std::vector<double>())
     {
         assert(vectors.size() > 0);
         assert((weights.size() == vectors.size()) || (weights.size() == 0));
@@ -1102,8 +1115,8 @@ namespace EigenHelpers
 
         // Do the weighted averaging
         const double initial_weight = (use_weights) ? fabs(weights[0]) : 1.0;
-        const Eigen::Vector3d& initial_element = vectors[0];
-        Eigen::Vector3d avg_vector = initial_element * initial_weight;
+        const EigenHelpers::Vector3d& initial_element = vectors[0];
+        EigenHelpers::Vector3d avg_vector = initial_element * initial_weight;
         for (size_t idx = 1; idx < vectors.size(); idx++)
         {
             double ew = 1.0;
@@ -1111,8 +1124,8 @@ namespace EigenHelpers
             {
                 ew = fabs(weights[idx]);
             }
-            const Eigen::Vector3d prev_avg_vector = avg_vector;
-            const Eigen::Vector3d& current = vectors[idx];
+            const EigenHelpers::Vector3d prev_avg_vector = avg_vector;
+            const EigenHelpers::Vector3d& current = vectors[idx];
             avg_vector = prev_avg_vector + ((ew / sum_weights) * (current - prev_avg_vector));
         }
         return avg_vector;
@@ -1232,7 +1245,7 @@ namespace EigenHelpers
             rotations[idx] = Eigen::Quaterniond(transforms[idx].rotation());
         }
         // Average
-        const Eigen::Vector3d average_translation = AverageEigenVector3d(translations, weights);
+        const EigenHelpers::Vector3d average_translation = AverageEigenVector3d(translations, weights);
         const Eigen::Quaterniond average_rotation = AverageEigenQuaterniond(rotations, weights);
         // Make the average transform
         const Eigen::Affine3d average_transform = (Eigen::Translation3d)average_translation * average_rotation;

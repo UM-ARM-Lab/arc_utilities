@@ -28,7 +28,7 @@ namespace ABB_IRB1600_145_FK_FAST
         Eigen::Quaterniond pre_joint_rotation(1.0, 0.0, 0.0, 0.0);
         Eigen::Affine3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitZ()));
+        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, EigenHelpers::Vector3d::UnitZ()));
         Eigen::Affine3d joint_transform = joint_translation * joint_rotation;
         return (pre_joint_transform * joint_transform);
     }
@@ -39,7 +39,7 @@ namespace ABB_IRB1600_145_FK_FAST
         Eigen::Quaterniond pre_joint_rotation(1.0, 0.0, 0.0, 0.0);
         Eigen::Affine3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitY()));
+        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, EigenHelpers::Vector3d::UnitY()));
         Eigen::Affine3d joint_transform = joint_translation * joint_rotation;
         return (pre_joint_transform * joint_transform);
     }
@@ -50,7 +50,7 @@ namespace ABB_IRB1600_145_FK_FAST
         Eigen::Quaterniond pre_joint_rotation(1.0, 0.0, 0.0, 0.0);
         Eigen::Affine3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitY()));
+        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, EigenHelpers::Vector3d::UnitY()));
         Eigen::Affine3d joint_transform = joint_translation * joint_rotation;
         return (pre_joint_transform * joint_transform);
     }
@@ -61,7 +61,7 @@ namespace ABB_IRB1600_145_FK_FAST
         Eigen::Quaterniond pre_joint_rotation(1.0, 0.0, 0.0, 0.0);
         Eigen::Affine3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitX()));
+        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, EigenHelpers::Vector3d::UnitX()));
         Eigen::Affine3d joint_transform = joint_translation * joint_rotation;
         return (pre_joint_transform * joint_transform);
     }
@@ -72,7 +72,7 @@ namespace ABB_IRB1600_145_FK_FAST
         Eigen::Quaterniond pre_joint_rotation(1.0, 0.0, 0.0, 0.0);
         Eigen::Affine3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitY()));
+        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, EigenHelpers::Vector3d::UnitY()));
         Eigen::Affine3d joint_transform = joint_translation * joint_rotation;
         return (pre_joint_transform * joint_transform);
     }
@@ -83,7 +83,7 @@ namespace ABB_IRB1600_145_FK_FAST
         Eigen::Quaterniond pre_joint_rotation(1.0, 0.0, 0.0, 0.0);
         Eigen::Affine3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitX()));
+        Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, EigenHelpers::Vector3d::UnitX()));
         Eigen::Affine3d joint_transform = joint_translation * joint_rotation;
         return (pre_joint_transform * joint_transform);
     }
