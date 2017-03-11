@@ -6,15 +6,15 @@
 
 namespace shortcut_smoothing
 {
-    EigenHelpers::VectorVector3d ShortcutSmooth(const EigenHelpers::VectorVector3d& input_vector, const size_t first_ind, const size_t second_ind, const double step_size, const std::function<bool(const EigenHelpers::Vector3d&)>& collision_fn)
+    EigenHelpers::VectorVector3d ShortcutSmooth(const EigenHelpers::VectorVector3d& input_vector, const size_t first_ind, const size_t second_ind, const double step_size, const std::function<bool(const Eigen::Vector3d&)>& collision_fn)
     {
         const size_t starting_ind = std::min(first_ind, second_ind);
         const size_t ending_ind = std::max(first_ind, second_ind);
 
-        const EigenHelpers::Vector3d& starting_point = input_vector[starting_ind];
-        const EigenHelpers::Vector3d& ending_point = input_vector[ending_ind];
-        const EigenHelpers::Vector3d delta = ending_point - starting_point;
-        const EigenHelpers::Vector3d delta_unit_vec = delta.normalized();
+        const Eigen::Vector3d& starting_point = input_vector[starting_ind];
+        const Eigen::Vector3d& ending_point = input_vector[ending_ind];
+        const Eigen::Vector3d delta = ending_point - starting_point;
+        const Eigen::Vector3d delta_unit_vec = delta.normalized();
 
         const double total_dist = delta.norm();
 
@@ -26,7 +26,7 @@ namespace shortcut_smoothing
         bool collision = false;
         for (double dist = step_size; !collision && dist < total_dist; dist += step_size)
         {
-            const EigenHelpers::Vector3d point_to_check = starting_point + dist * delta_unit_vec;
+            const Eigen::Vector3d point_to_check = starting_point + dist * delta_unit_vec;
             collision = collision_fn(point_to_check);
         }
 

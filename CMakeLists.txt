@@ -63,6 +63,7 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/zlib_helpers.hpp
     include/${PROJECT_NAME}/voxel_grid.hpp
     include/${PROJECT_NAME}/dynamic_spatial_hashed_voxel_grid.hpp
+    include/${PROJECT_NAME}/aligned_eigen_types.hpp
     include/${PROJECT_NAME}/eigen_helpers.hpp
     include/${PROJECT_NAME}/eigen_helpers_conversions.hpp
     include/${PROJECT_NAME}/simple_rrt_planner.hpp
@@ -81,10 +82,15 @@ add_executable(test_hierarchical_clustering src/test_hierarchical_clustering.cpp
 add_dependencies(test_hierarchical_clustering ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(test_hierarchical_clustering ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test node for voxel_grid
+# Simple test node for utility functions
 add_executable(test_arc_utilities src/test_arc_utilities.cpp)
 add_dependencies(test_arc_utilities ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(test_arc_utilities ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+# Simple test node for Eigen math
+add_executable(test_eigen_math src/test_eigen_math.cpp)
+add_dependencies(test_eigen_math ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+target_link_libraries(test_eigen_math ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for Dijkstras
 add_executable(test_dijkstras src/test_dijkstras.cpp)
