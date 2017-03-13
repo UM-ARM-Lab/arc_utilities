@@ -83,6 +83,4 @@ int main(int argc, char** argv)
         mvn_gaussians[idx] = mvn_dist(prng);
         std::cout << mvn_gaussians[idx].transpose() << std::endl;
     }
-
-    return 0;
 }

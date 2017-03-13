@@ -31,6 +31,21 @@ namespace EigenHelpersConversions
         return geom_point;
     }
 
+    inline Eigen::Vector4d GeometryPointToEigenVector4d(const geometry_msgs::Point& point)
+    {
+        Eigen::Vector4d eigen_point(point.x, point.y, point.z, 1.0);
+        return eigen_point;
+    }
+
+    inline geometry_msgs::Point EigenVector4dToGeometryPoint(const Eigen::Vector4d& point)
+    {
+        geometry_msgs::Point geom_point;
+        geom_point.x = point(0);
+        geom_point.y = point(1);
+        geom_point.z = point(2);
+        return geom_point;
+    }
+
     inline geometry_msgs::PointStamped EigenVector3dToGeometryPointStamped(const Eigen::Vector3d& point, const std::string& frame_id)
     {
         geometry_msgs::PointStamped point_stamped;
