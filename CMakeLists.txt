@@ -46,7 +46,7 @@ catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS ros
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include SYSTEM ${catkin_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
+include_directories(include SYSTEM ${catkin_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wconversion -Werror")
 
@@ -87,7 +87,7 @@ add_executable(test_arc_utilities src/test_arc_utilities.cpp)
 add_dependencies(test_arc_utilities ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(test_arc_utilities ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test node for Eigen math
+# Simple test node for Eigen3 math
 add_executable(test_eigen_math src/test_eigen_math.cpp)
 add_dependencies(test_eigen_math ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(test_eigen_math ${PROJECT_NAME} ${catkin_LIBRARIES})
