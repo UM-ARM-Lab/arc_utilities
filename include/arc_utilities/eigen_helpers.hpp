@@ -960,6 +960,34 @@ namespace EigenHelpers
         return EulerAnglesFromRotationMatrix(trans.rotation());
     }
 
+    inline Eigen::Affine3d TransformFromRPY(const double x, const double y, const double z, const double roll, const double pitch, const double yaw)
+    {
+        const Eigen::Affine3d transform = Eigen::Translation3d(x, y, z) * QuaternionFromRPY(roll, pitch, yaw);
+        return transform;
+    }
+
+    inline Eigen::Affine3d TransformFromRPY(const Eigen::Vector3d& translation, const Eigen::Vector3d& rotation)
+    {
+        const Eigen::Affine3d transform = (Eigen::Translation3d)translation * QuaternionFromRPY(rotation.x(), rotation.y(), rotation.z());
+        return transform;
+    }
+
+    inline Eigen::Affine3d TransformFromRPY(const Eigen::VectorXd& components)
+    {
+        assert(components.size() == 6);
+        const Eigen::Affine3d transform = Eigen::Translation3d(components(0), components(1), components(2)) * QuaternionFromRPY(components(3), components(4), components(5));
+        return transform;
+    }
+
+    inline Eigen::VectorXd TransformToRPY(const Eigen::Affine3d& transform)
+    {
+        Eigen::VectorXd components = Eigen::VectorXd::Zero(6);
+        const Eigen::Vector3d translation = transform.translation();
+        const Eigen::Vector3d rotation = EulerAnglesFromRotationMatrix(transform.rotation());
+        components << translation, rotation;
+        return components;
+    }
+
     inline Eigen::Vector3d StdVectorDoubleToEigenVector3d(const std::vector<double>& vector)
     {
         if (vector.size() != 3)
