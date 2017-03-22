@@ -522,13 +522,10 @@ namespace EigenHelpers
     {
         const Eigen::Vector3d trans_velocity = twist.segment<3>(0);
         const Eigen::Vector3d rot_velocity = twist.segment<3>(3);
+        const double trans_velocity_norm = trans_velocity.norm();
         const double rot_velocity_norm = rot_velocity.norm();
         Eigen::Matrix4d raw_transform = Eigen::Matrix4d::Identity();
-        if (rot_velocity_norm == 0.0)
-        {
-            raw_transform.block<3, 1>(0, 3) = trans_velocity * delta_t;
-        }
-        else
+        if (rot_velocity_norm >= 1e-100)
         {
             const double scaled_delta_t = delta_t * rot_velocity_norm;
             const Eigen::Vector3d scaled_trans_velocity = trans_velocity / rot_velocity_norm;
@@ -537,6 +534,24 @@ namespace EigenHelpers
             const Eigen::Vector3d translation_displacement = ((Eigen::Matrix3d::Identity() - rotation_displacement) * scaled_rot_velocity.cross(scaled_trans_velocity)) + (scaled_rot_velocity * scaled_rot_velocity.transpose() * scaled_trans_velocity * scaled_delta_t);
             raw_transform.block<3, 3>(0, 0) = rotation_displacement;
             raw_transform.block<3, 1>(0, 3) = translation_displacement;
+        }
+        else
+        {
+            if ((trans_velocity_norm >= 1e-100) || (rot_velocity_norm == 0.0))
+            {
+                raw_transform.block<3, 1>(0, 3) = trans_velocity * delta_t;
+            }
+            else
+            {
+                std::cerr << "*** WARNING - YOU MAY ENCOUNTER NUMERICAL INSTABILITY IN EXPTWIST(...) WITH TRANS & ROT VELOCITY NORM < 1e-100 ***" << std::endl;
+                const double scaled_delta_t = delta_t * rot_velocity_norm;
+                const Eigen::Vector3d scaled_trans_velocity = trans_velocity / rot_velocity_norm;
+                const Eigen::Vector3d scaled_rot_velocity = rot_velocity / rot_velocity_norm;
+                const Eigen::Matrix3d rotation_displacement = ExpMatrixExact(Skew(scaled_rot_velocity), scaled_delta_t);
+                const Eigen::Vector3d translation_displacement = ((Eigen::Matrix3d::Identity() - rotation_displacement) * scaled_rot_velocity.cross(scaled_trans_velocity)) + (scaled_rot_velocity * scaled_rot_velocity.transpose() * scaled_trans_velocity * scaled_delta_t);
+                raw_transform.block<3, 3>(0, 0) = rotation_displacement;
+                raw_transform.block<3, 1>(0, 3) = translation_displacement;
+            }
         }
         Eigen::Affine3d transform;
         transform = raw_transform;

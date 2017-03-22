@@ -15,7 +15,7 @@ inline void TestVector3d(const ssize_t iterations, const Eigen::Affine3d& base_t
     }
     std::chrono::time_point<std::chrono::high_resolution_clock> vector3_end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> vector3_test_time(vector3_end_time - vector3_start_time);
-    std::cout << "Affine3d * Vector3d test - " << vector3_test_time.count() << "s for " << iterations << " iterations to produce " << results(100000, 0) << std::endl;
+    std::cout << "Affine3d * Vector3d test - " << vector3_test_time.count() << "s for " << iterations << " iterations to produce " << results.block<4, 1>(100000, 0) << std::endl;
 }
 
 inline void TestVector4d(const ssize_t iterations, const Eigen::Affine3d& base_transform, Eigen::MatrixXd& results)
@@ -28,7 +28,7 @@ inline void TestVector4d(const ssize_t iterations, const Eigen::Affine3d& base_t
     }
     std::chrono::time_point<std::chrono::high_resolution_clock> vector4_end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> vector4_test_time(vector4_end_time - vector4_start_time);
-    std::cout << "Affine3d * Vector4d test - " << vector4_test_time.count() << "s for " << iterations << " iterations to produce " << results(100000, 0) << std::endl;
+    std::cout << "Affine3d * Vector4d test - " << vector4_test_time.count() << "s for " << iterations << " iterations to produce " << results.block<4, 1>(100000, 0) << std::endl;
 }
 
 inline void TestAlignedVector3d(const ssize_t iterations, const Eigen::Affine3d& base_transform, Eigen::MatrixXd& results)
@@ -41,7 +41,7 @@ inline void TestAlignedVector3d(const ssize_t iterations, const Eigen::Affine3d&
     }
     std::chrono::time_point<std::chrono::high_resolution_clock> alignedvector3_end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> alignedvector3_test_time(alignedvector3_end_time - alignedvector3_start_time);
-    std::cout << "Affine3d * AlignedVector3d test - " << alignedvector3_test_time.count() << "s for " << iterations << " iterations to produce " << results(100000, 0) << std::endl;
+    std::cout << "Affine3d * AlignedVector3d test - " << alignedvector3_test_time.count() << "s for " << iterations << " iterations to produce " << results.block<4, 1>(100000, 0) << std::endl;
 }
 
 inline void TestManual(const ssize_t iterations, const Eigen::Affine3d& base_transform, Eigen::MatrixXd& results)
@@ -55,7 +55,7 @@ inline void TestManual(const ssize_t iterations, const Eigen::Affine3d& base_tra
     }
     std::chrono::time_point<std::chrono::high_resolution_clock> manual_end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> manual_test_time(manual_end_time - manual_start_time);
-    std::cout << "Matrix4d * Vector4d test - " << manual_test_time.count() << "s for " << iterations << " iterations to produce " << results(100000, 0) << std::endl;
+    std::cout << "Matrix4d * Vector4d test - " << manual_test_time.count() << "s for " << iterations << " iterations to produce " << results.block<4, 1>(100000, 0) << std::endl;
 }
 
 
@@ -67,8 +67,8 @@ int main(int argc, char** argv)
         printf("Argument %d: %s\n", idx, argv[idx]);
     }
     const ssize_t iterations = 100000000;
-    const Eigen::Affine3d base_transform = Eigen::Translation3d(10.0, 10.0, 10.0) * Eigen::Quaterniond::Identity();
-    Eigen::MatrixXd results(iterations * 4, 1);
+    const Eigen::Affine3d base_transform = Eigen::Translation3d(10.0, 10.0, 10.0) * EigenHelpers::QuaternionFromRPY(0.25, 0.5, 0.75);
+    Eigen::MatrixXd results = Eigen::MatrixXd::Ones(iterations * 4, 1);
     TestVector3d(iterations, base_transform, results);
     TestVector3d(iterations, base_transform, results);
     TestVector3d(iterations, base_transform, results);

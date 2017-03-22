@@ -1024,15 +1024,18 @@ namespace arc_helpers
 
         std::uniform_real_distribution<double> uniform_unit_dist_;
 
+    public:
+
+        inline RandomRotationGenerator() : uniform_unit_dist_(0.0, 1.0) {}
+
         // From: "Uniform Random Rotations", Ken Shoemake, Graphics Gems III, pg. 124-132
-        template<typename Generator>
-        inline Eigen::Quaterniond GenerateUniformRandomQuaternion(Generator& prng)
+        static inline Eigen::Quaterniond GenerateUniformRandomQuaternion(const std::function<double()>& uniform_unit_dist)
         {
-            const double x0 = uniform_unit_dist_(prng);
+            const double x0 = uniform_unit_dist();
             const double r1 = sqrt(1.0 - x0);
             const double r2 = sqrt(x0);
-            const double t1 = 2.0 * M_PI * uniform_unit_dist_(prng);
-            const double t2 = 2.0 * M_PI * uniform_unit_dist_(prng);
+            const double t1 = 2.0 * M_PI * uniform_unit_dist();
+            const double t2 = 2.0 * M_PI * uniform_unit_dist();
             const double c1 = cos(t1);
             const double s1 = sin(t1);
             const double c2 = cos(t2);
@@ -1045,42 +1048,39 @@ namespace arc_helpers
         }
 
         // From Effective Sampling and Distance Metrics for 3D Rigid Body Path Planning, by James Kuffner, ICRA 2004
-        template<typename Generator>
-        Eigen::Vector3d GenerateUniformRandomEulerAngles(Generator& prng)
+        static inline Eigen::Vector3d GenerateUniformRandomEulerAngles(const std::function<double()>& uniform_unit_dist)
         {
-            const double roll = M_PI * (-2.0 * uniform_unit_dist_(prng) + 1.0);
-            const double pitch = acos(1.0 - 2.0 * uniform_unit_dist_(prng)) - M_PI_2;
-            const double yaw = M_PI * (-2.0 * uniform_unit_dist_(prng) + 1.0);
+            const double roll = M_PI * (-2.0 * uniform_unit_dist() + 1.0);
+            const double pitch = acos(1.0 - 2.0 * uniform_unit_dist()) - M_PI_2;
+            const double yaw = M_PI * (-2.0 * uniform_unit_dist() + 1.0);
             return Eigen::Vector3d(roll, pitch, yaw);
         }
-
-    public:
-
-        inline RandomRotationGenerator() : uniform_unit_dist_(0.0, 1.0) {}
 
         template<typename Generator>
         inline Eigen::Quaterniond GetQuaternion(Generator& prng)
         {
-            return GenerateUniformRandomQuaternion(prng);
+            std::function<double()> uniform_rand_fn = [&] () { return uniform_unit_dist_(prng); };
+            return GenerateUniformRandomQuaternion(uniform_rand_fn);
         }
 
         template<typename Generator>
         inline std::vector<double> GetRawQuaternion(Generator& prng)
         {
-            const Eigen::Quaterniond quat = GenerateUniformRandomQuaternion(prng);
+            const Eigen::Quaterniond quat = GetQuaternion(prng);
             return std::vector<double>{quat.x(), quat.y(), quat.z(), quat.w()};
         }
 
         template<typename Generator>
         inline Eigen::Vector3d GetEulerAngles(Generator& prng)
         {
-            return GenerateUniformRandomEulerAngles(prng);
+            std::function<double()> uniform_rand_fn = [&] () { return uniform_unit_dist_(prng); };
+            return GenerateUniformRandomEulerAngles(uniform_rand_fn);
         }
 
         template<typename Generator>
         inline std::vector<double> GetRawEulerAngles(Generator& prng)
         {
-            const Eigen::Vector3d angles = GenerateUniformRandomEulerAngles(prng);
+            const Eigen::Vector3d angles = GetEulerAngles(prng);
             return std::vector<double>{angles.x(), angles.y(), angles.z()};
         }
     };
