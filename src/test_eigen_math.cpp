@@ -4,6 +4,7 @@
 #include <chrono>
 #include <arc_utilities/eigen_helpers.hpp>
 #include <arc_utilities/aligned_eigen_types.hpp>
+#include <arc_utilities/pretty_print.hpp>
 
 inline void TestVector3d(const ssize_t iterations, const Eigen::Affine3d& base_transform, Eigen::MatrixXd& results)
 {
@@ -57,7 +58,6 @@ inline void TestManual(const ssize_t iterations, const Eigen::Affine3d& base_tra
     std::chrono::duration<double> manual_test_time(manual_end_time - manual_start_time);
     std::cout << "Matrix4d * Vector4d test - " << manual_test_time.count() << "s for " << iterations << " iterations to produce " << results.block<4, 1>(100000, 0) << std::endl;
 }
-
 
 int main(int argc, char** argv)
 {
