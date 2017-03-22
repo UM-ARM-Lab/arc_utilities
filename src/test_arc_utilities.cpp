@@ -8,6 +8,7 @@
 #include <arc_utilities/abb_irb1600_145_fk_fast.hpp>
 #include <arc_utilities/iiwa_14_fk_fast.hpp>
 #include <arc_utilities/simple_dtw.hpp>
+#include <arc_utilities/simple_prm_planner.hpp>
 
 int main(int argc, char** argv)
 {
