@@ -412,6 +412,16 @@ namespace EigenHelpers
         }
     }
 
+    inline std::vector<double> Add(const std::vector<double>& vec, const double scalar)
+    {
+        std::vector<double> added(vec.size(), 0.0);
+        for (size_t idx = 0; idx < added.size(); idx++)
+        {
+            added[idx] = vec[idx] + scalar;
+        }
+        return added;
+    }
+
     inline std::vector<double> Add(const std::vector<double>& vec1, const std::vector<double>& vec2)
     {
         if (vec1.size() == vec2.size())
@@ -429,6 +439,16 @@ namespace EigenHelpers
         {
             return std::vector<double>();
         }
+    }
+
+    inline std::vector<double> Sub(const std::vector<double>& vec, const double scalar)
+    {
+        std::vector<double> subed(vec.size(), 0.0);
+        for (size_t idx = 0; idx < subed.size(); idx++)
+        {
+            subed[idx] = vec[idx] - scalar;
+        }
+        return subed;
     }
 
     inline std::vector<double> Sub(const std::vector<double>& vec1, const std::vector<double>& vec2)
@@ -1103,6 +1123,32 @@ namespace EigenHelpers
             average = prev_average + ((ew / sum_weights) * (current - prev_average));
         }
         return average;
+    }
+
+    inline double ComputeStdDevStdVectorDouble(const std::vector<double>& values, const double mean)
+    {
+        assert(values.size() > 0);
+        if (values.size() == 1)
+        {
+            return 0.0;
+        }
+        else
+        {
+            const double inv_n_minus_1 = 1.0 / (double)(values.size() - 1);
+            double stddev_sum = 0.0;
+            for (size_t idx = 0; idx < values.size(); idx++)
+            {
+                const double delta = values[idx] - mean;
+                stddev_sum += (delta * delta);
+            }
+            return (stddev_sum * inv_n_minus_1);
+        }
+    }
+
+    inline double ComputeStdDevStdVectorDouble(const std::vector<double>& values)
+    {
+        const double mean = AverageStdVectorDouble(values);
+        return ComputeStdDevStdVectorDouble(values, mean);
     }
 
     inline double AverageContinuousRevolute(const std::vector<double>& angles, const std::vector<double>& weights=std::vector<double>())
