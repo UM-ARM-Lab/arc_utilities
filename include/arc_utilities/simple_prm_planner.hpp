@@ -176,7 +176,7 @@ namespace simple_prm_planner
             const double start_node_distance = solution_map_distances.second[start_node_index];
             if (std::isinf(start_node_distance))
             {
-                return std::make_pair(std::vector<int64_t>(), std::numeric_limits<double>::infinity());
+                return std::make_pair(std::vector<T, Allocator>(), std::numeric_limits<double>::infinity());
             }
             else
             {
