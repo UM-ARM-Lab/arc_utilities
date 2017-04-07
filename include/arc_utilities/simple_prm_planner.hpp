@@ -144,7 +144,7 @@ namespace simple_prm_planner
             }
             std::function<double(const arc_dijkstras::GraphNode<T, Allocator>&, const T&)> goal_distance_fn = [&] (const arc_dijkstras::GraphNode<T, Allocator>& node, const T& state) { return distance_fn(node.GetValueImmutable(), state); };
             const std::vector<std::pair<int64_t, double>> goal_nearest_neighbors = arc_helpers::GetKNearestNeighbors(roadmap.GetNodesImmutable(), goal, goal_distance_fn, K);
-            const int64_t goal_node_index = roadmap.AddNode(start);
+            const int64_t goal_node_index = roadmap.AddNode(goal);
 #ifdef ENABLE_PARALLEL_ROADMAP
             #pragma omp parallel for
 #endif

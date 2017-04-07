@@ -147,12 +147,14 @@ namespace arc_helpers
         assert(min <= max);
         if (val < min)
         {
-            std::cerr << "Clamping " << val << " to min " << min << std::endl;
+            const std::string msg = "Clamping " + std::to_string(val) + " to min " + std::to_string(min);
+            std::cerr << msg << std::endl;
             return min;
         }
         else if (val > max)
         {
-            std::cerr << "Clamping " << val << " to max " << max << std::endl;
+            const std::string msg = "Clamping " + std::to_string(val) + " to max " + std::to_string(max);
+            std::cerr << msg << std::endl;
             return max;
         }
         return val;
@@ -1050,9 +1052,10 @@ namespace arc_helpers
         // From Effective Sampling and Distance Metrics for 3D Rigid Body Path Planning, by James Kuffner, ICRA 2004
         static inline Eigen::Vector3d GenerateUniformRandomEulerAngles(const std::function<double()>& uniform_unit_dist)
         {
-            const double roll = M_PI * (-2.0 * uniform_unit_dist() + 1.0);
-            const double pitch = acos(1.0 - 2.0 * uniform_unit_dist()) - M_PI_2;
-            const double yaw = M_PI * (-2.0 * uniform_unit_dist() + 1.0);
+            const double roll = 2.0 * M_PI * uniform_unit_dist() -  M_PI;
+            const double pitch_init = std::acos(1.0 - (2.0 * uniform_unit_dist())) + M_PI_2;
+            const double pitch = (uniform_unit_dist() < 0.5) ? ((pitch_init < M_PI) ? pitch_init + M_PI : pitch_init - M_PI) : pitch_init;
+            const double yaw = 2.0 * M_PI * uniform_unit_dist() -  M_PI;
             return Eigen::Vector3d(roll, pitch, yaw);
         }
 
