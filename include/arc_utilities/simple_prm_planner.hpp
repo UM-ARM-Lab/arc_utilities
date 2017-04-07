@@ -55,6 +55,11 @@ namespace simple_prm_planner
                 }
                 const std::vector<std::pair<int64_t, double>> nearest_neighbors = arc_helpers::GetKNearestNeighbors(roadmap.GetNodesImmutable(), random_state, graph_distance_fn, K);
                 const int64_t new_node_index = roadmap.AddNode(random_state);
+                // Parallelize the collision-checking and distance computation
+                std::vector<std::pair<double, double>> nearest_neighbors_distances(nearest_neighbors.size());
+#ifdef ENABLE_PARALLEL_ROADMAP
+                #pragma omp parallel for
+#endif
                 for (size_t idx = 0; idx < nearest_neighbors.size(); idx++)
                 {
                     const std::pair<int64_t, double>& nearest_neighbor = nearest_neighbors[idx];
@@ -63,16 +68,31 @@ namespace simple_prm_planner
                     const T& nearest_neighbor_state = roadmap.GetNodeImmutable(nearest_neighbor_index).GetValueImmutable();
                     if (edge_validity_check_fn(nearest_neighbor_state, random_state))
                     {
-                        roadmap.AddEdgeBetweenNodes(nearest_neighbor_index, new_node_index, nearest_neighbor_distance);
                         if (distance_is_symmetric)
                         {
-                            roadmap.AddEdgeBetweenNodes(new_node_index, nearest_neighbor_index, nearest_neighbor_distance);
+                            nearest_neighbors_distances[idx] = std::make_pair(nearest_neighbor_distance, nearest_neighbor_distance);
                         }
                         else
                         {
                             const double reverse_distance = distance_fn(random_state, roadmap.GetNodeImmutable(nearest_neighbor_index).GetValueImmutable());
-                            roadmap.AddEdgeBetweenNodes(new_node_index, nearest_neighbor_index, reverse_distance);
+                            nearest_neighbors_distances[idx] = std::make_pair(nearest_neighbor_distance, reverse_distance);
                         }
+                    }
+                    else
+                    {
+                        nearest_neighbors_distances[idx] = std::make_pair(-1.0, -1.0);
+                    }
+                }
+                // THIS MUST BE SERIAL - add edges to roadmap
+                for (size_t idx = 0; idx < nearest_neighbors.size(); idx++)
+                {
+                    const std::pair<int64_t, double>& nearest_neighbor = nearest_neighbors[idx];
+                    const int64_t nearest_neighbor_index = nearest_neighbor.first;
+                    const std::pair<double, double>& nearest_neighbor_distances = nearest_neighbors_distances[idx];
+                    if (nearest_neighbor_distances.first >= 0.0 && nearest_neighbor_distances.second >= 0.0)
+                    {
+                        roadmap.AddEdgeBetweenNodes(nearest_neighbor_index, new_node_index, nearest_neighbor_distances.first);
+                        roadmap.AddEdgeBetweenNodes(new_node_index, nearest_neighbor_index, nearest_neighbor_distances.second);
                     }
                 }
             }
@@ -115,10 +135,15 @@ namespace simple_prm_planner
         template<typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<T, Allocator>, double> QueryPathAndAddNodes(const T& start, const T& goal, arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true)
         {
-            // Add the start and goal to the roadmap, and connect to their K nearest neighbors
+            // Add the start node to the roadmap
             std::function<double(const arc_dijkstras::GraphNode<T, Allocator>&, const T&)> start_distance_fn = [&] (const arc_dijkstras::GraphNode<T, Allocator>& node, const T& state) { return distance_fn(state, node.GetValueImmutable()); };
             const std::vector<std::pair<int64_t, double>> start_nearest_neighbors = arc_helpers::GetKNearestNeighbors(roadmap.GetNodesImmutable(), start, start_distance_fn, K);
             const int64_t start_node_index = roadmap.AddNode(start);
+            // Parallelize the collision-checking and distance computation
+            std::vector<std::pair<double, double>> start_nearest_neighbors_distances(start_nearest_neighbors.size());
+#ifdef ENABLE_PARALLEL_ROADMAP
+            #pragma omp parallel for
+#endif
             for (size_t idx = 0; idx < start_nearest_neighbors.size(); idx++)
             {
                 const std::pair<int64_t, double>& nearest_neighbor = start_nearest_neighbors[idx];
@@ -127,21 +152,42 @@ namespace simple_prm_planner
                 const T& nearest_neighbor_state = roadmap.GetNodeImmutable(nearest_neighbor_index).GetValueImmutable();
                 if (edge_validity_check_fn(nearest_neighbor_state, start))
                 {
-                    roadmap.AddEdgeBetweenNodes(start_node_index, nearest_neighbor_index, nearest_neighbor_distance);
                     if (distance_is_symmetric)
                     {
-                        roadmap.AddEdgeBetweenNodes(nearest_neighbor_index, start_node_index, nearest_neighbor_distance);
+                        start_nearest_neighbors_distances[idx] = std::make_pair(nearest_neighbor_distance, nearest_neighbor_distance);
                     }
                     else
                     {
                         const double reverse_distance = distance_fn(roadmap.GetNodeImmutable(nearest_neighbor_index).GetValueImmutable(), start);
-                        roadmap.AddEdgeBetweenNodes(nearest_neighbor_index, start_node_index, reverse_distance);
+                        start_nearest_neighbors_distances[idx] = std::make_pair(nearest_neighbor_distance, reverse_distance);
                     }
                 }
+                else
+                {
+                    start_nearest_neighbors_distances[idx] = std::make_pair(-1.0, -1.0);
+                }
             }
+            // THIS MUST BE SERIAL - add edges to roadmap
+            for (size_t idx = 0; idx < start_nearest_neighbors.size(); idx++)
+            {
+                const std::pair<int64_t, double>& nearest_neighbor = start_nearest_neighbors[idx];
+                const int64_t nearest_neighbor_index = nearest_neighbor.first;
+                const std::pair<double, double>& nearest_neighbor_distances = start_nearest_neighbors_distances[idx];
+                if (nearest_neighbor_distances.first >= 0.0 && nearest_neighbor_distances.second >= 0.0)
+                {
+                    roadmap.AddEdgeBetweenNodes(start_node_index, nearest_neighbor_index, nearest_neighbor_distances.first);
+                    roadmap.AddEdgeBetweenNodes(nearest_neighbor_index, start_node_index, nearest_neighbor_distances.second);
+                }
+            }
+            // Add the goal node to the roadmap
             std::function<double(const arc_dijkstras::GraphNode<T, Allocator>&, const T&)> goal_distance_fn = [&] (const arc_dijkstras::GraphNode<T, Allocator>& node, const T& state) { return distance_fn(node.GetValueImmutable(), state); };
             const std::vector<std::pair<int64_t, double>> goal_nearest_neighbors = arc_helpers::GetKNearestNeighbors(roadmap.GetNodesImmutable(), goal, goal_distance_fn, K);
             const int64_t goal_node_index = roadmap.AddNode(goal);
+            // Parallelize the collision-checking and distance computation
+            std::vector<std::pair<double, double>> goal_nearest_neighbors_distances(goal_nearest_neighbors.size());
+#ifdef ENABLE_PARALLEL_ROADMAP
+            #pragma omp parallel for
+#endif
             for (size_t idx = 0; idx < goal_nearest_neighbors.size(); idx++)
             {
                 const std::pair<int64_t, double>& nearest_neighbor = goal_nearest_neighbors[idx];
@@ -150,19 +196,36 @@ namespace simple_prm_planner
                 const T& nearest_neighbor_state = roadmap.GetNodeImmutable(nearest_neighbor_index).GetValueImmutable();
                 if (edge_validity_check_fn(nearest_neighbor_state, goal))
                 {
-                    roadmap.AddEdgeBetweenNodes(nearest_neighbor_index, goal_node_index, nearest_neighbor_distance);
                     if (distance_is_symmetric)
                     {
-                        roadmap.AddEdgeBetweenNodes(goal_node_index, nearest_neighbor_index, nearest_neighbor_distance);
+                        goal_nearest_neighbors_distances[idx] = std::make_pair(nearest_neighbor_distance, nearest_neighbor_distance);
                     }
                     else
                     {
                         const double reverse_distance = distance_fn(goal, roadmap.GetNodeImmutable(nearest_neighbor_index).GetValueImmutable());
-                        roadmap.AddEdgeBetweenNodes(goal_node_index, nearest_neighbor_index, reverse_distance);
+                        goal_nearest_neighbors_distances[idx] = std::make_pair(nearest_neighbor_distance, reverse_distance);
                     }
                 }
+                else
+                {
+                    goal_nearest_neighbors_distances[idx] = std::make_pair(-1.0, -1.0);
+                }
             }
+            // THIS MUST BE SERIAL - add edges to roadmap
+            for (size_t idx = 0; idx < goal_nearest_neighbors.size(); idx++)
+            {
+                const std::pair<int64_t, double>& nearest_neighbor = goal_nearest_neighbors[idx];
+                const int64_t nearest_neighbor_index = nearest_neighbor.first;
+                const std::pair<double, double>& nearest_neighbor_distances = goal_nearest_neighbors_distances[idx];
+                if (nearest_neighbor_distances.first >= 0.0 && nearest_neighbor_distances.second >= 0.0)
+                {
+                    roadmap.AddEdgeBetweenNodes(nearest_neighbor_index, goal_node_index, nearest_neighbor_distances.first);
+                    roadmap.AddEdgeBetweenNodes(goal_node_index, nearest_neighbor_index, nearest_neighbor_distances.second);
+                }
+            }
+            // Call Dijkstra's
             const auto dijkstras_solution = arc_dijkstras::SimpleDijkstrasAlgorithm<T, Allocator>::PerformDijkstrasAlgorithm(roadmap, goal_node_index);
+            // Extract solution
             const std::pair<std::vector<int64_t>, std::vector<double>>& solution_map_distances = dijkstras_solution.second;
             const double start_node_distance = solution_map_distances.second[start_node_index];
             if (std::isinf(start_node_distance))
