@@ -344,6 +344,14 @@ def BuildMatrix(translation, quaternion):
 
 ''' Generation Functions '''
 
+def BuildMatrixFromTransRot(trans, rot):
+    transform = numpy.empty(shape=[4, 4])
+    transform[0:3, 0:3] = rot
+    transform[0:3, 3] = trans
+    transform[3, 0:3] = 0
+    transform[3, 3] = 1
+    return transform
+
 
 def BuildMatrixFromDH(d, a, theta, alpha):
     #Do math here
