@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 #include <Eigen/Geometry>
+#include <arc_utilities/arc_helpers.hpp>
+#include <arc_utilities/eigen_helpers.hpp>
 
 #ifndef ABB_IRB1600_145_FK_FAST_HPP
 #define ABB_IRB1600_145_FK_FAST_HPP
@@ -19,6 +21,15 @@ namespace ABB_IRB1600_145_FK_FAST
     const std::string ABB_IRB1600_145_ACTIVE_JOINT_4_NAME = "joint_4";
     const std::string ABB_IRB1600_145_ACTIVE_JOINT_5_NAME = "joint_5";
     const std::string ABB_IRB1600_145_ACTIVE_JOINT_6_NAME = "joint_6";
+
+    const std::string ABB_IRB1600_145_LINK_1_NAME = "link_0";
+    const std::string ABB_IRB1600_145_LINK_2_NAME = "link_1";
+    const std::string ABB_IRB1600_145_LINK_3_NAME = "link_2";
+    const std::string ABB_IRB1600_145_LINK_4_NAME = "link_3";
+    const std::string ABB_IRB1600_145_LINK_5_NAME = "link_4";
+    const std::string ABB_IRB1600_145_LINK_6_NAME = "link_5";
+    const std::string ABB_IRB1600_145_LINK_7_NAME = "link_6";
+    const std::string ABB_IRB1600_145_LINK_8_NAME = "link_7";
 
     typedef std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> VectorAffine3d;
 
@@ -96,11 +107,11 @@ namespace ABB_IRB1600_145_FK_FAST
         return pre_joint_transform;
     }
 
-    inline VectorAffine3d GetLinkTransforms(const std::vector<double>& configuration)
+    inline VectorAffine3d GetLinkTransforms(const std::vector<double>& configuration, const Eigen::Affine3d& base_transform=Eigen::Affine3d::Identity())
     {
         assert(configuration.size() == ABB_IRB1600_145_NUM_ACTIVE_JOINTS);
         VectorAffine3d link_transforms(ABB_IRB1600_145_NUM_LINKS);
-        link_transforms[0] = Eigen::Affine3d::Identity();
+        link_transforms[0] = base_transform;
         link_transforms[1] = link_transforms[0] * Get_base_joint1_LinkJointTransform(configuration[0]);
         link_transforms[2] = link_transforms[1] * Get_link_1_joint_2_LinkJointTransform(configuration[1]);
         link_transforms[3] = link_transforms[2] * Get_link_2_joint_3_LinkJointTransform(configuration[2]);
@@ -111,7 +122,7 @@ namespace ABB_IRB1600_145_FK_FAST
         return link_transforms;
     }
 
-    inline VectorAffine3d GetLinkTransforms(std::map<std::string, double> configuration)
+    inline VectorAffine3d GetLinkTransforms(std::map<std::string, double> configuration, const Eigen::Affine3d& base_transform=Eigen::Affine3d::Identity())
     {
         std::vector<double> configuration_vector(ABB_IRB1600_145_NUM_ACTIVE_JOINTS);
         configuration_vector[0] = configuration[ABB_IRB1600_145_ACTIVE_JOINT_1_NAME];
@@ -120,7 +131,37 @@ namespace ABB_IRB1600_145_FK_FAST
         configuration_vector[3] = configuration[ABB_IRB1600_145_ACTIVE_JOINT_4_NAME];
         configuration_vector[4] = configuration[ABB_IRB1600_145_ACTIVE_JOINT_5_NAME];
         configuration_vector[5] = configuration[ABB_IRB1600_145_ACTIVE_JOINT_6_NAME];
-        return GetLinkTransforms(configuration_vector);
+        return GetLinkTransforms(configuration_vector, base_transform);
+    }
+
+    inline EigenHelpers::MapStringAffine3d GetLinkTransformsMap(const std::vector<double>& configuration, const Eigen::Affine3d& base_transform=Eigen::Affine3d::Identity())
+    {
+        const EigenHelpers::VectorAffine3d link_transforms = GetLinkTransforms(configuration, base_transform);
+        EigenHelpers::MapStringAffine3d link_transforms_map;
+        link_transforms_map[ABB_IRB1600_145_LINK_1_NAME] = link_transforms[0];
+        link_transforms_map[ABB_IRB1600_145_LINK_2_NAME] = link_transforms[1];
+        link_transforms_map[ABB_IRB1600_145_LINK_3_NAME] = link_transforms[2];
+        link_transforms_map[ABB_IRB1600_145_LINK_4_NAME] = link_transforms[3];
+        link_transforms_map[ABB_IRB1600_145_LINK_5_NAME] = link_transforms[4];
+        link_transforms_map[ABB_IRB1600_145_LINK_6_NAME] = link_transforms[5];
+        link_transforms_map[ABB_IRB1600_145_LINK_7_NAME] = link_transforms[6];
+        link_transforms_map[ABB_IRB1600_145_LINK_8_NAME] = link_transforms[7];
+        return link_transforms_map;
+    }
+
+    inline EigenHelpers::MapStringAffine3d GetLinkTransformsMap(const std::map<std::string, double>& configuration, const Eigen::Affine3d& base_transform=Eigen::Affine3d::Identity())
+    {
+        const EigenHelpers::VectorAffine3d link_transforms = GetLinkTransforms(configuration, base_transform);
+        EigenHelpers::MapStringAffine3d link_transforms_map;
+        link_transforms_map[ABB_IRB1600_145_LINK_1_NAME] = link_transforms[0];
+        link_transforms_map[ABB_IRB1600_145_LINK_2_NAME] = link_transforms[1];
+        link_transforms_map[ABB_IRB1600_145_LINK_3_NAME] = link_transforms[2];
+        link_transforms_map[ABB_IRB1600_145_LINK_4_NAME] = link_transforms[3];
+        link_transforms_map[ABB_IRB1600_145_LINK_5_NAME] = link_transforms[4];
+        link_transforms_map[ABB_IRB1600_145_LINK_6_NAME] = link_transforms[5];
+        link_transforms_map[ABB_IRB1600_145_LINK_7_NAME] = link_transforms[6];
+        link_transforms_map[ABB_IRB1600_145_LINK_8_NAME] = link_transforms[7];
+        return link_transforms_map;
     }
 }
 

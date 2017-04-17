@@ -13,7 +13,7 @@
 namespace IIWA_14_FK_FAST
 {
     const size_t IIWA_14_NUM_ACTIVE_JOINTS = 7;
-    const size_t IIWA_14_NUM_LINKS = 10;
+    const size_t IIWA_14_NUM_LINKS = 9;
 
     const std::string IIWA_14_ACTIVE_JOINT_1_NAME = "iiwa_joint_1";
     const std::string IIWA_14_ACTIVE_JOINT_2_NAME = "iiwa_joint_2";
@@ -32,7 +32,6 @@ namespace IIWA_14_FK_FAST
     const std::string IIWA_14_LINK_7_NAME = "iiwa_link_6";
     const std::string IIWA_14_LINK_8_NAME = "iiwa_link_7";
     const std::string IIWA_14_LINK_9_NAME = "iiwa_link_ee";
-    const std::string IIWA_14_LINK_10_NAME = "iiwa_link_ee_kuka";
 
     inline Eigen::Affine3d Get_link_0_joint_1_LinkJointTransform(const double joint_val)
     {
@@ -114,37 +113,28 @@ namespace IIWA_14_FK_FAST
     inline Eigen::Affine3d Get_Fixed_link_7_joint_ee_LinkJointTransform(void)
     {
         const Eigen::Translation3d pre_joint_translation(0.0, 0.0, 0.045);
-        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(0.0, -M_PI_2, 0.0);
+        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(0.0, 0.0, 0.0);
         const Eigen::Affine3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         return pre_joint_transform;
     }
 
-    inline Eigen::Affine3d Get_Fixed_link_7_joint_ee_kuka_LinkJointTransform(void)
-    {
-        const Eigen::Translation3d pre_joint_translation(0.0, 0.0, 0.045);
-        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(M_PI, M_PI, M_PI);
-        const Eigen::Affine3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
-        return pre_joint_transform;
-    }
-
-    inline EigenHelpers::VectorAffine3d GetLinkTransforms(const std::vector<double>& configuration)
+    inline EigenHelpers::VectorAffine3d GetLinkTransforms(const std::vector<double>& configuration, const Eigen::Affine3d& base_transform=Eigen::Affine3d::Identity())
     {
         assert(configuration.size() == IIWA_14_NUM_ACTIVE_JOINTS);
         EigenHelpers::VectorAffine3d link_transforms(IIWA_14_NUM_LINKS);
-        link_transforms[0] = Eigen::Affine3d::Identity();
+        link_transforms[0] = base_transform;
         link_transforms[1] = link_transforms[0] * Get_link_0_joint_1_LinkJointTransform(configuration[0]);
         link_transforms[2] = link_transforms[1] * Get_link_1_joint_2_LinkJointTransform(configuration[1]);
         link_transforms[3] = link_transforms[2] * Get_link_2_joint_3_LinkJointTransform(configuration[2]);
         link_transforms[4] = link_transforms[3] * Get_link_3_joint_4_LinkJointTransform(configuration[3]);
         link_transforms[5] = link_transforms[4] * Get_link_4_joint_5_LinkJointTransform(configuration[4]);
         link_transforms[6] = link_transforms[5] * Get_link_5_joint_6_LinkJointTransform(configuration[5]);
-        link_transforms[7] = link_transforms[6] * Get_link_6_joint_7_LinkJointTransform(configuration[5]);
+        link_transforms[7] = link_transforms[6] * Get_link_6_joint_7_LinkJointTransform(configuration[6]);
         link_transforms[8] = link_transforms[7] * Get_Fixed_link_7_joint_ee_LinkJointTransform();
-        link_transforms[9] = link_transforms[7] * Get_Fixed_link_7_joint_ee_kuka_LinkJointTransform();
         return link_transforms;
     }
 
-    inline EigenHelpers::VectorAffine3d GetLinkTransforms(const std::map<std::string, double>& configuration)
+    inline EigenHelpers::VectorAffine3d GetLinkTransforms(const std::map<std::string, double>& configuration, const Eigen::Affine3d& base_transform=Eigen::Affine3d::Identity())
     {
         std::vector<double> configuration_vector(IIWA_14_NUM_ACTIVE_JOINTS);
         configuration_vector[0] = arc_helpers::RetrieveOrDefault(configuration, IIWA_14_ACTIVE_JOINT_1_NAME, 0.0);
@@ -154,12 +144,12 @@ namespace IIWA_14_FK_FAST
         configuration_vector[4] = arc_helpers::RetrieveOrDefault(configuration, IIWA_14_ACTIVE_JOINT_5_NAME, 0.0);
         configuration_vector[5] = arc_helpers::RetrieveOrDefault(configuration, IIWA_14_ACTIVE_JOINT_6_NAME, 0.0);
         configuration_vector[6] = arc_helpers::RetrieveOrDefault(configuration, IIWA_14_ACTIVE_JOINT_7_NAME, 0.0);
-        return GetLinkTransforms(configuration_vector);
+        return GetLinkTransforms(configuration_vector, base_transform);
     }
 
-    inline EigenHelpers::MapStringAffine3d GetLinkTransformsMap(const std::vector<double>& configuration)
+    inline EigenHelpers::MapStringAffine3d GetLinkTransformsMap(const std::vector<double>& configuration, const Eigen::Affine3d& base_transform=Eigen::Affine3d::Identity())
     {
-        const EigenHelpers::VectorAffine3d link_transforms = GetLinkTransforms(configuration);
+        const EigenHelpers::VectorAffine3d link_transforms = GetLinkTransforms(configuration, base_transform);
         EigenHelpers::MapStringAffine3d link_transforms_map;
         link_transforms_map[IIWA_14_LINK_1_NAME] = link_transforms[0];
         link_transforms_map[IIWA_14_LINK_2_NAME] = link_transforms[1];
@@ -170,13 +160,12 @@ namespace IIWA_14_FK_FAST
         link_transforms_map[IIWA_14_LINK_7_NAME] = link_transforms[6];
         link_transforms_map[IIWA_14_LINK_8_NAME] = link_transforms[7];
         link_transforms_map[IIWA_14_LINK_9_NAME] = link_transforms[8];
-        link_transforms_map[IIWA_14_LINK_10_NAME] = link_transforms[9];
         return link_transforms_map;
     }
 
-    inline EigenHelpers::MapStringAffine3d GetLinkTransformsMap(const std::map<std::string, double>& configuration)
+    inline EigenHelpers::MapStringAffine3d GetLinkTransformsMap(const std::map<std::string, double>& configuration, const Eigen::Affine3d& base_transform=Eigen::Affine3d::Identity())
     {
-        const EigenHelpers::VectorAffine3d link_transforms = GetLinkTransforms(configuration);
+        const EigenHelpers::VectorAffine3d link_transforms = GetLinkTransforms(configuration, base_transform);
         EigenHelpers::MapStringAffine3d link_transforms_map;
         link_transforms_map[IIWA_14_LINK_1_NAME] = link_transforms[0];
         link_transforms_map[IIWA_14_LINK_2_NAME] = link_transforms[1];
@@ -187,7 +176,6 @@ namespace IIWA_14_FK_FAST
         link_transforms_map[IIWA_14_LINK_7_NAME] = link_transforms[6];
         link_transforms_map[IIWA_14_LINK_8_NAME] = link_transforms[7];
         link_transforms_map[IIWA_14_LINK_9_NAME] = link_transforms[8];
-        link_transforms_map[IIWA_14_LINK_10_NAME] = link_transforms[9];
         return link_transforms_map;
     }
 }
