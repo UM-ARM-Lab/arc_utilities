@@ -4,3 +4,7 @@
 
 # Vim Ctags file
 tags
+
+# Compiled python files
+*.pyc
+
