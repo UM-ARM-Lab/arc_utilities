@@ -125,13 +125,18 @@ namespace shortcut_smoothing
             // We want to add all the intermediate states to our returned path
             const double distance = state_distance_fn(previous_state, current_state);
             const double raw_num_intervals = distance / resampled_state_distance;
-            const uint32_t num_segments = std::max(1u, (uint32_t)std::round(raw_num_intervals));
+            const uint32_t num_segments = (uint32_t)std::ceil(raw_num_intervals);
             // If there's only one segment, we just add the end state of the window
-            if (num_segments <= 1u)
+            if (num_segments == 0u)
             {
+                // Do nothing because this means distance was exactly 0
+            }
+            else if (num_segments == 1u)
+            {
+                // Add a single point for the other end of the segment
                 resampled_path.push_back(current_state);
             }
-            // If there is more than one segment, interpolate between the start and end (including the end)
+            // If there is more than one segment, interpolate between previous_state and current_state (including the current_state)
             else
             {
                 for (uint32_t segment = 1u; segment <= num_segments; segment++)
