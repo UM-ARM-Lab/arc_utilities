@@ -147,15 +147,55 @@ namespace arc_helpers
         assert(min <= max);
         if (val < min)
         {
-            const std::string msg = "Clamping " + std::to_string(val) + " to min " + std::to_string(min);
-            std::cerr << msg << std::endl;
+            const std::string msg = "Clamping " + std::to_string(val) + " to min " + std::to_string(min) + "\n";
+            std::cerr << msg << std::flush;
             return min;
         }
         else if (val > max)
         {
-            const std::string msg = "Clamping " + std::to_string(val) + " to max " + std::to_string(max);
-            std::cerr << msg << std::endl;
+            const std::string msg = "Clamping " + std::to_string(val) + " to max " + std::to_string(max) + "\n";
+            std::cerr << msg << std::flush;
             return max;
+        }
+        return val;
+    }
+
+    // Written to mimic parts of Matlab wthresh(val, 'h', thresh) behavior, spreading the value to teh thresholds instead of setting them to zero
+    // https://www.mathworks.com/help/wavelet/ref/wthresh.html
+    template <class T>
+    inline T SpreadValue(const T& val, const T& low_threshold, const T& midpoint, const T& high_threshold)
+    {
+        assert(low_threshold <= midpoint);
+        assert(midpoint <= high_threshold);
+        if (val >= midpoint && val < high_threshold)
+        {
+            return high_threshold;
+        }
+        else if (val < midpoint && val > low_threshold)
+        {
+            return low_threshold;
+        }
+        return val;
+    }
+
+    // Written to mimic parts of Matlab wthresh(val, 'h', thresh) behavior, spreading the value to teh thresholds instead of setting them to zero
+    // https://www.mathworks.com/help/wavelet/ref/wthresh.html
+    template <class T>
+    inline T SpreadValueAndWarn(const T& val, const T& low_threshold, const T& midpoint, const T& high_threshold)
+    {
+        assert(low_threshold <= midpoint);
+        assert(midpoint <= high_threshold);
+        if (val >= midpoint && val < high_threshold)
+        {
+            const std::string msg = "Thresholding " + std::to_string(val) + " to high threshold " + std::to_string(high_threshold) + "\n";
+            std::cerr << msg << std::flush;
+            return high_threshold;
+        }
+        else if (val < midpoint && val > low_threshold)
+        {
+            const std::string msg = "Thresholding " + std::to_string(val) + " to low threshold " + std::to_string(low_threshold) + "\n";
+            std::cerr << msg << std::flush;
+            return low_threshold;
         }
         return val;
     }
