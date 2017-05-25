@@ -29,7 +29,7 @@ namespace std
     {
         std::size_t operator()(const std::complex<T>& val) const
         {
-            return (std::hash<T>()(val.real()) ^ ((std::hash<double>()(val.imag()) << 1) >> 1));
+            return (std::hash<T>()(val.real()) ^ ((std::hash<T>()(val.imag()) << 1) >> 1));
         }
     };
 
