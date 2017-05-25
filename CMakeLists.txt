@@ -76,6 +76,7 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/simple_dtw.hpp
     include/${PROJECT_NAME}/dijkstras.hpp
     include/${PROJECT_NAME}/shortcut_smoothing.hpp
+    include/${PROJECT_NAME}/first_order_visibility_graph.hpp
     src/${PROJECT_NAME}/zlib_helpers.cpp
     src/${PROJECT_NAME}/base64_helpers.cpp)
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
