@@ -169,6 +169,16 @@ namespace EigenHelpersConversions
         return vector_geom;
     }
 
+    inline Eigen::Matrix3Xd VectorEigenVector3dToEigenMatrix3Xd(const EigenHelpers::VectorVector3d& vector_eigen)
+    {
+        Eigen::Matrix3Xd eigen_matrix(3, vector_eigen.size());
+        for (size_t idx = 0; idx < vector_eigen.size(); idx++)
+        {
+            eigen_matrix.col(idx) = vector_eigen[idx];
+        }
+        return eigen_matrix;
+    }
+
     inline EigenHelpers::VectorVector3d VectorGeometryPointToVectorEigenVector3d(const std::vector<geometry_msgs::Point>& vector_geom)
     {
         EigenHelpers::VectorVector3d vector_eigen(vector_geom.size());

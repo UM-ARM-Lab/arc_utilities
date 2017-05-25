@@ -826,7 +826,7 @@ namespace EigenHelpers
 
     inline double Distance(const Eigen::VectorXd& v1, const Eigen::VectorXd& v2)
     {
-        return sqrt(SquaredDistance(v1, v2));
+        return (v2 - v1).norm();
     }
 
     inline double Distance(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2)
