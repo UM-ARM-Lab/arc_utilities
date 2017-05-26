@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <functional>
+#include <algorithm>
 
 namespace simple_astar_planner
 {
@@ -54,6 +55,7 @@ namespace simple_astar_planner
                     last_state = backpointer_ittr->second;
                 }
                 path.push_back(last_state);
+                std::reverse(path.begin(), path.end());
                 return path;
             }
 
@@ -80,7 +82,6 @@ namespace simple_astar_planner
                 cost_to_come[start] = 0.0;
 
                 bool goal_reached = false;
-                std::cout << "Entering explore loop\n\n";
                 while (!goal_reached && frontier.size() > 0)
                 {
                     const ConfigAndDistType current = frontier.top();
@@ -89,7 +90,6 @@ namespace simple_astar_planner
 
                     if (goal_reached_fn(current_node) == true)
                     {
-                        std::cout << "Reached goal!\n";
                         results.first = ExtractPathBasic(backpointers, current_node);
                         goal_reached = true;
                     }
