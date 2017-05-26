@@ -17,6 +17,7 @@ namespace arc_utilities
                 const StepType& min_y,
                 const StepType& max_y,
                 const StepType& step_size,
+                const std::function<ConfigType(const ConfigType&)>& round_to_grid_fn,
                 const std::function<bool(const ConfigType&)>& validity_check_fn)
         {
             std::vector<ConfigType, Allocator> neighbours;
@@ -34,7 +35,7 @@ namespace arc_utilities
                 {
                     if (!(x == config[0] && y == config[1]) && validity_check_fn(ConfigType(x, y)) == true)
                     {
-                        neighbours.push_back(ConfigType(x, y));
+                        neighbours.push_back(round_to_grid_fn(ConfigType(x, y)));
                     }
                 }
             }
@@ -52,6 +53,7 @@ namespace arc_utilities
                 const StepType& min_z,
                 const StepType& max_z,
                 const StepType& step_size,
+                const std::function<ConfigType(const ConfigType&)>& round_to_grid_fn,
                 const std::function<bool(const ConfigType&)>& validity_check_fn)
         {
             std::vector<ConfigType, Allocator> neighbours;
@@ -74,7 +76,7 @@ namespace arc_utilities
                     {
                         if (!(x == config[0] && y == config[1] && z == config[2]) && validity_check_fn(ConfigType(x, y, z)) == true)
                         {
-                            neighbours.push_back(ConfigType(x, y, z));
+                            neighbours.push_back(round_to_grid_fn(ConfigType(x, y, z)));
                         }
                     }
                 }
