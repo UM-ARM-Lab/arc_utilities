@@ -1023,17 +1023,20 @@ namespace EigenHelpers
         return quat;
     }
 
+    // Returns XYZ Euler angles
     inline Eigen::Vector3d EulerAnglesFromRotationMatrix(const Eigen::Matrix<double, 3, 3>& rot_matrix)
     {
         const Eigen::Vector3d euler_angles = rot_matrix.eulerAngles(0, 1, 2); // Use XYZ angles
         return euler_angles;
     }
 
+    // Returns XYZ Euler angles
     inline Eigen::Vector3d EulerAnglesFromQuaternion(const Eigen::Quaterniond& quat)
     {
         return EulerAnglesFromRotationMatrix(quat.toRotationMatrix());
     }
 
+    // Returns XYZ Euler angles
     inline Eigen::Vector3d EulerAnglesFromAffine3d(const Eigen::Affine3d& trans)
     {
         return EulerAnglesFromRotationMatrix(trans.rotation());
@@ -1125,46 +1128,50 @@ namespace EigenHelpers
 
     ////////////////////////////////////////////////////////////////////////////
     // Averaging functions
+    // Numerically more stable averages taken from http://people.ds.cam.ac.uk/fanf2/hermes/doc/antiforgery/stats.pdf
     ////////////////////////////////////////////////////////////////////////////
 
-    inline double AverageStdVectorDouble(const std::vector<double>& values, const std::vector<double>& weights=std::vector<double>())
+    inline double AverageStdVectorDouble(const std::vector<double>& values, const std::vector<double>& weights = std::vector<double>())
     {
         assert(values.size() > 0);
         assert((weights.size() == values.size()) || (weights.size() == 0));
-        if (values.size() == 1)
-        {
-            return values[0];
-        }
+
         // Get the weights
         bool use_weights = false;
-        double sum_weights = 0.0;
-        if (weights.size() == values.size())
+        if (weights.size() != 0)
         {
             use_weights = true;
-            for (size_t idx = 0; idx < weights.size(); idx++)
-            {
-                sum_weights += fabs(weights[idx]);
-            }
-            assert(sum_weights > 0.0);
         }
-        else
+
+        // Find the first element with non-zero weight
+        size_t starting_idx = 0;
+        while (starting_idx < weights.size() && weights[starting_idx] == 0.0)
         {
-            sum_weights = (double)values.size();
+            starting_idx++;
         }
-        // Do weighted averaging
-        const double initial_weight = (use_weights) ? fabs(weights[0]) : 1.0;
-        const double& initial_element = values[0];
-        double average = initial_element * initial_weight;
-        for (size_t idx = 1; idx < values.size(); idx++)
+
+        // If all weights are zero, return zero
+        if (starting_idx >= values.size())
         {
-            double ew = 1.0;
-            if (use_weights)
-            {
-                ew = fabs(weights[idx]);
-            }
+            return 0.0;
+        }
+
+        // Start the recursive definition with the base case
+        double average = values[starting_idx];
+        const double starting_weight = use_weights ? std::abs(weights[starting_idx]) : 1.0;
+        assert(starting_weight > 0);
+        double sum_weights = starting_weight;
+
+        // Do the weighted averaging on the rest of the vectors
+        assert(starting_idx + 1 > starting_idx);
+        for (size_t idx = starting_idx + 1; idx < values.size(); idx++)
+        {
+            const double weight = use_weights ? std::abs(weights[idx]) : 1.0;
+            sum_weights += weight;
+            const double effective_weight = weight / sum_weights;
             const double prev_average = average;
             const double current = values[idx];
-            average = prev_average + ((ew / sum_weights) * (current - prev_average));
+            average = prev_average + (effective_weight * (current - prev_average));
         }
         return average;
     }
@@ -1222,7 +1229,7 @@ namespace EigenHelpers
         // Do weighted averaging
         const double initial_weight = (use_weights) ? fabs(weights[0]) : 1.0;
         const double& initial_angle = angles[0];
-        double average = initial_angle * initial_weight;
+        double average = initial_angle * initial_weight / sum_weights;
         for (size_t idx = 1; idx < angles.size(); idx++)
         {
             double ew = 1.0;
@@ -1237,97 +1244,72 @@ namespace EigenHelpers
         return average;
     }
 
-    inline Eigen::Vector3d AverageEigenVector3d(const EigenHelpers::VectorVector3d& vectors, const std::vector<double>& weights=std::vector<double>())
+    /**
+     * This function is really only going to work well for "approximately continuous" types, i.e. floats and doubles, due to the implementation
+     */
+    template<typename ScalarType, int Rows, typename Allocator = std::allocator<Eigen::Matrix<ScalarType, Rows, 1>>>
+    inline Eigen::Matrix<ScalarType, Rows, 1> AverageEigenVector(
+            const std::vector<Eigen::Matrix<ScalarType, Rows, 1>, Allocator>& vectors,
+            const std::vector<double>& weights = std::vector<double>())
     {
         assert(vectors.size() > 0);
         assert((weights.size() == vectors.size()) || (weights.size() == 0));
-        if (vectors.size() == 1)
-        {
-            return vectors[0];
-        }
+
         // Get the weights
         bool use_weights = false;
-        double sum_weights = 0.0;
-        if (weights.size() == vectors.size())
+        if (weights.size() != 0)
         {
             use_weights = true;
-            for (size_t idx = 0; idx < weights.size(); idx++)
-            {
-                sum_weights += fabs(weights[idx]);
-            }
-            assert(sum_weights > 0.0);
         }
-        else
-        {
-            sum_weights = (double)vectors.size();
-        }
-        // Do the weighted averaging
 
-        // Do the weighted averaging
-        const double initial_weight = (use_weights) ? fabs(weights[0]) : 1.0;
-        const Eigen::Vector3d& initial_element = vectors[0];
-        Eigen::Vector3d avg_vector = initial_element * initial_weight;
-        for (size_t idx = 1; idx < vectors.size(); idx++)
+        // Find the first element with non-zero weight
+        size_t starting_idx = 0;
+        while (starting_idx < weights.size() && weights[starting_idx] == 0.0)
         {
-            double ew = 1.0;
-            if (use_weights)
-            {
-                ew = fabs(weights[idx]);
-            }
-            const Eigen::Vector3d prev_avg_vector = avg_vector;
-            const Eigen::Vector3d& current = vectors[idx];
-            avg_vector = prev_avg_vector + ((ew / sum_weights) * (current - prev_avg_vector));
+            starting_idx++;
+        }
+
+        // If all weights are zero, return zero
+        if (starting_idx >= vectors.size())
+        {
+            return Eigen::Matrix<ScalarType, Rows, 1>::Zero(vectors[0].rows());
+        }
+
+        // Start the recursive definition with the base case
+        Eigen::Matrix<ScalarType, Rows, 1> avg_vector = vectors[starting_idx];
+        const double starting_weight = use_weights ? std::abs(weights[starting_idx]) : 1.0;
+        assert(starting_weight > 0);
+        double sum_weights = starting_weight;
+
+        // Do the weighted averaging on the rest of the vectors
+        assert(starting_idx + 1 > starting_idx);
+        for (size_t idx = starting_idx + 1; idx < vectors.size(); idx++)
+        {
+            const double weight = use_weights ? std::abs(weights[idx]) : 1.0;
+            sum_weights += weight;
+            const double effective_weight = weight / sum_weights;
+            const Eigen::Matrix<ScalarType, Rows, 1> prev_avg_vector = avg_vector;
+            const Eigen::Matrix<ScalarType, Rows, 1>& current = vectors[idx];
+            avg_vector = prev_avg_vector + (effective_weight * (current - prev_avg_vector));
         }
         return avg_vector;
     }
 
-    inline Eigen::VectorXd AverageEigenVectorXd(const std::vector<Eigen::VectorXd>& vectors, const std::vector<double>& weights=std::vector<double>())
+    inline Eigen::Vector3d AverageEigenVector3d(const EigenHelpers::VectorVector3d& vectors, const std::vector<double>& weights = std::vector<double>())
     {
-        assert(vectors.size() > 0);
-        assert((weights.size() == vectors.size()) || (weights.size() == 0));
-        if (vectors.size() == 1)
-        {
-            return vectors[0];
-        }
-        // Get the weights
-        bool use_weights = false;
-        double sum_weights = 0.0;
-        if (weights.size() == vectors.size())
-        {
-            use_weights = true;
-            for (size_t idx = 0; idx < weights.size(); idx++)
-            {
-                sum_weights += fabs(weights[idx]);
-            }
-            assert(sum_weights > 0.0);
-        }
-        else
-        {
-            sum_weights = (double)vectors.size();
-        }
-        // Do the weighted averaging
-        const double initial_weight = (use_weights) ? fabs(weights[0]) : 1.0;
-        const Eigen::VectorXd& initial_element = vectors[0];
-        Eigen::VectorXd avg_vector = initial_element * initial_weight;
-        for (size_t idx = 1; idx < vectors.size(); idx++)
-        {
-            double ew = 1.0;
-            if (use_weights)
-            {
-                ew = fabs(weights[idx]);
-            }
-            const Eigen::VectorXd prev_avg_vector = avg_vector;
-            const Eigen::VectorXd& current = vectors[idx];
-            avg_vector = prev_avg_vector + ((ew / sum_weights) * (current - prev_avg_vector));
-        }
-        return avg_vector;
+        return AverageEigenVector(vectors, weights);
+    }
+
+    inline Eigen::VectorXd AverageEigenVectorXd(const std::vector<Eigen::VectorXd>& vectors, const std::vector<double>& weights = std::vector<double>())
+    {
+        return AverageEigenVector(vectors, weights);
     }
 
     /*
      * Implementation of method described in (http://stackoverflow.com/a/27410865)
      * See paper at (http://www.acsu.buffalo.edu/~johnc/ave_quat07.pdf) for full explanation
      */
-    inline Eigen::Quaterniond AverageEigenQuaterniond(const EigenHelpers::VectorQuaterniond& quaternions, const std::vector<double>& weights=std::vector<double>())
+    inline Eigen::Quaterniond AverageEigenQuaterniond(const EigenHelpers::VectorQuaterniond& quaternions, const std::vector<double>& weights = std::vector<double>())
     {
         assert(quaternions.size() > 0);
         assert((weights.size() == quaternions.size()) || (weights.size() == 0));
@@ -1378,7 +1360,7 @@ namespace EigenHelpers
         return average_q;
     }
 
-    inline Eigen::Affine3d AverageEigenAffine3d(const EigenHelpers::VectorAffine3d& transforms, const std::vector<double>& weights=std::vector<double>())
+    inline Eigen::Affine3d AverageEigenAffine3d(const EigenHelpers::VectorAffine3d& transforms, const std::vector<double>& weights = std::vector<double>())
     {
         assert(transforms.size() > 0);
         assert((weights.size() == transforms.size()) || (weights.size() == 0));
