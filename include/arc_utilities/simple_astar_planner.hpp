@@ -9,6 +9,10 @@
 #include <functional>
 #include <algorithm>
 
+//#include <ros/ros.h>
+//#include <visualization_msgs/Marker.h>
+//#include <arc_utilities/arc_helpers.hpp>
+
 namespace simple_astar_planner
 {
     template<typename ConfigType, typename Allocator = std::allocator<ConfigType>>
@@ -68,9 +72,27 @@ namespace simple_astar_planner
                     const std::function<double(const ConfigType&)>& heuristic_fn,
                     const std::function<bool(const ConfigType&)>& goal_reached_fn)
             {
-                std::pair<std::vector<ConfigType, Allocator>, std::map<std::string, double>> results;
-
                 const std::chrono::high_resolution_clock::time_point start_time = std::chrono::high_resolution_clock::now();
+
+
+
+//                visualization_msgs::Marker marker;
+//                marker.header.frame_id = "mocap_world";
+//                marker.type = visualization_msgs::Marker::CUBE_LIST;
+//                marker.action = visualization_msgs::Marker::ADD;
+//                marker.ns = "explored_states";
+//                marker.id = 1;
+//                marker.scale.x = 0.02;
+//                marker.scale.y = 0.02;
+//                marker.scale.z = 0.02;
+//                marker.points.reserve(4096);
+//                marker.color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(1.0, 1.0, 0.0, 1.0);
+//                ros::NodeHandle nh;
+//                ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 100, false);
+
+
+
+                std::pair<std::vector<ConfigType, Allocator>, std::map<std::string, double>> results;
 
                 const AStarComparator astar_compare(heuristic_fn);
                 std::priority_queue<ConfigAndDistType, std::vector<ConfigAndDistType>, AStarComparator> frontier(astar_compare);
@@ -98,6 +120,14 @@ namespace simple_astar_planner
                     //    so we want to avoid the expense of re-exploring it, and just discard this one once we pop it
                     else if (explored.find(current_node) == explored.end())
                     {
+//                        geometry_msgs::Point p;
+//                        p.x = current_node[0];
+//                        p.y = current_node[1];
+//                        p.z = current_node[2];
+//                        marker.points.push_back(p);
+//                        marker.header.stamp = ros::Time::now();
+//                        marker_pub.publish(marker);
+
                         explored.insert(current_node);
                         const double current_cost_to_come = cost_to_come.at(current_node);
 

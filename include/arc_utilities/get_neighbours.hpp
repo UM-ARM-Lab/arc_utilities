@@ -29,17 +29,27 @@ namespace arc_utilities
             const StepType y_min = std::max(min_y, config[1] - step_size);
             const StepType y_max = std::min(max_y, config[1] + step_size);
 
-            for (StepType x = x_min; x <= x_max; x += step_size)
+            const ConfigType min_vector = round_to_grid_fn(ConfigType(x_min, y_min));
+            const ConfigType max_vector = round_to_grid_fn(ConfigType(x_max, y_max));
+
+            for (int x_offset = -1; x_offset <= 1; ++x_offset)
             {
-                for (StepType y = y_min; y <= y_max; y += step_size)
+                const double x = config[0] + step_size * x_offset;
+                for (int y_offset = -1; y_offset <= 1; ++y_offset)
                 {
-                    if (!(x == config[0] && y == config[1]) && validity_check_fn(ConfigType(x, y)) == true)
+                    const double y = config[1] + step_size * y_offset;
+                    const ConfigType neighbour = round_to_grid_fn(ConfigType(x, y));
+
+                    if (min_vector[0] <= neighbour[0] && neighbour[0] <= max_vector[0] &&
+                        min_vector[1] <= neighbour[1] && neighbour[1] <= max_vector[1] &&
+                        (neighbour[0] != config[0] || neighbour[1] != config[1]) &&
+                        validity_check_fn(neighbour) == true)
                     {
-                        neighbours.push_back(round_to_grid_fn(ConfigType(x, y)));
+                        neighbours.push_back(neighbour);
                     }
                 }
             }
-
+            neighbours.shrink_to_fit();
             return neighbours;
         }
 
@@ -68,15 +78,27 @@ namespace arc_utilities
             const StepType z_min = std::max(min_z, config[2] - step_size);
             const StepType z_max = std::min(max_z, config[2] + step_size);
 
-            for (StepType x = x_min; x <= x_max; x += step_size)
+            const ConfigType min_vector = round_to_grid_fn(ConfigType(x_min, y_min, z_min));
+            const ConfigType max_vector = round_to_grid_fn(ConfigType(x_max, y_max, z_max));
+
+            for (int x_offset = -1; x_offset <= 1; ++x_offset)
             {
-                for (StepType y = y_min; y <= y_max; y += step_size)
+                const double x = config[0] + step_size * x_offset;
+                for (int y_offset = -1; y_offset <= 1; ++y_offset)
                 {
-                    for (StepType z = z_min; z <= z_max; z += step_size)
+                    const double y = config[1] + step_size * y_offset;
+                    for (int z_offset = -1; z_offset <= 1; ++z_offset)
                     {
-                        if (!(x == config[0] && y == config[1] && z == config[2]) && validity_check_fn(ConfigType(x, y, z)) == true)
+                        const double z = config[2] + step_size * z_offset;
+                        const ConfigType neighbour = round_to_grid_fn(ConfigType(x, y, z));
+
+                        if (min_vector[0] <= neighbour[0] && neighbour[0] <= max_vector[0] &&
+                            min_vector[1] <= neighbour[1] && neighbour[1] <= max_vector[1] &&
+                            min_vector[2] <= neighbour[2] && neighbour[2] <= max_vector[2] &&
+                            (neighbour[0] != config[0] || neighbour[1] != config[1] || neighbour[2] != config[2]) &&
+                            validity_check_fn(neighbour) == true)
                         {
-                            neighbours.push_back(round_to_grid_fn(ConfigType(x, y, z)));
+                            neighbours.push_back(neighbour);
                         }
                     }
                 }
