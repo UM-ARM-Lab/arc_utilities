@@ -787,7 +787,7 @@ namespace EigenHelpers
 
     inline double Distance(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2)
     {
-        double dq = fabs((q1.w() * q2.w()) + (q1.x() * q2.x()) + (q1.y() * q2.y()) + (q1.z() * q2.z()));
+        const double dq = fabs((q1.w() * q2.w()) + (q1.x() * q2.x()) + (q1.y() * q2.y()) + (q1.z() * q2.z()));
         if (dq < (1.0 - std::numeric_limits<double>::epsilon()))
         {
             return acos(2.0 * (dq * dq) - 1.0);
@@ -1141,7 +1141,7 @@ namespace EigenHelpers
                 const double delta = values[idx] - mean;
                 stddev_sum += (delta * delta);
             }
-            return (stddev_sum * inv_n_minus_1);
+            return std::sqrt(stddev_sum * inv_n_minus_1);
         }
     }
 

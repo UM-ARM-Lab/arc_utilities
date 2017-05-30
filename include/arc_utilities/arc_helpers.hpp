@@ -303,6 +303,40 @@ namespace arc_helpers
         {
             return MakeFromFloatColors(ColorChannelFromHex(r), ColorChannelFromHex(g), ColorChannelFromHex(b), TrimColorValue(a));
         }
+
+        static inline ColorType InterpolateHotToCold(const double value, const double min_value=0.0, const double max_value=1.0)
+        {
+            assert(min_value < max_value);
+            const double real_value = ClampValue(value, min_value, max_value);
+            const double range = max_value - min_value;
+            // Start with white
+            double r = 1.0;
+            double g = 1.0;
+            double b = 1.0;
+            // Interpolate
+            if (real_value < (min_value + (0.25 * range)))
+            {
+                r = 0.0;
+                g = 4.0 * (real_value - min_value) / range;
+            }
+            else if (real_value < (min_value + (0.5 * range)))
+            {
+                r = 0.0;
+                b = 1.0 + 4.0 * (min_value + 0.25 * range - real_value) / range;
+            }
+            else if (real_value < (min_value + (0.75 * range)))
+            {
+                r = 4.0 * (real_value - min_value - 0.5 * range) / range;
+                b = 0.0;
+            }
+            else
+            {
+                g = 1.0 + 4.0 * (min_value + 0.75 * range - real_value) / range;
+                b = 0.0;
+            }
+            return MakeFromFloatColors((float)r, (float)g, (float)b, 1.0f);
+        }
+
     };
 
     template<typename ColorTypeA, typename ColorTypeB>
@@ -732,11 +766,20 @@ namespace arc_helpers
     // SEE https://people.sc.fsu.edu/~jburkardt/presentations/truncated_normal.pdf FOR DETAILS
     inline double EvaluateGaussianCDF(const double mean, const double std_dev, const double val)
     {
-        return 0.5 * (1.0 - erf( ( (val - mean) / std_dev ) / sqrt(2.0) ) );
+        return 0.5 * (1.0 + std::erf( ( (val - mean) / std_dev ) / sqrt(2.0) ) );
+    }
+
+    inline double EvaluateGaussianPDF(const double mean, const double std_dev, const double val)
+    {
+        const double exponent = ((val - mean) * (val - mean)) / (2.0 * std_dev * std_dev);
+        const double fraction = 1.0 / (std_dev * std::sqrt(2.0 * M_PI));
+        const double pdf = fraction * std::exp(-exponent);
+        return pdf;
     }
 
     inline double EvaluateTruncatedGaussianCDF(const double mean, const double lower_bound, const double upper_bound, const double std_dev, const double val)
     {
+        assert(lower_bound <= upper_bound);
         if (val <= lower_bound)
         {
             return 0.0;
@@ -751,6 +794,28 @@ namespace arc_helpers
             const double numerator = EvaluateGaussianCDF(mean, std_dev, val) - cdf_lower_bound;
             const double denominator = EvaluateGaussianCDF(mean, std_dev, upper_bound) - cdf_lower_bound;
             return numerator / denominator;
+        }
+    }
+
+    inline double EvaluateTruncatedGaussianPDF(const double mean, const double lower_bound, const double upper_bound, const double std_dev, const double val)
+    {
+        assert(lower_bound <= upper_bound);
+        if (val <= lower_bound)
+        {
+            return 0.0;
+        }
+        else if (val >= upper_bound)
+        {
+            return 0.0;
+        }
+        else
+        {
+            const double cdf_upper = EvaluateGaussianCDF(mean, std_dev, upper_bound);
+            const double cdf_lower = EvaluateGaussianCDF(mean, std_dev, lower_bound);
+            const double probability_enclosed = cdf_upper - cdf_lower;
+            const double gaussian_pdf = EvaluateGaussianPDF(mean, std_dev, val);
+            const double pdf = gaussian_pdf / probability_enclosed;
+            return pdf;
         }
     }
 
