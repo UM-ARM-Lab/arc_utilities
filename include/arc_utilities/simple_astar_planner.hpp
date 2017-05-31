@@ -12,6 +12,8 @@
 //#include <ros/ros.h>
 //#include <visualization_msgs/Marker.h>
 //#include <arc_utilities/arc_helpers.hpp>
+//#include <arc_utilities/ros_helpers.hpp>
+//#include <arc_utilities/eigen_helpers_conversions.hpp>
 
 namespace simple_astar_planner
 {
@@ -74,20 +76,31 @@ namespace simple_astar_planner
             {
                 const std::chrono::high_resolution_clock::time_point start_time = std::chrono::high_resolution_clock::now();
 
-
-
+//                ros::NodeHandle nh;
 //                visualization_msgs::Marker marker;
 //                marker.header.frame_id = "mocap_world";
 //                marker.type = visualization_msgs::Marker::CUBE_LIST;
 //                marker.action = visualization_msgs::Marker::ADD;
 //                marker.ns = "explored_states";
 //                marker.id = 1;
-//                marker.scale.x = 0.02;
-//                marker.scale.y = 0.02;
-//                marker.scale.z = 0.02;
+//                marker.scale.x = ROSHelpers::GetParam(nh, "world_x_step", 1.0);
+//                marker.scale.y = ROSHelpers::GetParam(nh, "world_y_step", 1.0);
+//                marker.scale.z = ROSHelpers::GetParam(nh, "world_z_step", 1.0);
 //                marker.points.reserve(4096);
 //                marker.color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(1.0, 1.0, 0.0, 1.0);
-//                ros::NodeHandle nh;
+
+//                visualization_msgs::Marker neighbours_marker;
+//                neighbours_marker.header.frame_id = "mocap_world";
+//                neighbours_marker.type = visualization_msgs::Marker::CUBE_LIST;
+//                neighbours_marker.action = visualization_msgs::Marker::ADD;
+//                neighbours_marker.ns = "neighbours";
+//                neighbours_marker.id = 1;
+//                neighbours_marker.scale.x = ROSHelpers::GetParam(nh, "world_x_step", 1.0);
+//                neighbours_marker.scale.y = ROSHelpers::GetParam(nh, "world_y_step", 1.0);
+//                neighbours_marker.scale.z = ROSHelpers::GetParam(nh, "world_z_step", 1.0);
+//                neighbours_marker.points.reserve(26);
+//                neighbours_marker.color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(0.0, 0.0, 1.0, 0.3);
+
 //                ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 100, false);
 
 
@@ -133,6 +146,12 @@ namespace simple_astar_planner
 
                         // Expand the node to find all neighbours, adding them to the frontier if we have not already explored them
                         const auto neighbours = neighbour_fn(current_node);
+
+//                        neighbours_marker.points = EigenHelpersConversions::VectorEigenVector3dToVectorGeometryPoint(neighbours);
+//                        neighbours_marker.header.stamp = ros::Time::now();
+//                        marker_pub.publish(neighbours_marker);
+//                        std::cout << std::flush;
+
                         for (const auto neighbour : neighbours)
                         {
                             // Check if we've already explored this neighbour
