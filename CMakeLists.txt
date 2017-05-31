@@ -97,6 +97,11 @@ add_executable(test_eigen_math src/test_eigen_math.cpp)
 add_dependencies(test_eigen_math ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(test_eigen_math ${PROJECT_NAME} ${catkin_LIBRARIES})
 
+# Simple test node for averaging math
+add_executable(test_averaging src/test_averaging.cpp)
+add_dependencies(test_averaging ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+target_link_libraries(test_averaging ${PROJECT_NAME} ${catkin_LIBRARIES})
+
 # Simple test node for Dijkstras
 add_executable(test_dijkstras src/test_dijkstras.cpp)
 add_dependencies(test_dijkstras ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
