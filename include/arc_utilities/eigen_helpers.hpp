@@ -1139,29 +1139,21 @@ namespace EigenHelpers
         assert(values.size() > 0);
         assert((weights.size() == values.size()) || (weights.size() == 0));
         const bool use_weights = (weights.size() != 0);
-
         // Find the first element with non-zero weight
         size_t starting_idx = 0;
         while (starting_idx < weights.size() && weights[starting_idx] == 0.0)
         {
-            ++starting_idx;
+            starting_idx++;
         }
-
-        // If all weights are zero, return zero
-        if (starting_idx >= values.size())
-        {
-            return 0.0;
-        }
-
+        // If all weights are zero, result is undefined
+        assert(starting_idx < values.size());
         // Start the recursive definition with the base case
         double average = values[starting_idx];
         const double starting_weight = use_weights ? std::abs(weights[starting_idx]) : 1.0;
-        assert(starting_weight > 0);
+        assert(starting_weight > 0.0);
         double weights_running_sum = starting_weight;
-
         // Do the weighted averaging on the rest of the vectors
-        assert(starting_idx + 1 > starting_idx);
-        for (size_t idx = starting_idx + 1; idx < values.size(); ++idx)
+        for (size_t idx = starting_idx + 1; idx < values.size(); idx++)
         {
             const double weight = use_weights ? std::abs(weights[idx]) : 1.0;
             weights_running_sum += weight;
@@ -1170,13 +1162,10 @@ namespace EigenHelpers
             const double current = values[idx];
             average = prev_average + (effective_weight * (current - prev_average));
         }
-
         return average;
     }
 
-    inline double ComputeStdDevStdVectorDouble(
-            const std::vector<double>& values,
-            const double mean)
+    inline double ComputeStdDevStdVectorDouble(const std::vector<double>& values, const double mean)
     {
         assert(values.size() > 0);
         if (values.size() == 1)
@@ -1196,14 +1185,13 @@ namespace EigenHelpers
         }
     }
 
-    inline double ComputeStdDevStdVectorDouble(
-            const std::vector<double>& values)
+    inline double ComputeStdDevStdVectorDouble(const std::vector<double>& values)
     {
         const double mean = AverageStdVectorDouble(values);
         return ComputeStdDevStdVectorDouble(values, mean);
     }
 
-    /**
+    /*
      * This function does not actually deal with the continuous revolute space correctly,
      * it just assumes a normal real Euclidean space
      */
@@ -1227,28 +1215,20 @@ namespace EigenHelpers
         assert(vectors.size() > 0);
         assert((weights.size() == vectors.size()) || (weights.size() == 0));
         const bool use_weights = (weights.size() != 0);
-
         // Find the first element with non-zero weight
         size_t starting_idx = 0;
         while (starting_idx < weights.size() && weights[starting_idx] == 0.0)
         {
-            ++starting_idx;
+            starting_idx++;
         }
-
-        // If all weights are zero, return zero
-        if (starting_idx >= vectors.size())
-        {
-            return Eigen::Matrix<ScalarType, Rows, 1>::Zero(vectors[0].rows());
-        }
-
+        // If all weights are zero, result is undefined
+        assert(starting_idx < vectors.size());
         // Start the recursive definition with the base case
         Eigen::Matrix<ScalarType, Rows, 1> avg_vector = vectors[starting_idx];
         const double starting_weight = use_weights ? std::abs(weights[starting_idx]) : 1.0;
-        assert(starting_weight > 0);
+        assert(starting_weight > 0.0);
         double weights_running_sum = starting_weight;
-
         // Do the weighted averaging on the rest of the vectors
-        assert(starting_idx + 1 > starting_idx);
         for (size_t idx = starting_idx + 1; idx < vectors.size(); ++idx)
         {
             const double weight = use_weights ? std::abs(weights[idx]) : 1.0;
@@ -1258,7 +1238,6 @@ namespace EigenHelpers
             const Eigen::Matrix<ScalarType, Rows, 1>& current = vectors[idx];
             avg_vector = prev_avg_vector + (effective_weight * (current - prev_avg_vector));
         }
-
         return avg_vector;
     }
 
@@ -1288,20 +1267,12 @@ namespace EigenHelpers
         const bool use_weights = weights.size() == quaternions.size() ? true : false;
         assert(quaternions.size() > 0);
         assert((weights.size() == quaternions.size()) || (weights.size() == 0));
-
         // Shortcut the process if there is only 1 quaternion
         if (quaternions.size() == 1)
         {
-            if (weights.size() == 0 || weights[0] != 0.0)
-            {
-                return quaternions[0];
-            }
-            else
-            {
-                return Eigen::Quaterniond(Eigen::AngleAxisd(0.0, Eigen::Vector3d::UnitX()));
-            }
+            assert(weights.size() == 0 || weights[0] != 0.0);
+            return quaternions[0];
         }
-
         // Build the averaging matrix
         Eigen::MatrixXd q_matrix(4, quaternions.size());
         for (size_t idx = 0; idx < quaternions.size(); idx++)
@@ -1310,14 +1281,12 @@ namespace EigenHelpers
             const Eigen::Quaterniond& q = quaternions[idx];
             q_matrix.col((ssize_t)idx) << weight * q.w(), weight * q.x(), weight * q.y(), weight * q.z();
         }
-
         // Make the matrix square
         const Eigen::Matrix<double, 4, 4> qqtranspose_matrix = q_matrix * q_matrix.transpose();
         // Compute the eigenvectors and eigenvalues of the qqtranspose matrix
         const Eigen::EigenSolver<Eigen::Matrix<double, 4, 4>> solver(qqtranspose_matrix);
         const Eigen::EigenSolver<Eigen::Matrix<double, 4, 4>>::EigenvalueType eigen_values = solver.eigenvalues();
         const Eigen::EigenSolver<Eigen::Matrix<double, 4, 4>>::EigenvectorsType eigen_vectors = solver.eigenvectors();
-
         // Extract the eigenvector corresponding to the largest eigenvalue
         double max_eigenvalue = -INFINITY;
         int64_t max_eigenvector_index = -1;
@@ -1331,7 +1300,6 @@ namespace EigenHelpers
             }
         }
         assert(max_eigenvector_index >= 0);
-
         // Note that these are already normalized!
         const Eigen::Vector4cd best_eigenvector = eigen_vectors.col((long)max_eigenvector_index);
         // Convert back into a quaternion
@@ -1345,20 +1313,12 @@ namespace EigenHelpers
     {
         assert(transforms.size() > 0);
         assert((weights.size() == transforms.size()) || (weights.size() == 0));
-
         // Shortcut the process if there is only 1 transform
         if (transforms.size() == 1)
         {
-            if (weights.size() == 0 || weights[0] != 0.0)
-            {
-                return transforms[0];
-            }
-            else
-            {
-                return Eigen::Affine3d::Identity();
-            }
+            assert(weights.size() == 0 || weights[0] != 0.0);
+            return transforms[0];
         }
-
         // Extract components
         EigenHelpers::VectorVector3d translations(transforms.size());
         EigenHelpers::VectorQuaterniond rotations(transforms.size());
@@ -1367,11 +1327,9 @@ namespace EigenHelpers
             translations[idx] = transforms[idx].translation();
             rotations[idx] = Eigen::Quaterniond(transforms[idx].rotation());
         }
-
         // Average
         const Eigen::Vector3d average_translation = AverageEigenVector(translations, weights);
         const Eigen::Quaterniond average_rotation = AverageEigenQuaterniond(rotations, weights);
-
         // Make the average transform
         const Eigen::Affine3d average_transform = (Eigen::Translation3d)average_translation * average_rotation;
         return average_transform;
@@ -1391,7 +1349,7 @@ namespace EigenHelpers
         EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedV);
         EIGEN_STATIC_ASSERT_SAME_VECTOR_SIZE(DerivedB, DerivedV)
         static_assert(std::is_same<typename DerivedB::Scalar, typename DerivedV::Scalar>::value, "base_vector and vector_to_project must have the same data type");
-
+        // Perform projection
         const typename DerivedB::Scalar b_squared_norm = base_vector.squaredNorm();
         if (b_squared_norm > 0)
         {
@@ -1409,6 +1367,7 @@ namespace EigenHelpers
             const Eigen::MatrixBase<DerivedB>& base_vector,
             const Eigen::MatrixBase<DerivedV>& vector_to_project)
     {
+        // Rejection is defined in relation to projection
         return vector_to_project - VectorProjection(base_vector, vector_to_project);
     }
 
