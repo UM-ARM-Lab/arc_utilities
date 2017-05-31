@@ -47,27 +47,26 @@ namespace simple_rrt_planner
         }
 
         SimpleRRTPlannerState(const T& value, const int64_t parent_index, const std::vector<int64_t>& child_indices)
-        {
-            parent_index_ = parent_index;
-            child_indices_ = child_indices;
-            value_ = value;
-            initialized_ = true;
-        }
+            : value_(value)
+            , child_indices_(child_indices)
+            , parent_index_(parent_index)
+            , initialized_(true)
+        {}
 
         SimpleRRTPlannerState(const T& value, const int64_t parent_index)
+            : value_(value)
+            , parent_index_(parent_index)
+            , initialized_(true)
         {
-            parent_index_ = parent_index;
             child_indices_.clear();
-            value_ = value;
-            initialized_ = true;
         }
 
         SimpleRRTPlannerState(const T& value)
+            : value_(value)
+            , parent_index_(-1)
+            , initialized_(true)
         {
-            parent_index_ = -1;
             child_indices_.clear();
-            value_ = value;
-            initialized_ = true;
         }
 
         uint64_t SerializeSelf(std::vector<uint8_t>& buffer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& value_serializer) const
@@ -185,17 +184,16 @@ namespace simple_rrt_planner
 
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-        SimpleRRTPlannerPointerState() : initialized_(false)
-        {
-            parent_ = std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>>();
-        }
+        SimpleRRTPlannerPointerState()
+            : parent_(nullptr)
+            , initialized_(false)
+        {}
 
         SimpleRRTPlannerPointerState(const T& value, const std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>>& parent)
-        {
-            parent_(parent);
-            value_ = value;
-            initialized_ = true;
-        }
+            : value_(value)
+            , parent_(parent)
+            , initialized_(true)
+        {}
 
         SimpleRRTPlannerPointerState(const T& value)
         {
