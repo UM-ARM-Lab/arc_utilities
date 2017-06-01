@@ -8,6 +8,7 @@
 #include <functional>
 #include <chrono>
 #include <random>
+#include <memory>
 #include <arc_utilities/arc_helpers.hpp>
 
 #ifndef SIMPLE_RRT_PLANNER_HPP
@@ -41,7 +42,9 @@ namespace simple_rrt_planner
             return std::make_pair(temp_state, bytes_read);
         }
 
-        SimpleRRTPlannerState() : parent_index_(-1), initialized_(false)
+        SimpleRRTPlannerState()
+            : parent_index_(-1)
+            , initialized_(false)
         {
             child_indices_.clear();
         }
