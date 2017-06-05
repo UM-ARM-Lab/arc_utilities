@@ -48,7 +48,7 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
             // Defines a "less" operation"; by using "greater" then the smallest element will appear at the top of the priority queue
             bool operator()(const ConfigAndDistType& c1, const ConfigAndDistType& c2) const
             {
-                // If expected distances are different, we want to explore the one with the smaller expected distance
+                // We want to explore the one with the smaller expected distance
                 return (c1.second > c2.second);
             }
     };
@@ -69,13 +69,16 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
         marker.id = 1;
         marker.scale.x = 1.0;
         marker.scale.y = 1.0;
+        marker.color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(0.0, 0.0, 1.0, 1.0);
         marker.header.stamp = ros::Time::now();
         marker_pub.publish(marker);
-        marker.color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(0.0, 0.0, 1.0, 1.0);
     }
 
     const ConfigType start(0, 0), goal(rows - 1, cols - 1);
-    const auto heuristic_distance_fn = [&goal] (const ConfigType& config) { return ConfigTypeDistance(config, goal); };
+    const auto heuristic_distance_fn = [&goal] (const ConfigType& config)
+    {
+        return ConfigTypeDistance(config, goal);
+    };
 
     std::priority_queue<ConfigAndDistType, std::vector<ConfigAndDistType>, BestFirstSearchComparator> frontier;
     ArrayXb explored = ArrayXb::Constant(rows, cols, false);
@@ -103,7 +106,7 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
             ++marker.id;
             marker.points.push_back(p);
 
-            if (marker.id % 1000 == 0)
+            if (marker.id % 100 == 0)
             {
                 marker.header.stamp = ros::Time::now();
                 marker_pub.publish(marker);

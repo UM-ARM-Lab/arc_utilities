@@ -16,7 +16,7 @@
 
 namespace simple_rrt_planner
 {
-    template<typename T, typename Allocator=std::allocator<T>>
+    template<typename T, typename Allocator = std::allocator<T>>
     class SimpleRRTPlannerState
     {
     protected:
@@ -174,7 +174,7 @@ namespace simple_rrt_planner
         }
     };
 
-    template<typename T, typename Allocator=std::allocator<T>>
+    template<typename T, typename Allocator = std::allocator<T>>
     class SimpleRRTPlannerPointerState
     {
     protected:

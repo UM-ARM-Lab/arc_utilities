@@ -11,7 +11,11 @@ namespace arc_utilities
         typedef std::pair<ConfigType, double> ConfigAndDistType;
         typedef std::function<bool(const ssize_t row, const ssize_t col)> ValidityCheckFnType;
 
-        bool CheckFirstOrderDeformation(const ssize_t rows, const ssize_t cols, const ValidityCheckFnType& validity_check_fn, const bool visualization_enabled = true);
+        bool CheckFirstOrderDeformation(
+                const ssize_t rows,
+                const ssize_t cols,
+                const ValidityCheckFnType& validity_check_fn,
+                const bool visualization_enabled = true);
     }
 }
 

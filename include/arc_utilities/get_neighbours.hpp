@@ -49,6 +49,7 @@ namespace arc_utilities
                     }
                 }
             }
+
             neighbours.shrink_to_fit();
             return neighbours;
         }
