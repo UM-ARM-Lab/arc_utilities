@@ -1,6 +1,7 @@
 #include "arc_utilities/first_order_deformation.h"
 
 #include <queue>
+#include <thread>
 #include <Eigen/Core>
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -61,17 +62,32 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
     ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("first_order_visibility_visualization_marker", 100, true);
 
     visualization_msgs::Marker marker;
+    if (visualization_enabled)
     {
+        geometry_msgs::Point goal;
+        goal.x = (double)(rows - 1);
+        goal.y = (double)(cols - 1);
+        goal.z = 0;
+
         marker.header.frame_id = "mocap_world";
         marker.type = visualization_msgs::Marker::POINTS;
         marker.action = visualization_msgs::Marker::ADD;
-        marker.ns = "explored_states";
+        marker.ns = "first_order_visibility_goal";
         marker.id = 1;
+        marker.color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(0.0, 1.0, 0.0, 1.0);
         marker.scale.x = 1.0;
         marker.scale.y = 1.0;
+        marker.points.push_back(goal);
+        marker_pub.publish(marker);
+        std::this_thread::sleep_for(std::chrono::duration<double>(0.01));
+
+        marker.ns = "first_order_visibility_explored_states";
+        marker.id = 2;
         marker.color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(0.0, 0.0, 1.0, 1.0);
+        marker.points.clear();
         marker.header.stamp = ros::Time::now();
         marker_pub.publish(marker);
+        std::this_thread::sleep_for(std::chrono::duration<double>(0.01));
     }
 
     const ConfigType start(0, 0), goal(rows - 1, cols - 1);
@@ -87,7 +103,7 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
 
     if (visualization_enabled)
     {
-        std::cout << "Entering explore loop\n\n";
+        std::cout << "Entering explore loop\n";
     }
     bool path_found = false;
     while (!path_found && ros::ok() && frontier.size() > 0)
@@ -103,15 +119,15 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
             p.x = (double)current_config.first;
             p.y = (double)current_config.second;
             p.z = 0;
-            ++marker.id;
+//            ++marker.id;
             marker.points.push_back(p);
 
-            if (marker.id % 100 == 0)
+//            if (marker.id % 100 == 0)
             {
                 marker.header.stamp = ros::Time::now();
                 marker_pub.publish(marker);
-                marker.points.clear();
-                usleep(10);
+//                marker.points.clear();
+                std::this_thread::sleep_for(std::chrono::duration<double>(0.0001));
             }
         }
 
