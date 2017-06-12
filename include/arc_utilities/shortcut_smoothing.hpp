@@ -29,6 +29,7 @@ namespace shortcut_smoothing
             return input_vector;
         }
 
+        // Collision check the path between the first and second index
         bool collision = false;
         for (double dist = step_size; !collision && dist < total_dist; dist += step_size)
         {
