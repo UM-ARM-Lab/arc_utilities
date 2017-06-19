@@ -199,11 +199,10 @@ namespace simple_rrt_planner
         {}
 
         SimpleRRTPlannerPointerState(const T& value)
-        {
-            parent_ = std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>>();
-            value_ = value;
-            initialized_ = true;
-        }
+            : value_(value)
+            , parent_(std::shared_ptr<const SimpleRRTPlannerPointerState<T, Allocator>>())
+            , initialized_(true)
+        {}
 
         bool IsInitialized() const
         {

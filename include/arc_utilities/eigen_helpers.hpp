@@ -667,7 +667,7 @@ namespace EigenHelpers
         double diff = real_p2 - real_p1;
         if (fabs(diff) <= M_PI)
         {
-            interpolated = real_p1 + diff * ratio;
+            interpolated = real_p1 + diff * real_ratio;
         }
         else
         {
@@ -679,7 +679,7 @@ namespace EigenHelpers
             {
                 diff = -2.0 * M_PI - diff;
             }
-            interpolated = real_p1 - diff * ratio;
+            interpolated = real_p1 - diff * real_ratio;
             // Input states are within bounds, so the following check is sufficient
             if (interpolated > M_PI)
             {
