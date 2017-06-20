@@ -140,6 +140,15 @@ namespace EigenHelpers
         return true;
     }
 
+    // Inspired by Eigen's "isApprox" function
+    inline bool IsApprox(const double p1, const double p2, const double precision)
+    {
+        const double smallest_element = std::min(std::abs(p1), std::abs(p2));
+        const double threshold = precision * smallest_element;
+        return CloseEnough(p1, p2, threshold);
+    }
+
+
     template <typename Derived>
     inline Eigen::MatrixXd ClampNorm(const Eigen::MatrixBase<Derived>& item_to_clamp, const double max_norm)
     {
@@ -1333,6 +1342,41 @@ namespace EigenHelpers
         // Make the average transform
         const Eigen::Affine3d average_transform = (Eigen::Translation3d)average_translation * average_rotation;
         return average_transform;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Geometry functions
+    ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief DistanceToLine
+     * Math taken from http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+     * x = x0
+     * point_on_line = x1
+     * unit_vector = x2 - x1 / |x2 - x1|
+     * @param point_on_line
+     * @param unit_vector
+     * @param x
+     * @return The distance to the line, and the displacement along the line
+     */
+    inline std::pair<double, double> DistanceToLine(const Eigen::Vector3d& point_on_line, const Eigen::Vector3d& unit_vector, const Eigen::Vector3d x)
+    {
+        // Ensure that our input data is valid
+        const auto real_unit_vector = unit_vector.normalized();
+        if (!CloseEnough(unit_vector.norm(), 1.0, 1e-13))
+        {
+            std::cerr << "[Distance to line]: unit vector was not normalized: " << unit_vector.transpose() << " Norm: " << unit_vector.norm() << std::endl;
+        }
+
+        const auto delta = point_on_line - x;
+        const double displacement_along_line = -real_unit_vector.dot(delta);
+        const auto x_projected_onto_line = point_on_line + real_unit_vector * displacement_along_line;
+        const double distance_to_line = (x_projected_onto_line - x).norm();
+
+        // A simple neccescary (but not sufficient) check to look for math errors
+        assert(IsApprox(distance_to_line * distance_to_line + displacement_along_line * displacement_along_line, delta.squaredNorm(), 1e-10));
+
+        return std::make_pair(distance_to_line, displacement_along_line);
     }
 
     ////////////////////////////////////////////////////////////////////////////

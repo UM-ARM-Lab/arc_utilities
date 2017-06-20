@@ -115,6 +115,11 @@ add_executable(test_shortcut_smoothing src/test_shortcut_smoothing.cpp)
 add_dependencies(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_LIBRARIES})
 
+# Simple test node for DistanceToLine function
+add_executable(test_closest_point src/test_closest_point.cpp)
+add_dependencies(test_closest_point ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+target_link_libraries(test_closest_point ${PROJECT_NAME} ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
