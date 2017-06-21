@@ -148,10 +148,10 @@ namespace EigenHelpers
         return CloseEnough(p1, p2, threshold);
     }
 
-
     template <typename Derived>
-    inline Eigen::MatrixXd ClampNorm(const Eigen::MatrixBase<Derived>& item_to_clamp, const double max_norm)
+    inline Eigen::MatrixBase<Derived> ClampNorm(const Eigen::MatrixBase<Derived>& item_to_clamp, const double max_norm)
     {
+        assert(max_norm >= 0 && "You must pass a maximum norm that is positive");
         const double current_norm = item_to_clamp.norm();
         if (current_norm > max_norm)
         {
@@ -1368,8 +1368,8 @@ namespace EigenHelpers
             std::cerr << "[Distance to line]: unit vector was not normalized: " << unit_vector.transpose() << " Norm: " << unit_vector.norm() << std::endl;
         }
 
-        const auto delta = point_on_line - x;
-        const double displacement_along_line = -real_unit_vector.dot(delta);
+        const auto delta = x - point_on_line;
+        const double displacement_along_line = real_unit_vector.dot(delta);
         const auto x_projected_onto_line = point_on_line + real_unit_vector * displacement_along_line;
         const double distance_to_line = (x_projected_onto_line - x).norm();
 
