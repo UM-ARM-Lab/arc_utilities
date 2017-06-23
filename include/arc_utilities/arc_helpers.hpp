@@ -559,9 +559,9 @@ namespace arc_helpers
         {
             std::function<bool(const std::pair<int64_t, double>&, const std::pair<int64_t, double>&)> compare_fn = [] (const std::pair<int64_t, double>& index1, const std::pair<int64_t, double>& index2) { return index1.second < index2.second; };
             std::vector<std::vector<std::pair<int64_t, double>>> per_thread_nearests(GetNumOMPThreads(), std::vector<std::pair<int64_t, double>>(K, std::make_pair(-1, std::numeric_limits<double>::infinity())));
-    #ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
+#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
             #pragma omp parallel for
-    #endif
+#endif
             for (size_t idx = 0; idx < items.size(); idx++)
             {
                 const Item& item = items[idx];
