@@ -14,8 +14,7 @@ namespace arc_utilities
         bool CheckFirstOrderDeformation(
                 const ssize_t rows,
                 const ssize_t cols,
-                const ValidityCheckFnType& validity_check_fn,
-                const bool visualization_enabled = true);
+                const ValidityCheckFnType& validity_check_fn);
     }
 }
 

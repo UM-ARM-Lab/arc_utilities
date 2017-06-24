@@ -1,12 +1,7 @@
 #include "arc_utilities/first_order_deformation.h"
 
 #include <queue>
-#include <thread>
 #include <Eigen/Core>
-#include <ros/ros.h>
-#include <visualization_msgs/MarkerArray.h>
-#include "arc_utilities/arc_helpers.hpp"
-#include "arc_utilities/pretty_print.hpp"
 
 using namespace arc_utilities;
 using namespace FirstOrderDeformation;
@@ -41,12 +36,12 @@ static std::vector<ConfigType> GetNeighbours(const ConfigType& config, const ssi
     return neighbours;
 }
 
-bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const ssize_t cols, const ValidityCheckFnType& validity_check_fn, const bool visualization_enabled)
+bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const ssize_t cols, const ValidityCheckFnType& validity_check_fn)
 {
     struct BestFirstSearchComparator
     {
         public:
-            // Defines a "less" operation"; by using "greater" then the smallest element will appear at the top of the priority queue
+            // Defines a "less" operation"; by using "greater" the smallest element will appear at the top of the priority queue
             bool operator()(const ConfigAndDistType& c1, const ConfigAndDistType& c2) const
             {
                 // We want to explore the one with the smaller expected distance
@@ -54,93 +49,28 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
             }
     };
 
-
     assert(rows > 0 && cols > 0);
     typedef Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> ArrayXb;
 
-    ros::NodeHandle nh;
-    ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("first_order_visibility_visualization_marker", 100, true);
-
-    visualization_msgs::Marker marker;
-    if (visualization_enabled)
-    {
-        geometry_msgs::Point goal;
-        goal.x = (double)(rows - 1);
-        goal.y = (double)(cols - 1);
-        goal.z = 0;
-
-        marker.header.frame_id = "mocap_world";
-        marker.type = visualization_msgs::Marker::POINTS;
-        marker.action = visualization_msgs::Marker::ADD;
-        marker.ns = "first_order_visibility_goal";
-        marker.id = 1;
-        marker.color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(0.0, 1.0, 0.0, 1.0);
-        marker.scale.x = 1.0;
-        marker.scale.y = 1.0;
-        marker.points.push_back(goal);
-        marker_pub.publish(marker);
-        std::this_thread::sleep_for(std::chrono::duration<double>(0.01));
-
-        marker.ns = "first_order_visibility_explored_states";
-        marker.id = 2;
-        marker.color = arc_helpers::RGBAColorBuilder<std_msgs::ColorRGBA>::MakeFromFloatColors(0.0, 0.0, 1.0, 1.0);
-        marker.points.clear();
-        marker.header.stamp = ros::Time::now();
-        marker_pub.publish(marker);
-        std::this_thread::sleep_for(std::chrono::duration<double>(0.01));
-    }
-
-    const ConfigType start(0, 0), goal(rows - 1, cols - 1);
-    const auto heuristic_distance_fn = [&goal] (const ConfigType& config)
-    {
-        return ConfigTypeDistance(config, goal);
-    };
-
+    // Setup the strucutres needed to keep track of the search
     std::priority_queue<ConfigAndDistType, std::vector<ConfigAndDistType>, BestFirstSearchComparator> frontier;
     ArrayXb explored = ArrayXb::Constant(rows, cols, false);
 
-    frontier.push(ConfigAndDistType(start, heuristic_distance_fn(start)));
+    // Setup the start and goal
+    const ConfigType start(0, 0), goal(rows - 1, cols - 1);
+    const double start_heuristic_distance = ConfigTypeDistance(start, goal);
+    frontier.push(ConfigAndDistType(start, start_heuristic_distance));
 
-    if (visualization_enabled)
-    {
-        std::cout << "Entering explore loop\n";
-    }
+    // Perform the best first search
     bool path_found = false;
-    while (!path_found && ros::ok() && frontier.size() > 0)
+    while (!path_found && frontier.size() > 0)
     {
         const ConfigAndDistType current = frontier.top();
         frontier.pop();
         const ConfigType& current_config = current.first;
 
-        // Visualization code
-        if (visualization_enabled)
-        {
-            geometry_msgs::Point p;
-            p.x = (double)current_config.first;
-            p.y = (double)current_config.second;
-            p.z = 0;
-//            ++marker.id;
-            marker.points.push_back(p);
-
-//            if (marker.id % 100 == 0)
-            {
-                marker.header.stamp = ros::Time::now();
-                marker_pub.publish(marker);
-//                marker.points.clear();
-                std::this_thread::sleep_for(std::chrono::duration<double>(0.0001));
-            }
-        }
-
         if (current_config.first == goal.first && current_config.second == goal.second)
         {
-            if (visualization_enabled)
-            {
-                std::cout << "Reached goal!\n";
-                std::cout << PrettyPrint::PrettyPrint(current_config, true, " ") << std::endl << std::flush;
-                std::cout << std::endl;
-                marker.header.stamp = ros::Time::now();
-                marker_pub.publish(marker);
-            }
             path_found = true;
         }
         // Double check if we've already explored this node:
@@ -157,16 +87,12 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
                 // Check if we've already explored this neighbour to avoid re-adding it to the frontier
                 if (explored(neighbour.first, neighbour.second) == false)
                 {
-                    frontier.push(ConfigAndDistType(neighbour, heuristic_distance_fn(neighbour)));
+                    // We only need the heuristic distance as we are doing a best first search
+                    const double neighbour_heuristic_distance = ConfigTypeDistance(neighbour, goal);
+                    frontier.push(ConfigAndDistType(neighbour, neighbour_heuristic_distance));
                 }
             }
         }
-    }
-
-    if (visualization_enabled)
-    {
-        marker.header.stamp = ros::Time::now();
-        marker_pub.publish(marker);
     }
 
     return path_found;
