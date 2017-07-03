@@ -59,7 +59,7 @@ namespace arc_helpers
     }
 
     template<typename T>
-    inline bool RequireAlignment(const T& item, const uint64_t desired_alignment)
+    inline void RequireAlignment(const T& item, const uint64_t desired_alignment)
     {
         if (CheckAlignment(item, desired_alignment) == false)
         {
