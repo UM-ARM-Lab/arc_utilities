@@ -8,7 +8,7 @@
 
 namespace ROSHelpers
 {
-    inline Spin(const double loop_period)
+    inline void Spin(const double loop_period)
     {
         while (ros::ok())
         {
