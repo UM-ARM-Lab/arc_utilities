@@ -149,7 +149,7 @@ namespace EigenHelpers
     }
 
     template <typename Derived>
-    inline Eigen::MatrixBase<Derived> ClampNorm(const Eigen::MatrixBase<Derived>& item_to_clamp, const double max_norm)
+    inline Eigen::MatrixXd ClampNorm(const Eigen::MatrixBase<Derived>& item_to_clamp, const double max_norm)
     {
         assert(max_norm >= 0 && "You must pass a maximum norm that is positive");
         const double current_norm = item_to_clamp.norm();
