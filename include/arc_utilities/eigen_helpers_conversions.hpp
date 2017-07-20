@@ -9,6 +9,7 @@
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Transform.h>
+#include <geometry_msgs/Wrench.h>
 #include <arc_utilities/eigen_helpers.hpp>
 
 #ifndef EIGEN_HELPERS_CONVERSIONS_HPP
@@ -237,6 +238,16 @@ namespace EigenHelpersConversions
             vector_geom[idx] = EigenAffine3dToGeometryTransform(vector_eigen[idx]);
         }
         return vector_geom;
+    }
+
+    // Convert wrench (force and torque) message to Eigen vector
+    inline std::pair<Eigen::Vector3d, Eigen::Vector3d> GeometryWrenchToEigenPairVector(const geometry_msgs::Wrench& wrench)
+    {
+        Eigen::Vector3d eigen_force(wrench.force.x, wrench.force.y, wrench.force.z);
+        Eigen::Vector3d eigen_torque(wrench.torque.x, wrench.torque.y, wrench.torque.z);
+        const std::pair<Eigen::Vector3d, Eigen::Vector3d> eigen_wrench = std::make_pair(eigen_force, eigen_torque);
+
+        return eigen_wrench;
     }
 
     template<typename data_type, int LENGTH>
