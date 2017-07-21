@@ -241,6 +241,7 @@ namespace EigenHelpersConversions
     }
 
     // Convert wrench (force and torque) message to Eigen vector
+    // --- Added by Mengyao
     inline std::pair<Eigen::Vector3d, Eigen::Vector3d> GeometryWrenchToEigenPairVector(const geometry_msgs::Wrench& wrench)
     {
         Eigen::Vector3d eigen_force(wrench.force.x, wrench.force.y, wrench.force.z);
