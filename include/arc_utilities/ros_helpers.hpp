@@ -95,7 +95,7 @@ namespace ROSHelpers
         }
         else
         {
-            ROS_FATAL_STREAM_NAMED("params", "Cannot find " << param_name << " on parameter server for " << calling_fn_name << ": Value must be on paramter sever");
+            ROS_FATAL_STREAM_NAMED("params", "Cannot find " << nh.getNamespace() << "/" << param_name << " on parameter server for " << calling_fn_name << ": Value must be on paramter sever");
             return Maybe::Maybe<T>();
         }
     }
