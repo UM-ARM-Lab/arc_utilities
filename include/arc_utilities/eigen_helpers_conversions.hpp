@@ -240,13 +240,12 @@ namespace EigenHelpersConversions
         return vector_geom;
     }
 
-    // Convert wrench (force and torque) message to Eigen vector
+    // Convert wrench (force and torque) ROS message to Eigen typed data
     inline std::pair<Eigen::Vector3d, Eigen::Vector3d> GeometryWrenchToEigenPairVector(const geometry_msgs::Wrench& wrench)
     {
-        Eigen::Vector3d eigen_force(wrench.force.x, wrench.force.y, wrench.force.z);
-        Eigen::Vector3d eigen_torque(wrench.torque.x, wrench.torque.y, wrench.torque.z);
+        const Eigen::Vector3d eigen_force(wrench.force.x, wrench.force.y, wrench.force.z);
+        const Eigen::Vector3d eigen_torque(wrench.torque.x, wrench.torque.y, wrench.torque.z);
         const std::pair<Eigen::Vector3d, Eigen::Vector3d> eigen_wrench = std::make_pair(eigen_force, eigen_torque);
-
         return eigen_wrench;
     }
 
