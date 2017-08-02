@@ -259,6 +259,11 @@ namespace EigenHelpersConversions
             wrench_pair_vector.push_back(GeometryWrenchToEigenPair(wrench.at(node_ind)));
         }
 
+        if(wrench.size()<1)
+        {
+            assert(false && "in eigen_helpers_conversions.hpp, wrench size is zero");
+        }
+
         return wrench_pair_vector;
     }
 
