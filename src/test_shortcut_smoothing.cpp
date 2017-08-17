@@ -16,7 +16,7 @@ int main(int argc, char** argv)
     const double step_size = 0.1;
     const auto collision_fn = [] (const Eigen::Vector3d& location) { (void)location; return location.norm() > 4.0; };
 
-    auto vec_smoothed = shortcut_smoothing::ShortcutSmooth(vec, 1, 4, step_size, collision_fn);
+    auto vec_smoothed = shortcut_smoothing::InterpolateWithCollisionCheck(vec, 1, 4, step_size, collision_fn);
 
 
     std::cout << "Original:\n" << PrettyPrint::PrettyPrint(vec, true, "\n") << std::endl << std::endl;

@@ -7,7 +7,7 @@
 
 namespace shortcut_smoothing
 {    
-    inline EigenHelpers::VectorVector3d ShortcutSmooth(
+    inline EigenHelpers::VectorVector3d InterpolateWithCollisionCheck(
             const EigenHelpers::VectorVector3d& input_vector,
             const size_t first_ind,
             const size_t second_ind,
@@ -30,6 +30,7 @@ namespace shortcut_smoothing
         }
 
         // Collision check the path between the first and second index
+        // We assume that the endpoints are not in collision, so we don't check dist == 0 or dist == total_dist
         bool collision = false;
         for (double dist = step_size; !collision && dist < total_dist; dist += step_size)
         {

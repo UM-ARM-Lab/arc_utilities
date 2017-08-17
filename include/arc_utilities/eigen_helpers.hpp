@@ -1081,13 +1081,8 @@ namespace EigenHelpers
 
     inline Eigen::Vector3d StdVectorDoubleToEigenVector3d(const std::vector<double>& vector)
     {
-        if (vector.size() != 3)
-        {
-            std::cerr << "Vector3d source vector is not 3 elements in size" << std::endl;
-            assert(false);
-        }
-        const Eigen::Vector3d eigen_vector(vector[0], vector[1], vector[2]);
-        return eigen_vector;
+        assert(vector.size() == 3 && "std::vector<double> source vector is not 3 elements in size");
+        return Eigen::Vector3d(vector[0], vector[1], vector[2]);
     }
 
     inline Eigen::VectorXd StdVectorDoubleToEigenVectorXd(const std::vector<double>& vector)
