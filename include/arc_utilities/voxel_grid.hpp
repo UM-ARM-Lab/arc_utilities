@@ -36,8 +36,8 @@ namespace VoxelGrid
     {
     protected:
 
-        Eigen::Affine3d origin_transform_;
-        Eigen::Affine3d inverse_origin_transform_;
+        Eigen::Isometry3d origin_transform_;
+        Eigen::Isometry3d inverse_origin_transform_;
         T default_value_;
         T oob_value_;
         std::vector<T, Allocator> data_;
@@ -234,42 +234,42 @@ namespace VoxelGrid
             return std::make_pair(temp_grid, bytes_read);
         }
 
-        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const double x_size, const double y_size, double const z_size, const T& default_value)
+        VoxelGrid(const Eigen::Isometry3d& origin_transform, const double cell_size, const double x_size, const double y_size, double const z_size, const T& default_value)
         {
             Initialize(origin_transform, cell_size, cell_size, cell_size, x_size, y_size, z_size, default_value, default_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const double x_size, const double y_size, const double z_size, const T& default_value, const T& oob_value)
+        VoxelGrid(const Eigen::Isometry3d& origin_transform, const double cell_size, const double x_size, const double y_size, const double z_size, const T& default_value, const T& oob_value)
         {
             Initialize(origin_transform, cell_size, cell_size, cell_size, x_size, y_size, z_size, default_value, oob_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T& default_value)
+        VoxelGrid(const Eigen::Isometry3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T& default_value)
         {
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size, default_value, default_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T& default_value, const T& oob_value)
+        VoxelGrid(const Eigen::Isometry3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, const double z_size, const T& default_value, const T& oob_value)
         {
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size, default_value, oob_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value)
+        VoxelGrid(const Eigen::Isometry3d& origin_transform, const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value)
         {
             Initialize(origin_transform, cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells, default_value, default_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
+        VoxelGrid(const Eigen::Isometry3d& origin_transform, const double cell_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
         {
             Initialize(origin_transform, cell_size, cell_size, cell_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value)
+        VoxelGrid(const Eigen::Isometry3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value)
         {
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, default_value);
         }
 
-        VoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
+        VoxelGrid(const Eigen::Isometry3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
         {
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
@@ -316,7 +316,7 @@ namespace VoxelGrid
 
         VoxelGrid()
         {
-            origin_transform_ = Eigen::Affine3d::Identity();
+            origin_transform_ = Eigen::Isometry3d::Identity();
             inverse_origin_transform_ = origin_transform_.inverse();
             arc_helpers::RequireAlignment(origin_transform_, 16u);
             arc_helpers::RequireAlignment(inverse_origin_transform_, 16u);
@@ -338,7 +338,7 @@ namespace VoxelGrid
             initialized_ = false;
         }
 
-        inline void Initialize(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T& default_value, const T& oob_value)
+        inline void Initialize(const Eigen::Isometry3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const double x_size, const double y_size, double const z_size, const T& default_value, const T& oob_value)
         {
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, x_size, y_size, z_size);
             int64_t num_x_cells = (int64_t)(ceil(fabs(x_size) / fabs(cell_x_size)));
@@ -347,7 +347,7 @@ namespace VoxelGrid
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
         }
 
-        inline void Initialize(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
+        inline void Initialize(const Eigen::Isometry3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t num_x_cells, const int64_t num_y_cells, const int64_t num_z_cells, const T& default_value, const T& oob_value)
         {
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
             CoreInitialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
@@ -372,7 +372,7 @@ namespace VoxelGrid
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells);
             CoreInitialize(cell_x_size, cell_y_size, cell_z_size, num_x_cells, num_y_cells, num_z_cells, default_value, oob_value);
             const Eigen::Translation3d origin_translation(-x_size_ * 0.5, -y_size_ * 0.5, -z_size_ * 0.5);
-            const Eigen::Affine3d origin_transform = origin_translation * Eigen::Quaterniond::Identity();
+            const Eigen::Isometry3d origin_transform = origin_translation * Eigen::Quaterniond::Identity();
             origin_transform_ = origin_transform;
             inverse_origin_transform_ = origin_transform_.inverse();
             arc_helpers::RequireAlignment(origin_transform_, 16u);
@@ -386,8 +386,8 @@ namespace VoxelGrid
             // Serialize the initialized
             arc_helpers::SerializeFixedSizePOD<uint8_t>((uint8_t)initialized_, buffer);
             // Serialize the transforms
-            EigenHelpers::Serialize<Eigen::Affine3d>(origin_transform_, buffer);
-            EigenHelpers::Serialize<Eigen::Affine3d>(inverse_origin_transform_, buffer);
+            EigenHelpers::Serialize<Eigen::Isometry3d>(origin_transform_, buffer);
+            EigenHelpers::Serialize<Eigen::Isometry3d>(inverse_origin_transform_, buffer);
             // Serialize the data
             arc_helpers::SerializeVector<T, Allocator>(data_, buffer, value_serializer);
             // Serialize the cell sizes
@@ -425,10 +425,10 @@ namespace VoxelGrid
             initialized_ = (bool)initialized_deserialized.first;
             current_position += initialized_deserialized.second;
             // Deserialize the transforms
-            const std::pair<Eigen::Affine3d, uint64_t> origin_transform_deserialized = EigenHelpers::Deserialize<Eigen::Affine3d>(buffer, current_position);
+            const std::pair<Eigen::Isometry3d, uint64_t> origin_transform_deserialized = EigenHelpers::Deserialize<Eigen::Isometry3d>(buffer, current_position);
             origin_transform_ = origin_transform_deserialized.first;
             current_position += origin_transform_deserialized.second;
-            const std::pair<Eigen::Affine3d, uint64_t> inverse_origin_transform_deserialized = EigenHelpers::Deserialize<Eigen::Affine3d>(buffer, current_position);
+            const std::pair<Eigen::Isometry3d, uint64_t> inverse_origin_transform_deserialized = EigenHelpers::Deserialize<Eigen::Isometry3d>(buffer, current_position);
             inverse_origin_transform_ = inverse_origin_transform_deserialized.first;
             current_position += inverse_origin_transform_deserialized.second;
             // Deserialize the data
@@ -799,12 +799,12 @@ namespace VoxelGrid
             return num_z_cells_;
         }
 
-        inline const Eigen::Affine3d& GetOriginTransform() const
+        inline const Eigen::Isometry3d& GetOriginTransform() const
         {
             return origin_transform_;
         }
 
-        inline const Eigen::Affine3d& GetInverseOriginTransform() const
+        inline const Eigen::Isometry3d& GetInverseOriginTransform() const
         {
             return inverse_origin_transform_;
         }

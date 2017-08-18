@@ -85,16 +85,16 @@ namespace EigenHelpers
     typedef std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>> VectorVector4d;
     typedef std::vector<Eigen::Quaternionf, Eigen::aligned_allocator<Eigen::Quaternionf>> VectorQuaternionf;
     typedef std::vector<Eigen::Quaterniond, Eigen::aligned_allocator<Eigen::Quaterniond>> VectorQuaterniond;
-    typedef std::vector<Eigen::Affine3f, Eigen::aligned_allocator<Eigen::Affine3f>> VectorAffine3f;
-    typedef std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> VectorAffine3d;
+    typedef std::vector<Eigen::Isometry3f, Eigen::aligned_allocator<Eigen::Isometry3f>> VectorIsometry3f;
+    typedef std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>> VectorIsometry3d;
     typedef std::map<std::string, Eigen::Vector3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3f>>> MapStringVector3f;
     typedef std::map<std::string, Eigen::Vector3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3d>>> MapStringVector3d;
     typedef std::map<std::string, Eigen::Vector4f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4f>>> MapStringVector4f;
     typedef std::map<std::string, Eigen::Vector4d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4d>>> MapStringVector4d;
     typedef std::map<std::string, Eigen::Quaternionf, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Quaternionf>>> MapStringQuaternionf;
     typedef std::map<std::string, Eigen::Quaterniond, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Quaterniond>>> MapStringQuaterniond;
-    typedef std::map<std::string, Eigen::Affine3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3f>>> MapStringAffine3f;
-    typedef std::map<std::string, Eigen::Affine3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3d>>> MapStringAffine3d;
+    typedef std::map<std::string, Eigen::Isometry3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Isometry3f>>> MapStringIsometry3f;
+    typedef std::map<std::string, Eigen::Isometry3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Isometry3d>>> MapStringIsometry3d;
 
     inline bool Equal(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
     {
@@ -285,39 +285,39 @@ namespace EigenHelpers
     }
 
     template<>
-    inline uint64_t SerializedSize(const Eigen::Affine3d& value)
+    inline uint64_t SerializedSize(const Eigen::Isometry3d& value)
     {
         (void)(value);
         return (uint64_t)(16 * sizeof(double));
     }
 
     template<>
-    inline uint64_t SerializedSize<Eigen::Affine3d>(void)
+    inline uint64_t SerializedSize<Eigen::Isometry3d>(void)
     {
         return (uint64_t)(16 * sizeof(double));
     }
 
     template<>
-    inline uint64_t Serialize(const Eigen::Affine3d& value, std::vector<uint8_t>& buffer)
+    inline uint64_t Serialize(const Eigen::Isometry3d& value, std::vector<uint8_t>& buffer)
     {
         // Takes a state to serialize and a buffer to serialize into
         // Return number of bytes written to buffer
-        std::vector<uint8_t> temp_buffer(SerializedSize<Eigen::Affine3d>(), 0x00);
-        memcpy(&temp_buffer.front(), value.matrix().data(), SerializedSize<Eigen::Affine3d>());
+        std::vector<uint8_t> temp_buffer(SerializedSize<Eigen::Isometry3d>(), 0x00);
+        memcpy(&temp_buffer.front(), value.matrix().data(), SerializedSize<Eigen::Isometry3d>());
         buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
-        return SerializedSize<Eigen::Affine3d>();
+        return SerializedSize<Eigen::Isometry3d>();
     }
 
     template<>
-    inline std::pair<Eigen::Affine3d, uint64_t> Deserialize<Eigen::Affine3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    inline std::pair<Eigen::Isometry3d, uint64_t> Deserialize<Eigen::Isometry3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
     {
         assert(current < buffer.size());
-        assert((current + SerializedSize<Eigen::Affine3d>()) <= buffer.size());
+        assert((current + SerializedSize<Eigen::Isometry3d>()) <= buffer.size());
         // Takes a buffer to read from and the starting index in the buffer
         // Return the loaded state and how many bytes we read from the buffer
-        Eigen::Affine3d temp_value;
-        memcpy(temp_value.matrix().data(), &buffer[current], SerializedSize<Eigen::Affine3d>());
-        return std::make_pair(temp_value, SerializedSize<Eigen::Affine3d>());
+        Eigen::Isometry3d temp_value;
+        memcpy(temp_value.matrix().data(), &buffer[current], SerializedSize<Eigen::Isometry3d>());
+        return std::make_pair(temp_value, SerializedSize<Eigen::Isometry3d>());
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -550,7 +550,7 @@ namespace EigenHelpers
          return twist;
     }
 
-    inline Eigen::Matrix<double, 6, 6> AdjointFromTransform(const Eigen::Affine3d& transform)
+    inline Eigen::Matrix<double, 6, 6> AdjointFromTransform(const Eigen::Isometry3d& transform)
     {
         const Eigen::Matrix3d rotation = transform.matrix().block<3, 3>(0, 0);
         const Eigen::Vector3d translation = transform.matrix().block<3, 1>(0, 3);
@@ -564,14 +564,14 @@ namespace EigenHelpers
         return adjoint;
     }
 
-    inline Eigen::Matrix<double, 6, 1> TransformTwist(const Eigen::Affine3d& transform, const Eigen::Matrix<double, 6, 1>& initial_twist)
+    inline Eigen::Matrix<double, 6, 1> TransformTwist(const Eigen::Isometry3d& transform, const Eigen::Matrix<double, 6, 1>& initial_twist)
     {
         return (Eigen::Matrix<double, 6, 1>)(EigenHelpers::AdjointFromTransform(transform) * initial_twist);
     }
 
-    inline Eigen::Matrix<double, 6, 1> TwistBetweenTransforms(const Eigen::Affine3d& start, const Eigen::Affine3d& end)
+    inline Eigen::Matrix<double, 6, 1> TwistBetweenTransforms(const Eigen::Isometry3d& start, const Eigen::Isometry3d& end)
     {
-        const Eigen::Affine3d t_diff = start.inverse() * end;
+        const Eigen::Isometry3d t_diff = start.inverse() * end;
         return TwistUnhat(t_diff.matrix().log());
     }
 
@@ -582,7 +582,7 @@ namespace EigenHelpers
         return exp_matrix;
     }
 
-    inline Eigen::Affine3d ExpTwist(const Eigen::Matrix<double, 6, 1>& twist, const double delta_t)
+    inline Eigen::Isometry3d ExpTwist(const Eigen::Matrix<double, 6, 1>& twist, const double delta_t)
     {
         const Eigen::Vector3d trans_velocity = twist.segment<3>(0);
         const Eigen::Vector3d rot_velocity = twist.segment<3>(3);
@@ -617,7 +617,7 @@ namespace EigenHelpers
                 raw_transform.block<3, 1>(0, 3) = translation_displacement;
             }
         }
-        Eigen::Affine3d transform;
+        Eigen::Isometry3d transform;
         transform = raw_transform;
         return transform;
     }
@@ -764,7 +764,7 @@ namespace EigenHelpers
         return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
     }
 
-    inline Eigen::Affine3d Interpolate(const Eigen::Affine3d& t1, const Eigen::Affine3d& t2, const double ratio)
+    inline Eigen::Isometry3d Interpolate(const Eigen::Isometry3d& t1, const Eigen::Isometry3d& t2, const double ratio)
     {
         // Safety check ratio
         double real_ratio = ratio;
@@ -785,7 +785,7 @@ namespace EigenHelpers
         const Eigen::Quaterniond q2(t2.rotation());
         const Eigen::Vector3d vint = Interpolate(v1, v2, real_ratio);
         const Eigen::Quaterniond qint = Interpolate(q1, q2, real_ratio);
-        const Eigen::Affine3d tint = ((Eigen::Translation3d)vint) * qint;
+        const Eigen::Isometry3d tint = ((Eigen::Translation3d)vint) * qint;
         return tint;
     }
 
@@ -842,7 +842,7 @@ namespace EigenHelpers
         }
     }
 
-    inline double Distance(const Eigen::Affine3d& t1, const Eigen::Affine3d& t2, const double alpha=0.5)
+    inline double Distance(const Eigen::Isometry3d& t1, const Eigen::Isometry3d& t2, const double alpha=0.5)
     {
         assert(alpha >= 0.0);
         assert(alpha <= 1.0);
@@ -1037,31 +1037,31 @@ namespace EigenHelpers
     }
 
     // Returns XYZ Euler angles
-    inline Eigen::Vector3d EulerAnglesFromAffine3d(const Eigen::Affine3d& trans)
+    inline Eigen::Vector3d EulerAnglesFromIsometry3d(const Eigen::Isometry3d& trans)
     {
         return EulerAnglesFromRotationMatrix(trans.rotation());
     }
 
-    inline Eigen::Affine3d TransformFromRPY(const double x, const double y, const double z, const double roll, const double pitch, const double yaw)
+    inline Eigen::Isometry3d TransformFromRPY(const double x, const double y, const double z, const double roll, const double pitch, const double yaw)
     {
-        const Eigen::Affine3d transform = Eigen::Translation3d(x, y, z) * QuaternionFromRPY(roll, pitch, yaw);
+        const Eigen::Isometry3d transform = Eigen::Translation3d(x, y, z) * QuaternionFromRPY(roll, pitch, yaw);
         return transform;
     }
 
-    inline Eigen::Affine3d TransformFromRPY(const Eigen::Vector3d& translation, const Eigen::Vector3d& rotation)
+    inline Eigen::Isometry3d TransformFromRPY(const Eigen::Vector3d& translation, const Eigen::Vector3d& rotation)
     {
-        const Eigen::Affine3d transform = (Eigen::Translation3d)translation * QuaternionFromRPY(rotation.x(), rotation.y(), rotation.z());
+        const Eigen::Isometry3d transform = (Eigen::Translation3d)translation * QuaternionFromRPY(rotation.x(), rotation.y(), rotation.z());
         return transform;
     }
 
-    inline Eigen::Affine3d TransformFromRPY(const Eigen::VectorXd& components)
+    inline Eigen::Isometry3d TransformFromRPY(const Eigen::VectorXd& components)
     {
         assert(components.size() == 6);
-        const Eigen::Affine3d transform = Eigen::Translation3d(components(0), components(1), components(2)) * QuaternionFromRPY(components(3), components(4), components(5));
+        const Eigen::Isometry3d transform = Eigen::Translation3d(components(0), components(1), components(2)) * QuaternionFromRPY(components(3), components(4), components(5));
         return transform;
     }
 
-    inline Eigen::VectorXd TransformToRPY(const Eigen::Affine3d& transform)
+    inline Eigen::VectorXd TransformToRPY(const Eigen::Isometry3d& transform)
     {
         Eigen::VectorXd components = Eigen::VectorXd::Zero(6);
         const Eigen::Vector3d translation = transform.translation();
@@ -1307,8 +1307,8 @@ namespace EigenHelpers
         return average_q;
     }
 
-    inline Eigen::Affine3d AverageEigenAffine3d(
-            const EigenHelpers::VectorAffine3d& transforms,
+    inline Eigen::Isometry3d AverageEigenIsometry3d(
+            const EigenHelpers::VectorIsometry3d& transforms,
             const std::vector<double>& weights = std::vector<double>())
     {
         assert(transforms.size() > 0);
@@ -1331,7 +1331,7 @@ namespace EigenHelpers
         const Eigen::Vector3d average_translation = AverageEigenVector(translations, weights);
         const Eigen::Quaterniond average_rotation = AverageEigenQuaterniond(rotations, weights);
         // Make the average transform
-        const Eigen::Affine3d average_transform = (Eigen::Translation3d)average_translation * average_rotation;
+        const Eigen::Isometry3d average_transform = (Eigen::Translation3d)average_translation * average_rotation;
         return average_transform;
     }
 

@@ -57,7 +57,7 @@ namespace PrettyPrint
     inline std::string PrettyPrint(const Eigen::Quaterniond& quaternion_to_print, const bool add_delimiters, const std::string& separator);
 
     template<>
-    inline std::string PrettyPrint(const Eigen::Affine3d& transform_to_print, const bool add_delimiters, const std::string& separator);
+    inline std::string PrettyPrint(const Eigen::Isometry3d& transform_to_print, const bool add_delimiters, const std::string& separator);
 
     template <typename A, typename B>
     inline std::string PrettyPrint(const std::pair<A, B>& pairtoprint, const bool add_delimiters=false, const std::string& separator=", ");
@@ -217,13 +217,13 @@ namespace PrettyPrint
     }
 
     template<>
-    inline std::string PrettyPrint(const Eigen::Affine3d& transform_to_print, const bool add_delimiters, const std::string& separator)
+    inline std::string PrettyPrint(const Eigen::Isometry3d& transform_to_print, const bool add_delimiters, const std::string& separator)
     {
         UNUSED(add_delimiters);
         UNUSED(separator);
         Eigen::Vector3d vector_to_print = transform_to_print.translation();
         Eigen::Quaterniond quaternion_to_print(transform_to_print.rotation());
-        return "Affine3d <x: " + std::to_string(vector_to_print.x()) + " y: " + std::to_string(vector_to_print.y()) + " z: " + std::to_string(vector_to_print.z()) + ">, <x: " + std::to_string(quaternion_to_print.x()) + " y: " + std::to_string(quaternion_to_print.y()) + " z: " + std::to_string(quaternion_to_print.z()) + " w: " + std::to_string(quaternion_to_print.w()) + ">";
+        return "Isometry3d <x: " + std::to_string(vector_to_print.x()) + " y: " + std::to_string(vector_to_print.y()) + " z: " + std::to_string(vector_to_print.z()) + ">, <x: " + std::to_string(quaternion_to_print.x()) + " y: " + std::to_string(quaternion_to_print.y()) + " z: " + std::to_string(quaternion_to_print.z()) + " w: " + std::to_string(quaternion_to_print.w()) + ">";
     }
 
     template <typename A, typename B>
