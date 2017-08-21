@@ -24,7 +24,7 @@ namespace ROSHelpers
         T param_val;
         if (nh.getParam(param_name, param_val))
         {
-            ROS_INFO_STREAM_NAMED("params", "Setting    " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " to " << param_val);
+            ROS_INFO_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " as " << param_val);
         }
         else
         {
@@ -40,7 +40,7 @@ namespace ROSHelpers
         T param_val;
         if (nh.getParam(param_name, param_val))
         {
-            ROS_INFO_STREAM_NAMED("params", "Setting    " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " to " << param_val);
+            ROS_INFO_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " as " << param_val);
         }
         else
         {
@@ -57,7 +57,7 @@ namespace ROSHelpers
         T param_val;
         if (nh.getParam(param_name, param_val))
         {
-            ROS_DEBUG_STREAM_NAMED("params", "Setting    " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " to " << param_val);
+            ROS_DEBUG_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " as " << param_val);
         }
         else
         {
@@ -73,7 +73,7 @@ namespace ROSHelpers
         T param_val;
         if (nh.getParam(param_name, param_val))
         {
-            ROS_DEBUG_STREAM_NAMED("params", "Setting    " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " to " << param_val);
+            ROS_DEBUG_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " as " << param_val);
         }
         else
         {
@@ -90,12 +90,12 @@ namespace ROSHelpers
         T param_val;
         if (nh.getParam(param_name, param_val))
         {
-            ROS_INFO_STREAM_NAMED("params", "Setting    " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " to " << param_val);
+            ROS_INFO_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " as " << param_val);
             return Maybe::Maybe<T>(param_val);
         }
         else
         {
-            ROS_FATAL_STREAM_NAMED("params", "Cannot find " << param_name << " on parameter server for " << calling_fn_name << ": Value must be on paramter sever");
+            ROS_FATAL_STREAM_NAMED("params", "Cannot find " << nh.getNamespace() << "/" << param_name << " on parameter server for " << calling_fn_name << ": Value must be on paramter sever");
             return Maybe::Maybe<T>();
         }
     }
