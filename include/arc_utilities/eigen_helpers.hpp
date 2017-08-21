@@ -992,6 +992,22 @@ namespace EigenHelpers
         return distance;
     }
 
+    inline std::vector<double> CalculateIndividualDistances(const EigenHelpers::VectorVector3d& points)
+    {
+        std::vector<double> distances(points.size());
+
+        if (points.size() > 0)
+        {
+            distances[0] = 0.0;
+            for (size_t idx = 1; idx < points.size(); ++idx)
+            {
+                distances[idx] = (points[idx] - points[idx-1]).norm();
+            }
+        }
+
+        return distances;
+    }
+
     inline std::vector<double> CalculateCumulativeDistances(const EigenHelpers::VectorVector3d& points)
     {
         std::vector<double> distances(points.size());

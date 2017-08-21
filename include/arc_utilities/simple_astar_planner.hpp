@@ -8,6 +8,9 @@
 #include <unordered_map>
 #include <functional>
 #include <algorithm>
+#include <chrono>
+
+#include <arc_utilities/eigen_helpers.hpp>
 
 //#include <ros/ros.h>
 //#include <visualization_msgs/Marker.h>
@@ -35,7 +38,7 @@ namespace simple_astar_planner
                     bool operator()(const ConfigAndDistType& c1, const ConfigAndDistType& c2) const
                     {
                         // If both expected distances are the same, then we want to explore the one that has the smaller heuristic distance
-                        if (std::abs(c1.second - c2.second) < 1e-10)
+                        if (EigenHelpers::IsApprox(c1.second, c2.second, 1e-10))
                         {
                             const double hdist_c1 = heuristic_fn_(c1.first);
                             const double hdist_c2 = heuristic_fn_(c2.first);
@@ -74,7 +77,7 @@ namespace simple_astar_planner
                     const std::function<double(const ConfigType&)>& heuristic_fn,
                     const std::function<bool(const ConfigType&)>& goal_reached_fn)
             {
-                const std::chrono::high_resolution_clock::time_point start_time = std::chrono::high_resolution_clock::now();
+                const auto start_time = std::chrono::steady_clock::now();
 
 //                ros::NodeHandle nh;
 //                visualization_msgs::Marker marker;
@@ -190,7 +193,7 @@ namespace simple_astar_planner
                     }
                 }
 
-                const std::chrono::high_resolution_clock::time_point end_time = std::chrono::high_resolution_clock::now();
+                const auto end_time = std::chrono::steady_clock::now();
                 results.second["planning time"] = std::chrono::duration<double>(end_time - start_time).count();
                 results.second["nodes explored"] = explored.size();
 
