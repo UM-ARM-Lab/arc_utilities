@@ -69,6 +69,7 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/eigen_helpers.hpp
     include/${PROJECT_NAME}/eigen_helpers_conversions.hpp
     include/${PROJECT_NAME}/simple_rrt_planner.hpp
+    include/${PROJECT_NAME}/simple_astar_planner.hpp
     include/${PROJECT_NAME}/simple_prm_planner.hpp
     include/${PROJECT_NAME}/simple_kmeans_clustering.hpp
     include/${PROJECT_NAME}/simple_hierarchical_clustering.hpp
@@ -76,9 +77,11 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/simple_dtw.hpp
     include/${PROJECT_NAME}/dijkstras.hpp
     include/${PROJECT_NAME}/shortcut_smoothing.hpp
-    include/${PROJECT_NAME}/first_order_visibility_graph.hpp
+    include/${PROJECT_NAME}/first_order_deformation.h
+    include/${PROJECT_NAME}/get_neighbours.hpp
     src/${PROJECT_NAME}/zlib_helpers.cpp
-    src/${PROJECT_NAME}/base64_helpers.cpp)
+    src/${PROJECT_NAME}/base64_helpers.cpp
+    src/${PROJECT_NAME}/first_order_deformation.cpp)
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
 
@@ -111,6 +114,11 @@ target_link_libraries(test_dijkstras ${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(test_shortcut_smoothing src/test_shortcut_smoothing.cpp)
 add_dependencies(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+# Simple test node for DistanceToLine function
+add_executable(test_closest_point src/test_closest_point.cpp)
+add_dependencies(test_closest_point ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+target_link_libraries(test_closest_point ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 #############
 ## Install ##

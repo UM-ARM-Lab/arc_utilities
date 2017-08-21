@@ -41,6 +41,14 @@
 
 namespace arc_helpers
 {
+    // Used to force a particular code execution order, even with aggressive optimization
+    // https://stackoverflow.com/questions/37786547/enforcing-statement-order-in-c
+    template <class T>
+    __attribute__((always_inline)) inline void DoNotOptimize(const T &value)
+    {
+        asm volatile("" : "+m"(const_cast<T &>(value)));
+    }
+
     template<typename T>
     inline bool CheckAlignment(const T& item, const uint64_t desired_alignment)
     {
@@ -106,7 +114,7 @@ namespace arc_helpers
         }
     }
 
-    template <typename Key, typename Value, typename Compare=std::less<Key>, typename Allocator=std::allocator<std::pair<const Key, Value>>>
+    template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, Value>>>
     inline Value RetrieveOrDefault(const std::map<Key, Value, Compare, Allocator>& map, const Key& key, const Value& default_val)
     {
         const auto found_itr = map.find(key);
@@ -120,7 +128,7 @@ namespace arc_helpers
         }
     }
 
-    template <typename Key, typename Value, typename Hash=std::hash<Key>, typename Predicate=std::equal_to<Key>, typename Allocator=std::allocator<std::pair<const Key, Value>>>
+    template <typename Key, typename Value, typename Hash = std::hash<Key>, typename Predicate = std::equal_to<Key>, typename Allocator = std::allocator<std::pair<const Key, Value>>>
     inline Value RetrieveOrDefault(const std::unordered_map<Key, Value, Hash, Predicate, Allocator>& map, const Key& key, const Value& default_val)
     {
         const auto found_itr = map.find(key);
@@ -160,7 +168,7 @@ namespace arc_helpers
         return val;
     }
 
-    // Written to mimic parts of Matlab wthresh(val, 'h', thresh) behavior, spreading the value to teh thresholds instead of setting them to zero
+    // Written to mimic parts of Matlab wthresh(val, 'h', thresh) behavior, spreading the value to the thresholds instead of setting them to zero
     // https://www.mathworks.com/help/wavelet/ref/wthresh.html
     template <class T>
     inline T SpreadValue(const T& val, const T& low_threshold, const T& midpoint, const T& high_threshold)
@@ -178,7 +186,7 @@ namespace arc_helpers
         return val;
     }
 
-    // Written to mimic parts of Matlab wthresh(val, 'h', thresh) behavior, spreading the value to teh thresholds instead of setting them to zero
+    // Written to mimic parts of Matlab wthresh(val, 'h', thresh) behavior, spreading the value to the thresholds instead of setting them to zero
     // https://www.mathworks.com/help/wavelet/ref/wthresh.html
     template <class T>
     inline T SpreadValueAndWarn(const T& val, const T& low_threshold, const T& midpoint, const T& high_threshold)
@@ -502,7 +510,7 @@ namespace arc_helpers
         #endif
     }
 
-    template<typename Datatype, typename Allocator=std::allocator<Datatype>>
+    template<typename Datatype, typename Allocator = std::allocator<Datatype>>
     inline Eigen::MatrixXd BuildDistanceMatrix(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
     {
         Eigen::MatrixXd distance_matrix(data.size(), data.size());
@@ -529,7 +537,7 @@ namespace arc_helpers
         return distance_matrix;
     }
 
-    template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator=std::allocator<FirstDatatype>, typename SecondAllocator=std::allocator<SecondDatatype>>
+    template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator = std::allocator<FirstDatatype>, typename SecondAllocator = std::allocator<SecondDatatype>>
     inline Eigen::MatrixXd BuildDistanceMatrix(const std::vector<FirstDatatype, FirstAllocator>& data1, const std::vector<SecondDatatype, SecondAllocator>& data2, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
     {
         Eigen::MatrixXd distance_matrix(data1.size(), data1.size());
@@ -548,7 +556,7 @@ namespace arc_helpers
         return distance_matrix;
     }
 
-    template<typename Item, typename Value, typename ItemAlloc=std::allocator<Item>>
+    template<typename Item, typename Value, typename ItemAlloc = std::allocator<Item>>
     std::vector<std::pair<int64_t, double>> GetKNearestNeighbors(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
     {
         if (K == 0)
@@ -559,9 +567,9 @@ namespace arc_helpers
         {
             std::function<bool(const std::pair<int64_t, double>&, const std::pair<int64_t, double>&)> compare_fn = [] (const std::pair<int64_t, double>& index1, const std::pair<int64_t, double>& index2) { return index1.second < index2.second; };
             std::vector<std::vector<std::pair<int64_t, double>>> per_thread_nearests(GetNumOMPThreads(), std::vector<std::pair<int64_t, double>>(K, std::make_pair(-1, std::numeric_limits<double>::infinity())));
-    #ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
+#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
             #pragma omp parallel for
-    #endif
+#endif
             for (size_t idx = 0; idx < items.size(); idx++)
             {
                 const Item& item = items[idx];
@@ -1204,10 +1212,10 @@ namespace arc_helpers
     template<typename T>
     inline std::pair<T, uint64_t> DeserializeFixedSizePOD(const std::vector<uint8_t>& buffer, const uint64_t current);
 
-    template<typename T, typename Allocator=std::allocator<T>>
+    template<typename T, typename Allocator = std::allocator<T>>
     inline uint64_t SerializeVector(const std::vector<T, Allocator>& vec_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& item_serializer);
 
-    template<typename T, typename Allocator=std::allocator<T>>
+    template<typename T, typename Allocator = std::allocator<T>>
     inline std::pair<std::vector<T, Allocator>, uint64_t> DeserializeVector(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& item_deserializer);
 
     template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, T>>>
@@ -1437,7 +1445,7 @@ namespace arc_helpers
         return true;
     }
 
-    template <typename Key, typename Value, typename Compare=std::less<Key>, typename Allocator=std::allocator<std::pair<const Key, Value>>>
+    template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, Value>>>
     inline std::vector<Key> GetKeys(const std::map<Key, Value, Compare, Allocator>& map)
     {
         std::vector<Key> keys;
@@ -1452,7 +1460,7 @@ namespace arc_helpers
         return keys;
     }
 
-    template <typename Key, typename Value, typename Compare=std::less<Key>, typename Allocator=std::allocator<std::pair<const Key, Value>>>
+    template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, Value>>>
     inline std::vector<std::pair<const Key, Value>, Allocator> GetKeysAndValues(const std::map<Key, Value, Compare, Allocator>& map)
     {
         std::vector<std::pair<const Key, Value>, Allocator> keys_and_values;
@@ -1467,7 +1475,7 @@ namespace arc_helpers
         return keys_and_values;
     }
 
-    template <typename Key, typename Value, typename Compare=std::less<Key>, typename Allocator=std::allocator<std::pair<const Key, Value>>>
+    template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, Value>>>
     inline std::map<Key, Value, Compare, Allocator> MakeFromKeysAndValues(const std::vector<std::pair<const Key, Value>, Allocator>& keys_and_values)
     {
         std::map<Key, Value, Compare, Allocator> map;
@@ -1479,7 +1487,7 @@ namespace arc_helpers
         return map;
     }
 
-    template <typename Key, typename Value, typename Compare=std::less<Key>, typename KeyVectorAllocator=std::allocator<Key>, typename ValueVectorAllocator=std::allocator<Value>, typename PairAllocator=std::allocator<std::pair<const Key, Value>>>
+    template <typename Key, typename Value, typename Compare = std::less<Key>, typename KeyVectorAllocator = std::allocator<Key>, typename ValueVectorAllocator = std::allocator<Value>, typename PairAllocator = std::allocator<std::pair<const Key, Value>>>
     inline std::map<Key, Value, Compare, PairAllocator> MakeFromKeysAndValues(const std::vector<Key, KeyVectorAllocator>& keys, const std::vector<Value, ValueVectorAllocator>& values)
     {
         assert(keys.size() == values.size());

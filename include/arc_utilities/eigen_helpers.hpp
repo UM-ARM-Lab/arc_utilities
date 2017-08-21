@@ -140,9 +140,18 @@ namespace EigenHelpers
         return true;
     }
 
+    // Inspired by Eigen's "isApprox" function
+    inline bool IsApprox(const double p1, const double p2, const double precision)
+    {
+        const double smallest_element = std::min(std::abs(p1), std::abs(p2));
+        const double threshold = precision * smallest_element;
+        return CloseEnough(p1, p2, threshold);
+    }
+
     template <typename Derived>
     inline Eigen::MatrixXd ClampNorm(const Eigen::MatrixBase<Derived>& item_to_clamp, const double max_norm)
     {
+        assert(max_norm >= 0 && "You must pass a maximum norm that is positive");
         const double current_norm = item_to_clamp.norm();
         if (current_norm > max_norm)
         {
@@ -667,7 +676,7 @@ namespace EigenHelpers
         double diff = real_p2 - real_p1;
         if (fabs(diff) <= M_PI)
         {
-            interpolated = real_p1 + diff * ratio;
+            interpolated = real_p1 + diff * real_ratio;
         }
         else
         {
@@ -679,7 +688,7 @@ namespace EigenHelpers
             {
                 diff = -2.0 * M_PI - diff;
             }
-            interpolated = real_p1 - diff * ratio;
+            interpolated = real_p1 - diff * real_ratio;
             // Input states are within bounds, so the following check is sufficient
             if (interpolated > M_PI)
             {
@@ -826,7 +835,7 @@ namespace EigenHelpers
 
     inline double Distance(const Eigen::VectorXd& v1, const Eigen::VectorXd& v2)
     {
-        return sqrt(SquaredDistance(v1, v2));
+        return (v2 - v1).norm();
     }
 
     inline double Distance(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2)
@@ -983,6 +992,22 @@ namespace EigenHelpers
         return distance;
     }
 
+    inline std::vector<double> CalculateIndividualDistances(const EigenHelpers::VectorVector3d& points)
+    {
+        std::vector<double> distances(points.size());
+
+        if (points.size() > 0)
+        {
+            distances[0] = 0.0;
+            for (size_t idx = 1; idx < points.size(); ++idx)
+            {
+                distances[idx] = (points[idx] - points[idx-1]).norm();
+            }
+        }
+
+        return distances;
+    }
+
     inline std::vector<double> CalculateCumulativeDistances(const EigenHelpers::VectorVector3d& points)
     {
         std::vector<double> distances(points.size());
@@ -1072,13 +1097,8 @@ namespace EigenHelpers
 
     inline Eigen::Vector3d StdVectorDoubleToEigenVector3d(const std::vector<double>& vector)
     {
-        if (vector.size() != 3)
-        {
-            std::cerr << "Vector3d source vector is not 3 elements in size" << std::endl;
-            assert(false);
-        }
-        const Eigen::Vector3d eigen_vector(vector[0], vector[1], vector[2]);
-        return eigen_vector;
+        assert(vector.size() == 3 && "std::vector<double> source vector is not 3 elements in size");
+        return Eigen::Vector3d(vector[0], vector[1], vector[2]);
     }
 
     inline Eigen::VectorXd StdVectorDoubleToEigenVectorXd(const std::vector<double>& vector)
@@ -1333,6 +1353,41 @@ namespace EigenHelpers
         // Make the average transform
         const Eigen::Affine3d average_transform = (Eigen::Translation3d)average_translation * average_rotation;
         return average_transform;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Geometry functions
+    ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief DistanceToLine
+     * Math taken from http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+     * x = x0
+     * point_on_line = x1
+     * unit_vector = x2 - x1 / |x2 - x1|
+     * @param point_on_line
+     * @param unit_vector
+     * @param x
+     * @return The distance to the line, and the displacement along the line
+     */
+    inline std::pair<double, double> DistanceToLine(const Eigen::Vector3d& point_on_line, const Eigen::Vector3d& unit_vector, const Eigen::Vector3d x)
+    {
+        // Ensure that our input data is valid
+        const auto real_unit_vector = unit_vector.normalized();
+        if (!CloseEnough(unit_vector.norm(), 1.0, 1e-13))
+        {
+            std::cerr << "[Distance to line]: unit vector was not normalized: " << unit_vector.transpose() << " Norm: " << unit_vector.norm() << std::endl;
+        }
+
+        const auto delta = x - point_on_line;
+        const double displacement_along_line = real_unit_vector.dot(delta);
+        const auto x_projected_onto_line = point_on_line + real_unit_vector * displacement_along_line;
+        const double distance_to_line = (x_projected_onto_line - x).norm();
+
+        // A simple neccescary (but not sufficient) check to look for math errors
+        assert(IsApprox(distance_to_line * distance_to_line + displacement_along_line * displacement_along_line, delta.squaredNorm(), 1e-10));
+
+        return std::make_pair(distance_to_line, displacement_along_line);
     }
 
     ////////////////////////////////////////////////////////////////////////////
