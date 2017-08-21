@@ -19,18 +19,18 @@ int main(int argc, char** argv)
         printf("Argument %d: %s\n", idx, argv[idx]);
     }
     std::cout << "Testing PrettyPrints..." << std::endl;
-    std::cout << PrettyPrint::PrettyPrint(Eigen::Affine3d::Identity()) << std::endl;
+    std::cout << PrettyPrint::PrettyPrint(Eigen::Isometry3d::Identity()) << std::endl;
     std::cout << PrettyPrint::PrettyPrint(Eigen::Vector3d(0.0, 0.0, 0.0)) << std::endl;
     std::cout << PrettyPrint::PrettyPrint(std::vector<bool>{true, false, true, false}) << std::endl;
     std::cout << "...done" << std::endl;
     const std::vector<double> abb_irb_1600_145_base_config = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    const EigenHelpers::VectorAffine3d abb_irb_1600_145_link_transforms = ABB_IRB1600_145_FK_FAST::GetLinkTransforms(abb_irb_1600_145_base_config);
+    const EigenHelpers::VectorIsometry3d abb_irb_1600_145_link_transforms = ABB_IRB1600_145_FK_FAST::GetLinkTransforms(abb_irb_1600_145_base_config);
     std::cout << "ABB IRB1600-145 Link transforms:\n" << PrettyPrint::PrettyPrint(abb_irb_1600_145_link_transforms, false, "\n") << std::endl;
     const std::vector<double> iiwa_7_base_config = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    const EigenHelpers::VectorAffine3d iiwa_7_link_transforms = IIWA_7_FK_FAST::GetLinkTransforms(iiwa_7_base_config);
+    const EigenHelpers::VectorIsometry3d iiwa_7_link_transforms = IIWA_7_FK_FAST::GetLinkTransforms(iiwa_7_base_config);
     std::cout << "IIWA 7 Link transforms:\n" << PrettyPrint::PrettyPrint(iiwa_7_link_transforms, false, "\n") << std::endl;
     const std::vector<double> iiwa_14_base_config = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    const EigenHelpers::VectorAffine3d iiwa_14_link_transforms = IIWA_14_FK_FAST::GetLinkTransforms(iiwa_14_base_config);
+    const EigenHelpers::VectorIsometry3d iiwa_14_link_transforms = IIWA_14_FK_FAST::GetLinkTransforms(iiwa_14_base_config);
     std::cout << "IIWA 14 Link transforms:\n" << PrettyPrint::PrettyPrint(iiwa_14_link_transforms, false, "\n") << std::endl;
     std::cout << std::endl;
 

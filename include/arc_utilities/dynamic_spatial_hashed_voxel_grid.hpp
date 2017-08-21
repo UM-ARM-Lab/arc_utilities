@@ -458,8 +458,8 @@ namespace VoxelGrid
     {
     protected:
 
-        Eigen::Affine3d origin_transform_;
-        Eigen::Affine3d inverse_origin_transform_;
+        Eigen::Isometry3d origin_transform_;
+        Eigen::Isometry3d inverse_origin_transform_;
         T default_value_;
         std::unordered_map<CHUNK_REGION, DynamicSpatialHashedVoxelGridChunk<T, Allocator>> chunks_;
         double chunk_x_size_;
@@ -549,12 +549,12 @@ namespace VoxelGrid
 
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-        DynamicSpatialHashedVoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
+        DynamicSpatialHashedVoxelGrid(const Eigen::Isometry3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
         {
             Initialize(origin_transform, cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells, default_value);
         }
 
-        DynamicSpatialHashedVoxelGrid(const Eigen::Affine3d& origin_transform, const double cell_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
+        DynamicSpatialHashedVoxelGrid(const Eigen::Isometry3d& origin_transform, const double cell_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
         {
             Initialize(origin_transform, cell_size, cell_size, cell_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells, default_value);
         }
@@ -587,7 +587,7 @@ namespace VoxelGrid
             initialized_ = true;
         }
 
-        inline void Initialize(const Eigen::Affine3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
+        inline void Initialize(const Eigen::Isometry3d& origin_transform, const double cell_x_size, const double cell_y_size, const double cell_z_size, const int64_t chunk_num_x_cells, const int64_t chunk_num_y_cells, const int64_t chunk_num_z_cells, const T& default_value)
         {
             SafetyCheckSizes(cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells);
             CoreInitialize(cell_x_size, cell_y_size, cell_z_size, chunk_num_x_cells, chunk_num_y_cells, chunk_num_z_cells, default_value);
@@ -982,7 +982,7 @@ namespace VoxelGrid
             default_value_ = default_value;
         }
 
-        inline Eigen::Affine3d GetOriginTransform() const
+        inline Eigen::Isometry3d GetOriginTransform() const
         {
             return origin_transform_;
         }
