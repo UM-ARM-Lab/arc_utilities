@@ -134,10 +134,16 @@ namespace PrettyPrint
     template<>
     inline std::string PrettyPrint(const Eigen::Vector3d& vector_to_print, const bool add_delimiters, const std::string& separator)
     {
-        UNUSED(add_delimiters);
         UNUSED(separator);
         std::ostringstream strm;
-        strm << std::setprecision(12) << "Vector3d: <x: " << vector_to_print.x() << " y: " << vector_to_print.y() << " z: " << vector_to_print.z() << ">";
+        if (add_delimiters)
+        {
+            strm << std::setprecision(12) << "Vector3d: <x: " << vector_to_print.x() << " y: " << vector_to_print.y() << " z: " << vector_to_print.z() << ">";
+        }
+        else
+        {
+            strm << std::setprecision(12) << vector_to_print.x() << " " << vector_to_print.y() << " " << vector_to_print.z();;
+        }
         return strm.str();
     }
 
