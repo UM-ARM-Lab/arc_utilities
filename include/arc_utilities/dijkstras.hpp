@@ -793,7 +793,9 @@ namespace arc_dijkstras
                 // Check if the node has already been discovered
                 const auto explored_itr = explored.find(top_node.GraphIndex());
                 // We have not been here before, or it is cheaper now
-                if (!((explored_itr != explored.end()) && (top_node.CostToCome() >= explored_itr->second.second)))
+                const bool in_explored = (explored_itr != explored.end());
+                const bool in_explored_is_worse = (in_explored) ? (top_node.CostToCome() < explored_itr->second.second) : true;
+                if (!in_explored || in_explored_is_worse)
                 {
                     // Add to the explored list
                     explored[top_node.GraphIndex()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
@@ -816,7 +818,9 @@ namespace arc_dijkstras
                         // Now, check if the child state has already been found
                         const auto explored_itr = explored.find(child_node_index);
                         // It is not in the explored list, or is there with a higher cost-to-come
-                        if (!((explored_itr != explored.end()) && (child_cost_to_come >= explored_itr->second.second)))
+                        const bool in_explored = (explored_itr != explored.end());
+                        const bool in_explored_is_worse = (in_explored) ? (child_cost_to_come < explored_itr->second.second) : true;
+                        if (!in_explored || in_explored_is_worse)
                         {
                             // Compute the heuristic for the child
                             const double child_heuristic = heuristic_function(child_node_index);
