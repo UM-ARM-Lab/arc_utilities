@@ -187,7 +187,7 @@ namespace simple_prm_planner
             const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
             // Call Dijkstra's
             const auto dijkstras_solution = arc_dijkstras::SimpleDijkstrasAlgorithm<T, Allocator>::PerformDijkstrasAlgorithm(roadmap, goal_node_index);
-            // Indentify the lowest-distance starting state
+            // Identify the lowest-distance starting state
             const std::pair<std::vector<int64_t>, std::vector<double>>& solution_map_distances = dijkstras_solution.second;
             double best_start_node_distance = std::numeric_limits<double>::infinity();
             int64_t best_start_node_index = -1;
@@ -242,9 +242,23 @@ namespace simple_prm_planner
         template<typename T, typename Allocator=std::allocator<T>>
         static std::pair<std::vector<T, Allocator>, double> QueryPathAndAddNodesSingleStartSingleGoal(const T& start, const T& goal, arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true)
         {
-            std::vector<T, Allocator> starts;
-            starts.push_back(start);
-            return QueryPathAndAddNodesMultiStartSingleGoal(starts, goal, roadmap, edge_validity_check_fn, distance_fn, K, distance_is_symmetric);
+            // Add the start node to the roadmap
+            const int64_t start_node_index = AddNodeToRoadmap(start, NEW_STATE_TO_ROADMAP, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+            // Add the goal node to the roadmap
+            const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+            // Call graph A*
+            const std::pair<std::vector<int64_t>, double> astar_result = arc_dijkstras::SimpleGraphAstar<T, Allocator>::PerformAstar(roadmap, start_node_index, goal_node_index, distance_fn);
+            // Convert the solution path from A* provided as indices into real states
+            const std::vector<int64_t>& solution_path_indices = astar_result.first;
+            std::vector<T, Allocator> solution_path;
+            solution_path.reserve(astar_result.first.size());
+            for (size_t idx = 0; idx < solution_path_indices.size(); idx++)
+            {
+                const int64_t path_index = solution_path_indices[idx];
+                solution_path.push_back(roadmap.GetNodeImmutable(path_index).GetValueImmutable());
+            }
+            solution_path.shrink_to_fit();
+            return std::make_pair(solution_path, astar_result.second);
         }
 
         // TODO - figure out a better way to balance parallelism between KNN queries inside path calls and multiple calls to Dijkstras
@@ -288,9 +302,7 @@ namespace simple_prm_planner
         static std::pair<std::vector<T, Allocator>, double> QueryPathSingleStartSingleGoal(const T& start, const T& goal, const arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true)
         {
             arc_dijkstras::Graph<T, Allocator> working_copy = roadmap;
-            std::vector<T, Allocator> starts;
-            starts.push_back(start);
-            return QueryPathAndAddNodesMultiStartSingleGoal(starts, goal, working_copy, edge_validity_check_fn, distance_fn, K, distance_is_symmetric);
+            return QueryPathAndAddNodesSingleStartSingleGoal(start, goal, working_copy, edge_validity_check_fn, distance_fn, K, distance_is_symmetric);
         }
     };
 }
