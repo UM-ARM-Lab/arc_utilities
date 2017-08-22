@@ -1419,7 +1419,17 @@ namespace arc_helpers
     {
         if (unlikely(msg_level <= print_level))
         {
-            std::cout << "[" << msg_level << "/" << print_level << "] " << msg << std::endl;
+            const std::string printstr = "[" + std::to_string(msg_level) + "/" + std::to_string(print_level) + "] " + msg + "\n";
+            std::cout << printstr << std::flush;
+        }
+    }
+
+    inline void ConditionalError(const std::string& msg, const int32_t msg_level, const int32_t print_level)
+    {
+        if (unlikely(msg_level <= print_level))
+        {
+            const std::string printstr = "[" + std::to_string(msg_level) + "/" + std::to_string(print_level) + "] " + msg + "\n";
+            std::cerr << printstr << std::flush;
         }
     }
 
