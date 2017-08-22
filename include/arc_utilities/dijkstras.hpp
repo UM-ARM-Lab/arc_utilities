@@ -675,13 +675,35 @@ namespace arc_dijkstras
     {
     protected:
 
-        class CompareIndexFn
+        class AstarNode
+        {
+        protected:
+
+            int64_t index_;
+            int64_t backpointer_;
+            double cost_to_come_;
+            double value_;
+
+        public:
+
+            AstarNode(const int64_t index, const int64_t backpointer, const double cost_to_come, const double value) : index_(index), backpointer_(backpointer), cost_to_come_(cost_to_come), value_(value) {}
+
+            inline int64_t Index() const { return index_; }
+
+            inline int64_t Backpointer() const { return backpointer_; }
+
+            inline double CostToCome() const { return cost_to_come_; }
+
+            inline double Value() const { return value_; }
+        };
+
+        class CompareNodeFn
         {
             public:
 
-                constexpr bool operator()(const std::pair<int64_t, double>& lhs, const std::pair<int64_t, double>& rhs) const
+                constexpr bool operator()(const AstarNode& lhs, const AstarNode& rhs) const
                 {
-                    return lhs.second > rhs.second;
+                    return lhs.Value() > rhs.Value();
                 }
         };
 
@@ -693,6 +715,7 @@ namespace arc_dijkstras
 
         static AstarResult PerformAstar(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn)
         {
+
             // Enforced sanity checks
             assert(start_index >= (int64_t)0);
             assert(start_index < (int64_t)graph.GetNodesImmutable().size());
@@ -700,48 +723,43 @@ namespace arc_dijkstras
             assert(goal_index < (int64_t)graph.GetNodesImmutable().size());
             assert(start_index != goal_index);
             // Setup
-            std::priority_queue<std::pair<int64_t, double>, std::vector<std::pair<int64_t, double>>, CompareIndexFn> queue;
-            std::unordered_map<int64_t, double> closed_list;
-            std::unordered_map<int64_t, double> open_list;
-            std::unordered_map<int64_t, int64_t> backpointers;
-            std::unordered_map<int64_t, double> cost_to_come;
+            std::priority_queue<AstarNode, std::vector<AstarNode>, CompareNodeFn> queue;
+            std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
             auto heuristic_function = [&] (const int64_t node_index) { return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable()); };
             // Initialize
-            queue.push(std::make_pair(start_index, heuristic_function(start_index)));
-            open_list[start_index] = 0.0;
-            backpointers[start_index] = -1;
-            cost_to_come[start_index] = 0.0;
+            queue.push(AstarNode(start_index, -1, 0.0, heuristic_function(start_index)));
             // Search
             while (queue.size() > 0)
             {
                 // Get the top of the priority queue
-                const std::pair<int64_t, double> top_node = queue.top();
-                const int64_t& top_node_index = top_node.first;
-                const double& top_node_value = top_node.second;
+                const AstarNode top_node = queue.top();
                 queue.pop();
                 // Check if the node has already been discovered
-                const auto closed_list_itr = closed_list.find(top_node_index);
-                // We have not already been here
-                if (closed_list_itr == closed_list.end())
+                const auto explored_itr = explored.find(top_node.Index());
+                // We have already been here and it was cheaper then
+                if ((explored_itr != explored.end()) && (top_node.CostToCome() >= explored_itr->second.second))
                 {
-                    // Remove from open list
-                    open_list.erase(top_node_index);
-                    // Add to the closed list
-                    closed_list[top_node_index] = top_node_value;
+                    continue;
+                }
+                // We have not been here before, or it is cheaper now
+                else
+                {
+                    // Add to the explored list
+                    explored[top_node.Index()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
                     // Check if we have reached the goal
-                    if (top_node_index == goal_index)
+                    if (top_node.Index() == goal_index)
                     {
                         break;
                     }
                     // Explore and add the children
-                    const std::vector<GraphEdge>& out_edges = graph.GetNodeImmutable(top_node_index).GetOutEdgesImmutable();
+                    const std::vector<GraphEdge>& out_edges = graph.GetNodeImmutable(top_node.Index()).GetOutEdgesImmutable();
                     for (size_t out_edge_idx = 0; out_edge_idx < out_edges.size(); out_edge_idx++)
                     {
                         // Get the next child node
                         const GraphEdge& current_out_edge = out_edges[out_edge_idx];
                         const int64_t child_node_index = current_out_edge.GetToIndex();
                         // Compute the cost-to-come for the new child
-                        const double parent_cost_to_come = cost_to_come[top_node_index];
+                        const double parent_cost_to_come = top_node.CostToCome();
                         const double parent_to_child_cost = current_out_edge.GetWeight();
                         const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
                         // Compute the heuristic for the child
@@ -749,63 +767,24 @@ namespace arc_dijkstras
                         // Compute the child value
                         const double child_value = child_cost_to_come + child_heuristic;
                         // Now, check if the child state has already been found
-                        const auto closed_list_itr = closed_list.find(child_node_index);
-                        // If it is not in the closed list already
-                        if (closed_list_itr == closed_list.end())
+                        const auto explored_itr = explored.find(child_node_index);
+                        // If it is in the explored list already with a higher cost-to-come
+                        if ((explored_itr != explored.end()) && (child_cost_to_come >= explored_itr->second.second))
                         {
-                            // Check if it is in the open list already
-                            const auto open_list_itr = open_list.find(child_node_index);
-                            // If it is not already in the open list
-                            if (open_list_itr == open_list.end())
-                            {
-                                // Add to the open list, queue, backpointers, and cost_to_come
-                                queue.push(std::make_pair(child_node_index, child_value));
-                                open_list[child_node_index] = child_value;
-                                backpointers[child_node_index] = top_node_index;
-                                cost_to_come[child_node_index] = child_cost_to_come;
-                            }
-                            // It is already in the open list
-                            else
-                            {
-                                // Check if we have a lower value than the already-stored one
-                                const double existing_open_list_value = open_list_itr->second;
-                                // If we are better
-                                if (child_value < existing_open_list_value)
-                                {
-                                    // Update open list, queue, backpointers, and cost_to_come
-                                    queue.push(std::make_pair(child_node_index, child_value));
-                                    open_list[child_node_index] = child_value;
-                                    backpointers[child_node_index] = top_node_index;
-                                    cost_to_come[child_node_index] = child_cost_to_come;
-                                }
-                            }
+                            continue;
                         }
-                        // It is already in the closed list
+                        // It is not in the explored list, or is there with a higher cost-to-come
                         else
                         {
-                            // Check if we have a lower value than the already-stored one
-                            const double existing_closed_list_value = closed_list_itr->second;
-                            // If we are better
-                            if (child_value < existing_closed_list_value)
-                            {
-                                // Update closed list, backpointers, and cost_to_come
-                                closed_list[child_node_index] = child_value;
-                                backpointers[child_node_index] = top_node_index;
-                                cost_to_come[child_node_index] = child_cost_to_come;
-                            }
+                            queue.push(AstarNode(child_node_index, top_node.Index(), child_cost_to_come, child_value));
                         }
                     }
                 }
-                // We have already been here
-                else
-                {
-                    ;
-                }
             }
             // Check if a solution was found
-            const auto goal_index_itr = backpointers.find(goal_index);
+            const auto goal_index_itr = explored.find(goal_index);
             // If no solution found
-            if (goal_index_itr == backpointers.end())
+            if (goal_index_itr == explored.end())
             {
                 return std::make_pair(std::vector<int64_t>(), std::numeric_limits<double>::infinity());
             }
@@ -815,7 +794,7 @@ namespace arc_dijkstras
                 // Extract the path indices in reverse order
                 std::vector<int64_t> solution_path_indices;
                 solution_path_indices.push_back(goal_index);
-                int64_t previous_index = goal_index_itr->second;
+                int64_t previous_index = goal_index_itr->second.first;
                 while (previous_index >= 0)
                 {
                     const int64_t current_index = previous_index;
@@ -826,15 +805,15 @@ namespace arc_dijkstras
                     }
                     else
                     {
-                        const auto current_index_itr = backpointers.find(current_index);
-                        assert(current_index_itr != backpointers.end());
-                        previous_index = current_index_itr->second;
+                        const auto current_index_itr = explored.find(current_index);
+                        assert(current_index_itr != explored.end());
+                        previous_index = current_index_itr->second.first;
                     }
                 }
                 // Reverse
                 std::reverse(solution_path_indices.begin(), solution_path_indices.end());
                 // Get the cost of the path
-                const double solution_path_cost = cost_to_come[goal_index];
+                const double solution_path_cost = explored[goal_index].second;
                 return std::make_pair(solution_path_indices, solution_path_cost);
             }
         }
