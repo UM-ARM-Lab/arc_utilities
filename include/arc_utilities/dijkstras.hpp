@@ -558,8 +558,10 @@ namespace arc_dijkstras
 
             static DijkstrasResult PerformDijkstrasAlgorithm(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index)
             {
-                assert(start_index >= (int64_t)0);
-                assert(start_index < (int64_t)graph.GetNodesImmutable().size());
+                if ((start_index < 0) && (start_index >= (int64_t)graph.GetNodesImmutable().size()))
+                {
+                    throw std::invalid_argument("Start index out of range");
+                }
                 Graph<NodeValueType, Allocator> working_copy = graph;
                 // Setup
                 std::vector<int64_t> previous_index_map(working_copy.GetNodesImmutable().size(), -1);
@@ -679,16 +681,16 @@ namespace arc_dijkstras
         {
         protected:
 
-            int64_t index_;
+            int64_t graph_index_;
             int64_t backpointer_;
             double cost_to_come_;
             double value_;
 
         public:
 
-            AstarNode(const int64_t index, const int64_t backpointer, const double cost_to_come, const double value) : index_(index), backpointer_(backpointer), cost_to_come_(cost_to_come), value_(value) {}
+            AstarNode(const int64_t graph_index, const int64_t backpointer, const double cost_to_come, const double value) : graph_index_(graph_index), backpointer_(backpointer), cost_to_come_(cost_to_come), value_(value) {}
 
-            inline int64_t Index() const { return index_; }
+            inline int64_t GraphIndex() const { return graph_index_; }
 
             inline int64_t Backpointer() const { return backpointer_; }
 
@@ -711,76 +713,13 @@ namespace arc_dijkstras
 
     public:
 
+        // Return is a pair<path, cost>
+        // Path is a vector of node indices in the provided graph
+        // Cost is the computed cost-to-come of the goal node
         typedef std::pair<std::vector<int64_t>, double> AstarResult;
 
-        static AstarResult PerformAstar(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn)
+        static AstarResult ExtractSolution(const std::unordered_map<int64_t, std::pair<int64_t, double>>& explored, const int64_t start_index, const int64_t goal_index)
         {
-
-            // Enforced sanity checks
-            assert(start_index >= (int64_t)0);
-            assert(start_index < (int64_t)graph.GetNodesImmutable().size());
-            assert(goal_index >= (int64_t)0);
-            assert(goal_index < (int64_t)graph.GetNodesImmutable().size());
-            assert(start_index != goal_index);
-            // Setup
-            std::priority_queue<AstarNode, std::vector<AstarNode>, CompareNodeFn> queue;
-            std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
-            auto heuristic_function = [&] (const int64_t node_index) { return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable()); };
-            // Initialize
-            queue.push(AstarNode(start_index, -1, 0.0, heuristic_function(start_index)));
-            // Search
-            while (queue.size() > 0)
-            {
-                // Get the top of the priority queue
-                const AstarNode top_node = queue.top();
-                queue.pop();
-                // Check if the node has already been discovered
-                const auto explored_itr = explored.find(top_node.Index());
-                // We have already been here and it was cheaper then
-                if ((explored_itr != explored.end()) && (top_node.CostToCome() >= explored_itr->second.second))
-                {
-                    continue;
-                }
-                // We have not been here before, or it is cheaper now
-                else
-                {
-                    // Add to the explored list
-                    explored[top_node.Index()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
-                    // Check if we have reached the goal
-                    if (top_node.Index() == goal_index)
-                    {
-                        break;
-                    }
-                    // Explore and add the children
-                    const std::vector<GraphEdge>& out_edges = graph.GetNodeImmutable(top_node.Index()).GetOutEdgesImmutable();
-                    for (size_t out_edge_idx = 0; out_edge_idx < out_edges.size(); out_edge_idx++)
-                    {
-                        // Get the next child node
-                        const GraphEdge& current_out_edge = out_edges[out_edge_idx];
-                        const int64_t child_node_index = current_out_edge.GetToIndex();
-                        // Compute the cost-to-come for the new child
-                        const double parent_cost_to_come = top_node.CostToCome();
-                        const double parent_to_child_cost = current_out_edge.GetWeight();
-                        const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
-                        // Compute the heuristic for the child
-                        const double child_heuristic = heuristic_function(child_node_index);
-                        // Compute the child value
-                        const double child_value = child_cost_to_come + child_heuristic;
-                        // Now, check if the child state has already been found
-                        const auto explored_itr = explored.find(child_node_index);
-                        // If it is in the explored list already with a higher cost-to-come
-                        if ((explored_itr != explored.end()) && (child_cost_to_come >= explored_itr->second.second))
-                        {
-                            continue;
-                        }
-                        // It is not in the explored list, or is there with a higher cost-to-come
-                        else
-                        {
-                            queue.push(AstarNode(child_node_index, top_node.Index(), child_cost_to_come, child_value));
-                        }
-                    }
-                }
-            }
             // Check if a solution was found
             const auto goal_index_itr = explored.find(goal_index);
             // If no solution found
@@ -794,10 +733,12 @@ namespace arc_dijkstras
                 // Extract the path indices in reverse order
                 std::vector<int64_t> solution_path_indices;
                 solution_path_indices.push_back(goal_index);
-                int64_t previous_index = goal_index_itr->second.first;
-                while (previous_index >= 0)
+                int64_t backpointer = goal_index_itr->second.first;
+                // Any backpointer >= 0 is a valid node in the graph
+                // The backpointer for start_index is -1
+                while (backpointer >= 0)
                 {
-                    const int64_t current_index = previous_index;
+                    const int64_t current_index = backpointer;
                     solution_path_indices.push_back(current_index);
                     if (current_index == start_index)
                     {
@@ -805,17 +746,88 @@ namespace arc_dijkstras
                     }
                     else
                     {
-                        const auto current_index_itr = explored.find(current_index);
-                        assert(current_index_itr != explored.end());
-                        previous_index = current_index_itr->second.first;
+                        // Using map.at(key) throws an exception if key not found
+                        // This provides bounds safety check
+                        const auto current_index_data = explored.at(current_index);
+                        backpointer = current_index_data.first;
                     }
                 }
                 // Reverse
                 std::reverse(solution_path_indices.begin(), solution_path_indices.end());
                 // Get the cost of the path
-                const double solution_path_cost = explored[goal_index].second;
+                const double solution_path_cost = goal_index_itr->second.second;
                 return std::make_pair(solution_path_indices, solution_path_cost);
             }
+        }
+
+        static AstarResult PerformAstar(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn)
+        {
+            // Enforced sanity checks
+            if ((start_index < 0) && (start_index >= (int64_t)graph.GetNodesImmutable().size()))
+            {
+                throw std::invalid_argument("Start index out of range");
+            }
+            if ((goal_index < 0) && (goal_index >= (int64_t)graph.GetNodesImmutable().size()))
+            {
+                throw std::invalid_argument("Goal index out of range");
+            }
+            if (start_index == goal_index)
+            {
+                throw std::invalid_argument("Start and goal indices must be different");
+            }
+            // Setup
+            std::priority_queue<AstarNode, std::vector<AstarNode>, CompareNodeFn> queue;
+            // Key is the node index in the provided graph
+            // Value is a pair<backpointer, cost-to-come>
+            // backpointer is the parent index in the provided graph
+            std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
+            const auto heuristic_function = [&] (const int64_t node_index) { return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable()); };
+            // Initialize
+            queue.push(AstarNode(start_index, -1, 0.0, heuristic_function(start_index)));
+            // Search
+            while (queue.size() > 0)
+            {
+                // Get the top of the priority queue
+                const AstarNode top_node = queue.top();
+                queue.pop();
+                // Check if the node has already been discovered
+                const auto explored_itr = explored.find(top_node.GraphIndex());
+                // We have not been here before, or it is cheaper now
+                if (!((explored_itr != explored.end()) && (top_node.CostToCome() >= explored_itr->second.second)))
+                {
+                    // Add to the explored list
+                    explored[top_node.GraphIndex()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
+                    // Check if we have reached the goal
+                    if (top_node.GraphIndex() == goal_index)
+                    {
+                        break;
+                    }
+                    // Explore and add the children
+                    const std::vector<GraphEdge>& out_edges = graph.GetNodeImmutable(top_node.GraphIndex()).GetOutEdgesImmutable();
+                    for (size_t out_edge_idx = 0; out_edge_idx < out_edges.size(); out_edge_idx++)
+                    {
+                        // Get the next child node
+                        const GraphEdge& current_out_edge = out_edges[out_edge_idx];
+                        const int64_t child_node_index = current_out_edge.GetToIndex();
+                        // Compute the cost-to-come for the new child
+                        const double parent_cost_to_come = top_node.CostToCome();
+                        const double parent_to_child_cost = current_out_edge.GetWeight();
+                        const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
+                        // Now, check if the child state has already been found
+                        const auto explored_itr = explored.find(child_node_index);
+                        // It is not in the explored list, or is there with a higher cost-to-come
+                        if (!((explored_itr != explored.end()) && (child_cost_to_come >= explored_itr->second.second)))
+                        {
+                            // Compute the heuristic for the child
+                            const double child_heuristic = heuristic_function(child_node_index);
+                            // Compute the child value
+                            const double child_value = child_cost_to_come + child_heuristic;
+                            queue.push(AstarNode(child_node_index, top_node.GraphIndex(), child_cost_to_come, child_value));
+                        }
+                    }
+                }
+            }
+            return ExtractSolution(explored, start_index, goal_index);
         }
     };
 
