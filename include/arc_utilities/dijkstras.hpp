@@ -120,7 +120,7 @@ namespace arc_dijkstras
         return stream;
     }
 
-    template<typename NodeValueType, typename Allocator=std::allocator<NodeValueType>>
+    template<typename NodeValueType, typename Allocator = std::allocator<NodeValueType>>
     class GraphNode
     {
         protected:
@@ -134,31 +134,47 @@ namespace arc_dijkstras
 
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-            static uint64_t Serialize(const GraphNode<NodeValueType, Allocator>& node, std::vector<uint8_t>& buffer, const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer)
+            static uint64_t Serialize(
+                    const GraphNode<NodeValueType, Allocator>& node,
+                    std::vector<uint8_t>& buffer,
+                    const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer)
             {
                 return node.SerializeSelf(buffer, value_serializer);
             }
 
-            static std::pair<GraphNode<NodeValueType, Allocator>, uint64_t> Deserialize(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+            static std::pair<GraphNode<NodeValueType, Allocator>, uint64_t> Deserialize(
+                    const std::vector<uint8_t>& buffer,
+                    const uint64_t current,
+                    const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
             {
                 GraphNode<NodeValueType, Allocator> temp_node;
                 const uint64_t bytes_read = temp_node.DeserializeSelf(buffer, current, value_deserializer);
                 return std::make_pair(temp_node, bytes_read);
             }
 
-            GraphNode(const NodeValueType& value, const double distance, const std::vector<GraphEdge>& new_in_edges, const std::vector<GraphEdge>& new_out_edges)
-                : value_(value), distance_(distance), in_edges_(new_in_edges), out_edges_(new_out_edges)
+            GraphNode(
+                    const NodeValueType& value,
+                    const double distance,
+                    const std::vector<GraphEdge>& new_in_edges,
+                    const std::vector<GraphEdge>& new_out_edges)
+                : value_(value)
+                , distance_(distance)
+                , in_edges_(new_in_edges)
+                , out_edges_(new_out_edges)
             {}
 
             GraphNode(const NodeValueType& value)
-                : value_(value), distance_(std::numeric_limits<double>::infinity())
+                : value_(value)
+                , distance_(std::numeric_limits<double>::infinity())
             {}
 
             GraphNode()
                 : distance_(std::numeric_limits<double>::infinity())
             {}
 
-            uint64_t SerializeSelf(std::vector<uint8_t>& buffer, const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer) const
+            uint64_t SerializeSelf(
+                    std::vector<uint8_t>& buffer,
+                    const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer) const
             {
                 const uint64_t start_buffer_size = buffer.size();
                 // Serialize the value
@@ -175,7 +191,10 @@ namespace arc_dijkstras
                 return bytes_written;
             }
 
-            uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+            uint64_t DeserializeSelf(
+                    const std::vector<uint8_t>& buffer,
+                    const uint64_t current,
+                    const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
             {
                 assert(current < buffer.size());
                 uint64_t current_position = current;
@@ -291,7 +310,7 @@ namespace arc_dijkstras
             }
     };
 
-    template<typename NodeValueType, typename Allocator=std::allocator<NodeValueType>>
+    template<typename NodeValueType, typename Allocator = std::allocator<NodeValueType>>
     class Graph
     {
         protected:
@@ -300,12 +319,17 @@ namespace arc_dijkstras
 
         public:
 
-            static uint64_t Serialize(const Graph<NodeValueType, Allocator>& graph, std::vector<uint8_t>& buffer, const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer)
+            static uint64_t Serialize(
+                    const Graph<NodeValueType,
+                    Allocator>& graph, std::vector<uint8_t>& buffer,
+                    const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer)
             {
                 return graph.SerializeSelf(buffer, value_serializer);
             }
 
-            static std::pair<Graph<NodeValueType, Allocator>, uint64_t> Deserialize(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+            static std::pair<Graph<NodeValueType, Allocator>, uint64_t> Deserialize(
+                    const std::vector<uint8_t>& buffer, const uint64_t current,
+                    const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
             {
                 Graph<NodeValueType, Allocator> temp_graph;
                 const uint64_t bytes_read = temp_graph.DeserializeSelf(buffer, current, value_deserializer);
@@ -332,10 +356,12 @@ namespace arc_dijkstras
             Graph()
             {}
 
-            uint64_t SerializeSelf(std::vector<uint8_t>& buffer, const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer) const
+            uint64_t SerializeSelf(
+                    std::vector<uint8_t>& buffer,
+                    const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer) const
             {
                 const uint64_t start_buffer_size = buffer.size();
-                std::function<uint64_t(const GraphNode<NodeValueType, Allocator>&, std::vector<uint8_t>&)> graph_state_serializer = std::bind(GraphNode<NodeValueType, Allocator>::Serialize, std::placeholders::_1, std::placeholders::_2, value_serializer);
+                const auto graph_state_serializer = std::bind(GraphNode<NodeValueType, Allocator>::Serialize, std::placeholders::_1, std::placeholders::_2, value_serializer);
                 arc_helpers::SerializeVector<GraphNode<NodeValueType, Allocator>>(nodes_, buffer, graph_state_serializer);
                 // Figure out how many bytes were written
                 const uint64_t end_buffer_size = buffer.size();
@@ -343,10 +369,13 @@ namespace arc_dijkstras
                 return bytes_written;
             }
 
-            uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+            uint64_t DeserializeSelf(
+                    const std::vector<uint8_t>& buffer,
+                    const uint64_t current,
+                    const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
             {
-                const std::function<std::pair<GraphNode<NodeValueType, Allocator>, uint64_t>(const std::vector<uint8_t>&, const uint64_t)> graph_state_deserializer = std::bind(GraphNode<NodeValueType, Allocator>::Deserialize, std::placeholders::_1, std::placeholders::_2, value_deserializer);
-                const std::pair<std::vector<GraphNode<NodeValueType, Allocator>>, uint64_t> deserialized_nodes = arc_helpers::DeserializeVector<GraphNode<NodeValueType, Allocator>>(buffer, current, graph_state_deserializer);
+                const auto graph_state_deserializer = std::bind(GraphNode<NodeValueType, Allocator>::Deserialize, std::placeholders::_1, std::placeholders::_2, value_deserializer);
+                const auto deserialized_nodes = arc_helpers::DeserializeVector<GraphNode<NodeValueType, Allocator>>(buffer, current, graph_state_deserializer);
                 nodes_ = deserialized_nodes.first;
                 return deserialized_nodes.second;
             }
@@ -535,7 +564,7 @@ namespace arc_dijkstras
             }
     };
 
-    template<typename NodeValueType, typename Allocator=std::allocator<NodeValueType>>
+    template<typename NodeValueType, typename Allocator = std::allocator<NodeValueType>>
     class SimpleDijkstrasAlgorithm
     {
         protected:
@@ -550,13 +579,16 @@ namespace arc_dijkstras
                     }
             };
 
-            SimpleDijkstrasAlgorithm() {}
+            SimpleDijkstrasAlgorithm()
+            {}
 
         public:
 
             typedef std::pair<Graph<NodeValueType, Allocator>, std::pair<std::vector<int64_t>, std::vector<double>>> DijkstrasResult;
 
-            static DijkstrasResult PerformDijkstrasAlgorithm(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index)
+            static DijkstrasResult PerformDijkstrasAlgorithm(
+                    const Graph<NodeValueType, Allocator>& graph,
+                    const int64_t start_index)
             {
                 if ((start_index < 0) && (start_index >= (int64_t)graph.GetNodesImmutable().size()))
                 {
@@ -633,15 +665,20 @@ namespace arc_dijkstras
             }
 
             // These functions have not been tested.  Use with care.
-            static uint64_t SerializeDijstrasResult(const DijkstrasResult& result, std::vector<uint8_t>& buffer, const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer)
+            static uint64_t SerializeDijstrasResult(
+                    const DijkstrasResult& result,
+                    std::vector<uint8_t>& buffer,
+                    const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer)
             {
                 const uint64_t start_buffer_size = buffer.size();
                 // Serialize the graph
                 result.first.SerializeSelf(buffer, value_serializer);
                 // Serialize the previous index
-                SerializeVector(result.second.first, std::bind(arc_helpers::SerializeFixedSizePOD<uint64_t>, std::placeholders::_1, std::placeholders::_2));
+                const auto index_serializer = std::bind(arc_helpers::SerializeFixedSizePOD<int64_t>, std::placeholders::_1, std::placeholders::_2);
+                SerializeVector(result.second.first, index_serializer);
                 // Serialze the distances
-                SerializeVector(result.second.second, std::bind(arc_helpers::SerializeFixedSizePOD<uint64_t>, std::placeholders::_1, std::placeholders::_2));
+                const auto distance_serializer = std::bind(arc_helpers::SerializeFixedSizePOD<double>, std::placeholders::_1, std::placeholders::_2);
+                SerializeVector(result.second.second, distance_serializer);
                 // Figure out how many bytes were written
                 const uint64_t end_buffer_size = buffer.size();
                 const uint64_t bytes_written = end_buffer_size - start_buffer_size;
@@ -649,21 +686,26 @@ namespace arc_dijkstras
             }
 
             // These functions have not been tested.  Use with care.
-            static std::pair<DijkstrasResult, uint64_t> DijstrasResult(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+            static std::pair<DijkstrasResult, uint64_t> DijstrasResult(
+                    const std::vector<uint8_t>& buffer,
+                    const uint64_t current,
+                    const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
             {
                 assert(current < buffer.size());
                 uint64_t current_position = current;
                 // Deserialize the graph itself
                 std::pair<DijkstrasResult, uint64_t> deserialized;
-                const std::pair<Graph<NodeValueType, Allocator>, uint64_t> graph_deserialized = Graph<NodeValueType, Allocator>::Deserialize(buffer, current_position, value_deserializer);
+                const auto graph_deserialized = Graph<NodeValueType, Allocator>::Deserialize(buffer, current_position, value_deserializer);
                 deserialized.first.first = graph_deserialized.first;
                 current_position += graph_deserialized.second;
                 // Deserialize the previous index
-                const std::pair<std::vector<int64_t>, uint64_t> prev_index_deserialized = arc_helpers::DeserializeVector<int64_t>(buffer, current_position, std::bind(arc_helpers::DeserializeFixedSizePOD<uint64_t>, std::placeholders::_1, std::placeholders::_2));
+                const auto index_deserializer = std::bind(arc_helpers::DeserializeFixedSizePOD<int64_t>, std::placeholders::_1, std::placeholders::_2);
+                const auto prev_index_deserialized = arc_helpers::DeserializeVector<int64_t>(buffer, current_position, index_deserializer);
                 deserialized.first.second.first = prev_index_deserialized.first;
                 current_position += prev_index_deserialized.second;
                 // Deserialize the distances
-                const std::pair<std::vector<double>, uint64_t> distance_deserialized = arc_helpers::DeserializeVector<double>(buffer, current_position, std::bind(arc_helpers::DeserializeFixedSizePOD<double>, std::placeholders::_1, std::placeholders::_2));
+                const auto distance_deserializer = std::bind(arc_helpers::DeserializeFixedSizePOD<double>, std::placeholders::_1, std::placeholders::_2);
+                const auto distance_deserialized = arc_helpers::DeserializeVector<double>(buffer, current_position, distance_deserializer);
                 deserialized.first.second.second = distance_deserialized.first;
                 current_position += distance_deserialized.second;
                 // Figure out how many bytes were read
@@ -672,7 +714,7 @@ namespace arc_dijkstras
             }
     };
 
-    template<typename NodeValueType, typename Allocator=std::allocator<NodeValueType>>
+    template<typename NodeValueType, typename Allocator = std::allocator<NodeValueType>>
     class SimpleGraphAstar
     {
     protected:
@@ -688,15 +730,36 @@ namespace arc_dijkstras
 
         public:
 
-            AstarNode(const int64_t graph_index, const int64_t backpointer, const double cost_to_come, const double value) : graph_index_(graph_index), backpointer_(backpointer), cost_to_come_(cost_to_come), value_(value) {}
+            AstarNode(
+                    const int64_t graph_index,
+                    const int64_t backpointer,
+                    const double cost_to_come,
+                    const double value)
+                : graph_index_(graph_index)
+                , backpointer_(backpointer)
+                , cost_to_come_(cost_to_come)
+                , value_(value)
+            {}
 
-            inline int64_t GraphIndex() const { return graph_index_; }
+            inline int64_t GraphIndex() const
+            {
+                return graph_index_;
+            }
 
-            inline int64_t Backpointer() const { return backpointer_; }
+            inline int64_t Backpointer() const
+            {
+                return backpointer_;
+            }
 
-            inline double CostToCome() const { return cost_to_come_; }
+            inline double CostToCome() const
+            {
+                return cost_to_come_;
+            }
 
-            inline double Value() const { return value_; }
+            inline double Value() const
+            {
+                return value_;
+            }
         };
 
         class CompareNodeFn
@@ -709,7 +772,8 @@ namespace arc_dijkstras
                 }
         };
 
-        SimpleGraphAstar() {}
+        SimpleGraphAstar()
+        {}
 
     public:
 
@@ -718,7 +782,10 @@ namespace arc_dijkstras
         // Cost is the computed cost-to-come of the goal node
         typedef std::pair<std::vector<int64_t>, double> AstarResult;
 
-        static AstarResult ExtractSolution(const std::unordered_map<int64_t, std::pair<int64_t, double>>& explored, const int64_t start_index, const int64_t goal_index)
+        static AstarResult ExtractSolution(
+                const std::unordered_map<int64_t, std::pair<int64_t, double>>& explored,
+                const int64_t start_index,
+                const int64_t goal_index)
         {
             // Check if a solution was found
             const auto goal_index_itr = explored.find(goal_index);
@@ -760,7 +827,14 @@ namespace arc_dijkstras
             }
         }
 
-        static AstarResult PerformAstar(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn)
+        // HeuristicFn must be of a type that matches the following interface:
+        // std::function<double(const NodeValueType&, const NodeValueType&)>
+        template <class HeuristicFn>
+        static AstarResult PerformAstar(
+                const Graph<NodeValueType, Allocator>& graph,
+                const int64_t start_index,
+                const int64_t goal_index,
+                const HeuristicFn& heuristic_fn)
         {
             // Enforced sanity checks
             if ((start_index < 0) && (start_index >= (int64_t)graph.GetNodesImmutable().size()))
@@ -776,20 +850,23 @@ namespace arc_dijkstras
                 throw std::invalid_argument("Start and goal indices must be different");
             }
             // Setup
-            std::priority_queue<AstarNode, std::vector<AstarNode>, CompareNodeFn> queue;
+            std::priority_queue<AstarNode, std::vector<AstarNode>, CompareNodeFn> frontier;
             // Key is the node index in the provided graph
             // Value is a pair<backpointer, cost-to-come>
             // backpointer is the parent index in the provided graph
             std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
-            const auto heuristic_function = [&] (const int64_t node_index) { return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable()); };
+            const auto heuristic_function = [&] (const int64_t node_index)
+            {
+                return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable());
+            };
             // Initialize
-            queue.push(AstarNode(start_index, -1, 0.0, heuristic_function(start_index)));
+            frontier.push(AstarNode(start_index, -1, 0.0, heuristic_function(start_index)));
             // Search
-            while (queue.size() > 0)
+            while (frontier.size() > 0)
             {
                 // Get the top of the priority queue
-                const AstarNode top_node = queue.top();
-                queue.pop();
+                const AstarNode top_node = frontier.top();
+                frontier.pop();
                 // Check if the node has already been discovered
                 const auto explored_itr = explored.find(top_node.GraphIndex());
                 // We have not been here before, or it is cheaper now
@@ -804,7 +881,7 @@ namespace arc_dijkstras
                     {
                         break;
                     }
-                    // Explore and add the children
+                    // Add the children to the frontier
                     const std::vector<GraphEdge>& out_edges = graph.GetNodeImmutable(top_node.GraphIndex()).GetOutEdgesImmutable();
                     for (size_t out_edge_idx = 0; out_edge_idx < out_edges.size(); out_edge_idx++)
                     {
@@ -815,9 +892,9 @@ namespace arc_dijkstras
                         const double parent_cost_to_come = top_node.CostToCome();
                         const double parent_to_child_cost = current_out_edge.GetWeight();
                         const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
-                        // Now, check if the child state has already been found
+                        // Now, check if a path to the child state has already been found
                         const auto explored_itr = explored.find(child_node_index);
-                        // It is not in the explored list, or is there with a higher cost-to-come
+                        // It is not in the explored list, or is there with a higher cost-to-come, then re-add to the frontier
                         const bool in_explored = (explored_itr != explored.end());
                         const bool in_explored_is_worse = (in_explored) ? (child_cost_to_come < explored_itr->second.second) : true;
                         if (!in_explored || in_explored_is_worse)
@@ -826,7 +903,7 @@ namespace arc_dijkstras
                             const double child_heuristic = heuristic_function(child_node_index);
                             // Compute the child value
                             const double child_value = child_cost_to_come + child_heuristic;
-                            queue.push(AstarNode(child_node_index, top_node.GraphIndex(), child_cost_to_come, child_value));
+                            frontier.push(AstarNode(child_node_index, top_node.GraphIndex(), child_cost_to_come, child_value));
                         }
                     }
                 }
