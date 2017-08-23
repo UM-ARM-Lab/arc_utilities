@@ -68,12 +68,23 @@ namespace shortcut_smoothing
         }
     }
 
-    template<typename PRNG, typename Configuration, typename ConfigAlloc = std::allocator<Configuration>>
+
+    /**
+     * @brief ShortcutSmoothPath
+     * @param path
+     * @param max_iterations
+     * @param max_failed_iterations
+     * @param max_shortcut_fraction
+     * @param edge_validity_check_fn - Must match the following prototype: std::function<bool(const Configuration&, const Configuration&)>&>
+     * @param prng
+     * @return
+     */
+    template<typename PRNG, typename Configuration, typename ConfigAlloc = std::allocator<Configuration>, class EdgeValidityCheckFn>
     inline std::vector<Configuration, ConfigAlloc> ShortcutSmoothPath(
             const std::vector<Configuration, ConfigAlloc>& path,
             const uint32_t max_iterations, const uint32_t max_failed_iterations,
             const double max_shortcut_fraction,
-            const std::function<bool(const Configuration&, const Configuration&)>& edge_validity_check_fn,
+            const EdgeValidityCheckFn& edge_validity_check_fn,
             PRNG& prng)
     {
         std::vector<Configuration, ConfigAlloc> current_path = path;
@@ -124,18 +135,18 @@ namespace shortcut_smoothing
      * @param start_ind
      * @param end_ind
      * @param resampled_state_distance
-     * @param state_distance_fn
-     * @param state_interpolation_fn
+     * @param state_distance_fn - must match the following prototype: std::function<double(const Configuration&, const Configuration&, const)>
+     * @param state_interpolation_fn - must match the following prototype: std::function<Configuration(const Configuration&, const Configuration&, const double)>
      * @return
      */
-    template<typename Configuration, typename ConfigAlloc = std::allocator<Configuration>>
+    template<typename Configuration, typename ConfigAlloc = std::allocator<Configuration>, class DistanceFn, class InterpolationFn>
     inline std::vector<Configuration, ConfigAlloc> ResamplePathPartial(
             const std::vector<Configuration, ConfigAlloc>& path,
             const size_t start_ind,
             const size_t end_ind,
             const double resampled_state_distance,
-            const std::function<double(const Configuration&, const Configuration&)>& state_distance_fn,
-            const std::function<Configuration(const Configuration&, const Configuration&, const double)>& state_interpolation_fn)
+            const DistanceFn& state_distance_fn,
+            const InterpolationFn& state_interpolation_fn)
     {
         assert(end_ind > start_ind);
         assert(end_ind <= path.size());
@@ -187,12 +198,12 @@ namespace shortcut_smoothing
         return resampled_path;
     }
 
-    template<typename Configuration, typename ConfigAlloc=std::allocator<Configuration>>
+    template<typename Configuration, typename ConfigAlloc = std::allocator<Configuration>, class DistanceFn, class InterpolationFn>
     inline std::vector<Configuration, ConfigAlloc> ResamplePath(
             const std::vector<Configuration, ConfigAlloc>& path,
             const double resampled_state_distance,
-            const std::function<double(const Configuration&, const Configuration&)>& state_distance_fn,
-            const std::function<Configuration(const Configuration&, const Configuration&, const double)>& state_interpolation_fn)
+            const DistanceFn& state_distance_fn,
+            const InterpolationFn& state_interpolation_fn)
     {
         return ResamplePathPartial(path, 0, path.size(), resampled_state_distance, state_distance_fn, state_interpolation_fn);
     }
