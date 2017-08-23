@@ -124,10 +124,17 @@ namespace PrettyPrint
     template<>
     inline std::string PrettyPrint(const Eigen::Vector2d& vector_to_print, const bool add_delimiters, const std::string& separator)
     {
-        UNUSED(add_delimiters);
         UNUSED(separator);
         std::ostringstream strm;
-        strm << std::setprecision(12) << "Vector2d: <x: " << vector_to_print(0) << " y: " << vector_to_print(1) << ">";
+        strm << std::setprecision(12);
+        if (add_delimiters)
+        {
+            strm << "Vector2d: <x: " << vector_to_print(0) << " y: " << vector_to_print(1) << ">";
+        }
+        else
+        {
+            strm << vector_to_print(0) << ", " << vector_to_print(1);
+        }
         return strm.str();
     }
 
@@ -136,13 +143,14 @@ namespace PrettyPrint
     {
         UNUSED(separator);
         std::ostringstream strm;
+        strm << std::setprecision(12);
         if (add_delimiters)
         {
-            strm << std::setprecision(12) << "Vector3d: <x: " << vector_to_print.x() << " y: " << vector_to_print.y() << " z: " << vector_to_print.z() << ">";
+            strm << "Vector3d: <x: " << vector_to_print.x() << " y: " << vector_to_print.y() << " z: " << vector_to_print.z() << ">";
         }
         else
         {
-            strm << std::setprecision(12) << vector_to_print.x() << " " << vector_to_print.y() << " " << vector_to_print.z();;
+            strm << vector_to_print.x() << ", " << vector_to_print.y() << ", " << vector_to_print.z();;
         }
         return strm.str();
     }
@@ -150,86 +158,84 @@ namespace PrettyPrint
     template<>
     inline std::string PrettyPrint(const Eigen::Vector4d& vector_to_print, const bool add_delimiters, const std::string& separator)
     {
-        UNUSED(add_delimiters);
         UNUSED(separator);
         std::ostringstream strm;
-        strm << std::setprecision(12) << "Vector4d: <x: " << vector_to_print(0) << " y: " << vector_to_print(1) << " z: " << vector_to_print(2) << " w: " << vector_to_print(3) << ">";
+        strm << std::setprecision(12);
+        if (add_delimiters)
+        {
+            strm << "Vector4d: <x: " << vector_to_print(0) << " y: " << vector_to_print(1) << " z: " << vector_to_print(2) << " w: " << vector_to_print(3) << ">";
+        }
+        else
+        {
+            strm << vector_to_print(0) << ", " << vector_to_print(1) << ", " << vector_to_print(2) << ", " << vector_to_print(3);
+        }
         return strm.str();
     }
 
     template<>
     inline std::string PrettyPrint(const Eigen::VectorXd& vector_to_print, const bool add_delimiters, const std::string& separator)
     {
-        UNUSED(add_delimiters);
         UNUSED(separator);
-        if (vector_to_print.size() > 1)
+        Eigen::IOFormat io_format(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "", "");
+        if (add_delimiters)
         {
-            std::ostringstream strm;
-            strm << "VectorXd: <" << std::to_string(vector_to_print(0));
-            for (std::ptrdiff_t idx = 1; idx < vector_to_print.size(); idx++)
-            {
-                strm << ", " << std::to_string(vector_to_print(idx));
-            }
-            strm << ">";
-            return strm.str();
+            io_format = Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "VectorXd: <", ">");;
         }
-        else if (vector_to_print.size() == 1)
-        {
-            return "VectorXd: <" + std::to_string(vector_to_print(0)) + ">";
-        }
-        else
-        {
-            return "VectorXd: <>";
-        }
+        std::ostringstream strm;
+        strm << std::setprecision(12);
+        strm << vector_to_print.format(io_format);
+        return strm.str();
     }
 
     template<>
     inline std::string PrettyPrint(const Eigen::MatrixXd& matrix_to_print, const bool add_delimiters, const std::string& separator)
     {
-        UNUSED(add_delimiters);
         UNUSED(separator);
-        if (matrix_to_print.rows() > 0 && matrix_to_print.cols() > 0)
+        Eigen::IOFormat io_format(Eigen::StreamPrecision, 0, ", ", "\n", "", "", "", "");
+        if (add_delimiters)
         {
-            std::ostringstream strm;
-            strm << "MatrixXd:\n[";
-            strm << std::to_string(matrix_to_print(0, 0));
-            for (int64_t col = 1; col < matrix_to_print.cols(); col++)
-            {
-                strm << ", " << std::to_string(matrix_to_print(0, col));
-            }
-            for (int64_t row = 1; row < matrix_to_print.rows(); row++)
-            {
-                strm << "\n" << std::to_string(matrix_to_print(row, 0));
-                for (int64_t col = 1; col < matrix_to_print.cols(); col++)
-                {
-                    strm << ", " << std::to_string(matrix_to_print(row, col));
-                }
-            }
-            strm << "]";
-            return strm.str();
+            io_format = Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "", "", "MatrixXd:\n[", "]");;
         }
-        else
-        {
-            return "MatrixXd:\n[]";
-        }
+        std::ostringstream strm;
+        strm << std::setprecision(12);
+        strm << matrix_to_print.format(io_format);
+        return strm.str();
     }
 
     template<>
     inline std::string PrettyPrint(const Eigen::Quaterniond& quaternion_to_print, const bool add_delimiters, const std::string& separator)
     {
-        UNUSED(add_delimiters);
         UNUSED(separator);
-        return "Quaterniond <x: " + std::to_string(quaternion_to_print.x()) + " y: " + std::to_string(quaternion_to_print.y()) + " z: " + std::to_string(quaternion_to_print.z()) + " w: " + std::to_string(quaternion_to_print.w()) + ">";
+        std::ostringstream strm;
+        strm << std::setprecision(12);
+        if (add_delimiters)
+        {
+            strm << "Quaterniond <x: " << quaternion_to_print.x() << " y: " << quaternion_to_print.y() << " z: " << quaternion_to_print.z() << " w: " << quaternion_to_print.w() << ">";
+        }
+        else
+        {
+            strm << quaternion_to_print.x() << ", " << quaternion_to_print.y() << ", " << quaternion_to_print.z() << ", " << quaternion_to_print.w();
+        }
+        return strm.str();
     }
 
     template<>
     inline std::string PrettyPrint(const Eigen::Isometry3d& transform_to_print, const bool add_delimiters, const std::string& separator)
     {
-        UNUSED(add_delimiters);
         UNUSED(separator);
+        std::ostringstream strm;
+        strm << std::setprecision(12);
         Eigen::Vector3d vector_to_print = transform_to_print.translation();
         Eigen::Quaterniond quaternion_to_print(transform_to_print.rotation());
-        return "Isometry3d <x: " + std::to_string(vector_to_print.x()) + " y: " + std::to_string(vector_to_print.y()) + " z: " + std::to_string(vector_to_print.z()) + ">, <x: " + std::to_string(quaternion_to_print.x()) + " y: " + std::to_string(quaternion_to_print.y()) + " z: " + std::to_string(quaternion_to_print.z()) + " w: " + std::to_string(quaternion_to_print.w()) + ">";
+        if (add_delimiters)
+        {
+            strm << "Isometry3d <x: " << vector_to_print.x() << " y: " << vector_to_print.y() << " z: " << vector_to_print.z() << ">, <x: " << quaternion_to_print.x() << " y: " << quaternion_to_print.y() << " z: "  << quaternion_to_print.z() << " w: " << quaternion_to_print.w() << ">";
+        }
+        else
+        {
+            strm << vector_to_print.x() << ", " << vector_to_print.y() << ", " << vector_to_print.z() << " : " << quaternion_to_print.x() << ", " << quaternion_to_print.y() << ", "  << quaternion_to_print.z() << ", " << quaternion_to_print.w();
+        }
+        return strm.str();
     }
 
     template <typename A, typename B>
