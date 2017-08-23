@@ -114,6 +114,22 @@ namespace simple_prm_planner
             return new_node_index;
         }
 
+        template<typename T, typename Allocator = std::allocator<T>>
+        static std::vector<T, Allocator> ExtractSolutionPath(
+                const arc_dijkstras::Graph<T, Allocator>& roadmap,
+                const std::vector<int64_t>& solution_path_indices)
+        {
+            std::vector<T, Allocator> solution_path;
+            solution_path.reserve(solution_path_indices.size());
+            for (size_t idx = 0; idx < solution_path_indices.size(); idx++)
+            {
+                const int64_t path_index = solution_path_indices[idx];
+                solution_path.push_back(roadmap.GetNodeImmutable(path_index).GetValueImmutable());
+            }
+            solution_path.shrink_to_fit();
+            return solution_path;
+        }
+
     public:
 
         template<typename T, typename Allocator = std::allocator<T>>
@@ -239,15 +255,7 @@ namespace simple_prm_planner
                         previous_index = solution_map_distances.first[current_index];
                     }
                 }
-                std::vector<T, Allocator> solution_path;
-                solution_path.reserve(solution_path_indices.size());
-                for (size_t idx = 0; idx < solution_path_indices.size(); idx++)
-                {
-                    const int64_t solution_path_index = solution_path_indices[idx];
-                    const T& solution_path_state = roadmap.GetNodeImmutable(solution_path_index).GetValueImmutable();
-                    solution_path.push_back(solution_path_state);
-                }
-                solution_path.shrink_to_fit();
+                const std::vector<T, Allocator> solution_path = ExtractSolutionPath(roadmap, solution_path_indices);
                 return std::make_pair(solution_path, start_node_distance);
             }
         }
@@ -269,15 +277,7 @@ namespace simple_prm_planner
             // Call graph A*
             const std::pair<std::vector<int64_t>, double> astar_result = arc_dijkstras::SimpleGraphAstar<T, Allocator>::PerformAstar(roadmap, start_node_index, goal_node_index, distance_fn);
             // Convert the solution path from A* provided as indices into real states
-            const std::vector<int64_t>& solution_path_indices = astar_result.first;
-            std::vector<T, Allocator> solution_path;
-            solution_path.reserve(astar_result.first.size());
-            for (size_t idx = 0; idx < solution_path_indices.size(); idx++)
-            {
-                const int64_t path_index = solution_path_indices[idx];
-                solution_path.push_back(roadmap.GetNodeImmutable(path_index).GetValueImmutable());
-            }
-            solution_path.shrink_to_fit();
+            const std::vector<T, Allocator> solution_path = ExtractSolutionPath(roadmap, astar_result.first);
             return std::make_pair(solution_path, astar_result.second);
         }
 
