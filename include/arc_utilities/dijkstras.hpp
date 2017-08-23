@@ -760,7 +760,7 @@ namespace arc_dijkstras
             }
         }
 
-        static AstarResult PerformAstar(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn)
+        static AstarResult PerformLazyAstar(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<bool(const Graph<NodeValueType, Allocator>&, const GraphEdge&)>& edge_validity_check_fn, const std::function<double(const Graph<NodeValueType, Allocator>&, const GraphEdge&)>& distance_fn, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn)
         {
             // Enforced sanity checks
             if ((start_index < 0) && (start_index >= (int64_t)graph.GetNodesImmutable().size()))
@@ -775,13 +775,14 @@ namespace arc_dijkstras
             {
                 throw std::invalid_argument("Start and goal indices must be different");
             }
+            // Make helper function
+            const auto heuristic_function = [&] (const int64_t node_index) { return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable()); };
             // Setup
             std::priority_queue<AstarNode, std::vector<AstarNode>, CompareNodeFn> queue;
             // Key is the node index in the provided graph
             // Value is a pair<backpointer, cost-to-come>
             // backpointer is the parent index in the provided graph
             std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
-            const auto heuristic_function = [&] (const int64_t node_index) { return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable()); };
             // Initialize
             queue.push(AstarNode(start_index, -1, 0.0, heuristic_function(start_index)));
             // Search
@@ -808,30 +809,49 @@ namespace arc_dijkstras
                     const std::vector<GraphEdge>& out_edges = graph.GetNodeImmutable(top_node.GraphIndex()).GetOutEdgesImmutable();
                     for (size_t out_edge_idx = 0; out_edge_idx < out_edges.size(); out_edge_idx++)
                     {
-                        // Get the next child node
+                        // Get the next potential child node
                         const GraphEdge& current_out_edge = out_edges[out_edge_idx];
                         const int64_t child_node_index = current_out_edge.GetToIndex();
-                        // Compute the cost-to-come for the new child
-                        const double parent_cost_to_come = top_node.CostToCome();
-                        const double parent_to_child_cost = current_out_edge.GetWeight();
-                        const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
-                        // Now, check if the child state has already been found
-                        const auto explored_itr = explored.find(child_node_index);
-                        // It is not in the explored list, or is there with a higher cost-to-come
-                        const bool in_explored = (explored_itr != explored.end());
-                        const bool in_explored_is_worse = (in_explored) ? (child_cost_to_come < explored_itr->second.second) : true;
-                        if (!in_explored || in_explored_is_worse)
+                        // Check if the top node->child edge is valid
+                        if (edge_validity_check_fn(graph, current_out_edge))
                         {
-                            // Compute the heuristic for the child
-                            const double child_heuristic = heuristic_function(child_node_index);
-                            // Compute the child value
-                            const double child_value = child_cost_to_come + child_heuristic;
-                            queue.push(AstarNode(child_node_index, top_node.GraphIndex(), child_cost_to_come, child_value));
+                            // Compute the cost-to-come for the new child
+                            const double parent_cost_to_come = top_node.CostToCome();
+                            const double parent_to_child_cost = distance_fn(graph, current_out_edge);
+                            const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
+                            // Now, check if the child state has already been found
+                            const auto explored_itr = explored.find(child_node_index);
+                            // It is not in the explored list, or is there with a higher cost-to-come
+                            const bool in_explored = (explored_itr != explored.end());
+                            const bool in_explored_is_worse = (in_explored) ? (child_cost_to_come < explored_itr->second.second) : true;
+                            if (!in_explored || in_explored_is_worse)
+                            {
+                                // Compute the heuristic for the child
+                                const double child_heuristic = heuristic_function(child_node_index);
+                                // Compute the child value
+                                const double child_value = child_cost_to_come + child_heuristic;
+                                queue.push(AstarNode(child_node_index, top_node.GraphIndex(), child_cost_to_come, child_value));
+                            }
                         }
                     }
                 }
             }
             return ExtractSolution(explored, start_index, goal_index);
+        }
+
+        static AstarResult PerformLazyAstar(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<bool(const NodeValueType&, const NodeValueType&)>& edge_validity_check_fn, const std::function<double(const NodeValueType&, const NodeValueType&)>& distance_fn, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn)
+        {
+            const auto edge_validity_check_function = [&] (const Graph<NodeValueType, Allocator>& graph, const GraphEdge& edge) { return edge_validity_check_fn(graph.GetNodeImmutable(edge.GetFromIndex()).GetValueImmutable(), graph.GetNodeImmutable(edge.GetToIndex()).GetValueImmutable()); };
+            const auto distance_function = [&] (const Graph<NodeValueType, Allocator>& graph, const GraphEdge& edge) { return distance_fn(graph.GetNodeImmutable(edge.GetFromIndex()).GetValueImmutable(), graph.GetNodeImmutable(edge.GetToIndex()).GetValueImmutable()); };
+            //const auto heuristic_function = [&] (const int64_t node_index) { return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable()); };
+            return PerformLazyAstar(graph, start_index, goal_index, edge_validity_check_function, distance_function, heuristic_fn);
+        }
+
+        static AstarResult PerformAstar(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn)
+        {
+            const auto edge_validity_check_function = [&] (const Graph<NodeValueType, Allocator>& graph, const GraphEdge& edge) { UNUSED(graph); if (edge.GetWeight() < std::numeric_limits<double>::infinity()) { return true; } else { return false; } };
+            const auto distance_function = [&] (const Graph<NodeValueType, Allocator>& graph, const GraphEdge& edge) { UNUSED(graph); return edge.GetWeight(); };
+            return PerformLazyAstar(graph, start_index, goal_index, edge_validity_check_function, distance_function, heuristic_fn);
         }
     };
 
