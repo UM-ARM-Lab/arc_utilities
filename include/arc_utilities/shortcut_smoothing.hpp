@@ -154,8 +154,7 @@ namespace shortcut_smoothing
         // If we only have one element, to resample between, return it
         if (end_ind - start_ind == 1)
         {
-            std::vector<Configuration, ConfigAlloc> resampled_path = {path[start_ind]};
-            return resampled_path;
+            return std::vector<Configuration, ConfigAlloc>(1, path[start_ind]);
         }
 
         // Add the first state
@@ -163,26 +162,25 @@ namespace shortcut_smoothing
         resampled_path.push_back(path[start_ind]);
 
         // Loop through the path, adding interpolated states as needed
-        for (size_t idx = start_ind + 1; idx < end_ind; idx++)
+        for (size_t idx = start_ind; idx < end_ind - 1; idx++)
         {
             // Get the states from the original path
-            const Configuration& previous_state = path[idx - 1];
             const Configuration& current_state = path[idx];
+            const Configuration& next_state = path[idx + 1];
 
             // We want to add all the intermediate states to our returned path
-            const double distance = state_distance_fn(previous_state, current_state);
+            const double distance = state_distance_fn(current_state, next_state);
             const double raw_num_intervals = distance / resampled_state_distance;
             const uint32_t num_segments = (uint32_t)std::ceil(raw_num_intervals);
 
-            // If there's only one segment, we just add the end state of the window
             if (num_segments == 0u)
             {
                 // Do nothing because this means distance was exactly 0, so we are going to discard the extra point
             }
+            // If there's only one segment, we just add the end state of the window
             else if (num_segments == 1u)
             {
-                // Add a single point for the other end of the segment
-                resampled_path.push_back(current_state);
+                resampled_path.push_back(next_state);
             }
             // If there is more than one segment, interpolate between previous_state and current_state (including the current_state)
             else
@@ -190,7 +188,7 @@ namespace shortcut_smoothing
                 for (uint32_t segment = 1u; segment <= num_segments; segment++)
                 {
                     const double interpolation_ratio = (double)segment / (double)num_segments;
-                    const Configuration interpolated_state = state_interpolation_fn(previous_state, current_state, interpolation_ratio);
+                    const Configuration interpolated_state = state_interpolation_fn(current_state, next_state, interpolation_ratio);
                     resampled_path.push_back(interpolated_state);
                 }
             }

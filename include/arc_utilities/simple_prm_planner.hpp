@@ -281,6 +281,28 @@ namespace simple_prm_planner
             return std::make_pair(solution_path, astar_result.second);
         }
 
+        template<typename T, typename Allocator = std::allocator<T>, typename Generator = std::mt19937_64>
+        static std::pair<std::vector<T, Allocator>, double> QueryPathAndAddNodesSingleStartSingleGoalRandomWalk(
+                const T& start,
+                const T& goal,
+                Generator& generator,
+                arc_dijkstras::Graph<T, Allocator>& roadmap,
+                const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
+                const std::function<double(const T&, const T&)>& distance_fn,
+                const size_t K,
+                const bool distance_is_symmetric = true)
+        {
+            // Add the start node to the roadmap
+            const int64_t start_node_index = AddNodeToRoadmap(start, NEW_STATE_TO_ROADMAP, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+            // Add the goal node to the roadmap
+            const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+            // Call the random walk algorithm
+            const std::pair<std::vector<int64_t>, double> random_walk_result = arc_dijkstras::GraphRandomWalk<T, Allocator>::PerformRandomBiasedWalk(roadmap, start_node_index, goal_node_index, distance_fn, generator);
+            // Convert the result into a path and return it
+            const std::vector<T, Allocator> solution_path = ExtractSolutionPath(roadmap, random_walk_result.first);
+            return std::make_pair(solution_path, random_walk_result.second);
+        }
+
         // TODO - figure out a better way to balance parallelism between KNN queries inside path calls and multiple calls to Dijkstras
         template<typename T, typename Allocator = std::allocator<T>>
         static std::pair<std::vector<T, Allocator>, double> QueryPathMultiStartMultiGoal(

@@ -1,6 +1,7 @@
 #ifndef DIJKSTRAS_HPP
 #define DIJKSTRAS_HPP
 
+#include <random>
 #include <cstdint>
 #include <functional>
 #include <limits>
@@ -717,201 +718,258 @@ namespace arc_dijkstras
     template<typename NodeValueType, typename Allocator = std::allocator<NodeValueType>>
     class SimpleGraphAstar
     {
-    protected:
-
-        class AstarNode
-        {
         protected:
 
-            int64_t graph_index_;
-            int64_t backpointer_;
-            double cost_to_come_;
-            double value_;
+            class AstarNode
+            {
+            protected:
+
+                int64_t graph_index_;
+                int64_t backpointer_;
+                double cost_to_come_;
+                double value_;
+
+            public:
+
+                AstarNode(
+                        const int64_t graph_index,
+                        const int64_t backpointer,
+                        const double cost_to_come,
+                        const double value)
+                    : graph_index_(graph_index)
+                    , backpointer_(backpointer)
+                    , cost_to_come_(cost_to_come)
+                    , value_(value)
+                {}
+
+                inline int64_t GraphIndex() const
+                {
+                    return graph_index_;
+                }
+
+                inline int64_t Backpointer() const
+                {
+                    return backpointer_;
+                }
+
+                inline double CostToCome() const
+                {
+                    return cost_to_come_;
+                }
+
+                inline double Value() const
+                {
+                    return value_;
+                }
+            };
+
+            class CompareNodeFn
+            {
+                public:
+
+                    constexpr bool operator()(const AstarNode& lhs, const AstarNode& rhs) const
+                    {
+                        return lhs.Value() > rhs.Value();
+                    }
+            };
+
+            SimpleGraphAstar()
+            {}
 
         public:
 
-            AstarNode(
-                    const int64_t graph_index,
-                    const int64_t backpointer,
-                    const double cost_to_come,
-                    const double value)
-                : graph_index_(graph_index)
-                , backpointer_(backpointer)
-                , cost_to_come_(cost_to_come)
-                , value_(value)
-            {}
+            // Return is a pair<path, cost>
+            // Path is a vector of node indices in the provided graph
+            // Cost is the computed cost-to-come of the goal node
+            typedef std::pair<std::vector<int64_t>, double> AstarResult;
 
-            inline int64_t GraphIndex() const
+            static AstarResult ExtractSolution(
+                    const std::unordered_map<int64_t, std::pair<int64_t, double>>& explored,
+                    const int64_t start_index,
+                    const int64_t goal_index)
             {
-                return graph_index_;
-            }
-
-            inline int64_t Backpointer() const
-            {
-                return backpointer_;
-            }
-
-            inline double CostToCome() const
-            {
-                return cost_to_come_;
-            }
-
-            inline double Value() const
-            {
-                return value_;
-            }
-        };
-
-        class CompareNodeFn
-        {
-            public:
-
-                constexpr bool operator()(const AstarNode& lhs, const AstarNode& rhs) const
+                // Check if a solution was found
+                const auto goal_index_itr = explored.find(goal_index);
+                // If no solution found
+                if (goal_index_itr == explored.end())
                 {
-                    return lhs.Value() > rhs.Value();
+                    return std::make_pair(std::vector<int64_t>(), std::numeric_limits<double>::infinity());
                 }
-        };
-
-        SimpleGraphAstar()
-        {}
-
-    public:
-
-        // Return is a pair<path, cost>
-        // Path is a vector of node indices in the provided graph
-        // Cost is the computed cost-to-come of the goal node
-        typedef std::pair<std::vector<int64_t>, double> AstarResult;
-
-        static AstarResult ExtractSolution(
-                const std::unordered_map<int64_t, std::pair<int64_t, double>>& explored,
-                const int64_t start_index,
-                const int64_t goal_index)
-        {
-            // Check if a solution was found
-            const auto goal_index_itr = explored.find(goal_index);
-            // If no solution found
-            if (goal_index_itr == explored.end())
-            {
-                return std::make_pair(std::vector<int64_t>(), std::numeric_limits<double>::infinity());
-            }
-            // If a solution was found
-            else
-            {
-                // Extract the path indices in reverse order
-                std::vector<int64_t> solution_path_indices;
-                solution_path_indices.push_back(goal_index);
-                int64_t backpointer = goal_index_itr->second.first;
-                // Any backpointer >= 0 is a valid node in the graph
-                // The backpointer for start_index is -1
-                while (backpointer >= 0)
+                // If a solution was found
+                else
                 {
-                    const int64_t current_index = backpointer;
-                    solution_path_indices.push_back(current_index);
-                    if (current_index == start_index)
+                    // Extract the path indices in reverse order
+                    std::vector<int64_t> solution_path_indices;
+                    solution_path_indices.push_back(goal_index);
+                    int64_t backpointer = goal_index_itr->second.first;
+                    // Any backpointer >= 0 is a valid node in the graph
+                    // The backpointer for start_index is -1
+                    while (backpointer >= 0)
                     {
-                        break;
-                    }
-                    else
-                    {
-                        // Using map.at(key) throws an exception if key not found
-                        // This provides bounds safety check
-                        const auto current_index_data = explored.at(current_index);
-                        backpointer = current_index_data.first;
-                    }
-                }
-                // Reverse
-                std::reverse(solution_path_indices.begin(), solution_path_indices.end());
-                // Get the cost of the path
-                const double solution_path_cost = goal_index_itr->second.second;
-                return std::make_pair(solution_path_indices, solution_path_cost);
-            }
-        }
-
-        // HeuristicFn must be of a type that matches the following interface:
-        // std::function<double(const NodeValueType&, const NodeValueType&)>
-        template <class HeuristicFn>
-        static AstarResult PerformAstar(
-                const Graph<NodeValueType, Allocator>& graph,
-                const int64_t start_index,
-                const int64_t goal_index,
-                const HeuristicFn& heuristic_fn)
-        {
-            // Enforced sanity checks
-            if ((start_index < 0) && (start_index >= (int64_t)graph.GetNodesImmutable().size()))
-            {
-                throw std::invalid_argument("Start index out of range");
-            }
-            if ((goal_index < 0) && (goal_index >= (int64_t)graph.GetNodesImmutable().size()))
-            {
-                throw std::invalid_argument("Goal index out of range");
-            }
-            if (start_index == goal_index)
-            {
-                throw std::invalid_argument("Start and goal indices must be different");
-            }
-            // Setup
-            std::priority_queue<AstarNode, std::vector<AstarNode>, CompareNodeFn> frontier;
-            // Key is the node index in the provided graph
-            // Value is a pair<backpointer, cost-to-come>
-            // backpointer is the parent index in the provided graph
-            std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
-            const auto heuristic_function = [&] (const int64_t node_index)
-            {
-                return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable());
-            };
-            // Initialize
-            frontier.push(AstarNode(start_index, -1, 0.0, heuristic_function(start_index)));
-            // Search
-            while (frontier.size() > 0)
-            {
-                // Get the top of the priority queue
-                const AstarNode top_node = frontier.top();
-                frontier.pop();
-                // Check if the node has already been discovered
-                const auto explored_itr = explored.find(top_node.GraphIndex());
-                // We have not been here before, or it is cheaper now
-                const bool in_explored = (explored_itr != explored.end());
-                const bool in_explored_is_worse = (in_explored) ? (top_node.CostToCome() < explored_itr->second.second) : true;
-                if (!in_explored || in_explored_is_worse)
-                {
-                    // Add to the explored list
-                    explored[top_node.GraphIndex()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
-                    // Check if we have reached the goal
-                    if (top_node.GraphIndex() == goal_index)
-                    {
-                        break;
-                    }
-                    // Add the children to the frontier
-                    const std::vector<GraphEdge>& out_edges = graph.GetNodeImmutable(top_node.GraphIndex()).GetOutEdgesImmutable();
-                    for (size_t out_edge_idx = 0; out_edge_idx < out_edges.size(); out_edge_idx++)
-                    {
-                        // Get the next child node
-                        const GraphEdge& current_out_edge = out_edges[out_edge_idx];
-                        const int64_t child_node_index = current_out_edge.GetToIndex();
-                        // Compute the cost-to-come for the new child
-                        const double parent_cost_to_come = top_node.CostToCome();
-                        const double parent_to_child_cost = current_out_edge.GetWeight();
-                        const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
-                        // Now, check if a path to the child state has already been found
-                        const auto explored_itr = explored.find(child_node_index);
-                        // It is not in the explored list, or is there with a higher cost-to-come, then re-add to the frontier
-                        const bool in_explored = (explored_itr != explored.end());
-                        const bool in_explored_is_worse = (in_explored) ? (child_cost_to_come < explored_itr->second.second) : true;
-                        if (!in_explored || in_explored_is_worse)
+                        const int64_t current_index = backpointer;
+                        solution_path_indices.push_back(current_index);
+                        if (current_index == start_index)
                         {
-                            // Compute the heuristic for the child
-                            const double child_heuristic = heuristic_function(child_node_index);
-                            // Compute the child value
-                            const double child_value = child_cost_to_come + child_heuristic;
-                            frontier.push(AstarNode(child_node_index, top_node.GraphIndex(), child_cost_to_come, child_value));
+                            break;
+                        }
+                        else
+                        {
+                            // Using map.at(key) throws an exception if key not found
+                            // This provides bounds safety check
+                            const auto current_index_data = explored.at(current_index);
+                            backpointer = current_index_data.first;
+                        }
+                    }
+                    // Reverse
+                    std::reverse(solution_path_indices.begin(), solution_path_indices.end());
+                    // Get the cost of the path
+                    const double solution_path_cost = goal_index_itr->second.second;
+                    return std::make_pair(solution_path_indices, solution_path_cost);
+                }
+            }
+
+            // HeuristicFn must be of a type that matches the following interface:
+            // std::function<double(const NodeValueType&, const NodeValueType&)>
+            template <class HeuristicFn>
+            static AstarResult PerformAstar(
+                    const Graph<NodeValueType, Allocator>& graph,
+                    const int64_t start_index,
+                    const int64_t goal_index,
+                    const HeuristicFn& heuristic_fn)
+            {
+                // Enforced sanity checks
+                if ((start_index < 0) && (start_index >= (int64_t)graph.GetNodesImmutable().size()))
+                {
+                    throw std::invalid_argument("Start index out of range");
+                }
+                if ((goal_index < 0) && (goal_index >= (int64_t)graph.GetNodesImmutable().size()))
+                {
+                    throw std::invalid_argument("Goal index out of range");
+                }
+                if (start_index == goal_index)
+                {
+                    throw std::invalid_argument("Start and goal indices must be different");
+                }
+                // Setup
+                std::priority_queue<AstarNode, std::vector<AstarNode>, CompareNodeFn> frontier;
+                // Key is the node index in the provided graph
+                // Value is a pair<backpointer, cost-to-come>
+                // backpointer is the parent index in the provided graph
+                std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
+                const auto heuristic_function = [&] (const int64_t node_index)
+                {
+                    return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable());
+                };
+                // Initialize
+                frontier.push(AstarNode(start_index, -1, 0.0, heuristic_function(start_index)));
+                // Search
+                while (frontier.size() > 0)
+                {
+                    // Get the top of the priority queue
+                    const AstarNode top_node = frontier.top();
+                    frontier.pop();
+                    // Check if the node has already been discovered
+                    const auto explored_itr = explored.find(top_node.GraphIndex());
+                    // We have not been here before, or it is cheaper now
+                    const bool in_explored = (explored_itr != explored.end());
+                    const bool in_explored_is_worse = (in_explored) ? (top_node.CostToCome() < explored_itr->second.second) : true;
+                    if (!in_explored || in_explored_is_worse)
+                    {
+                        // Add to the explored list
+                        explored[top_node.GraphIndex()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
+                        // Check if we have reached the goal
+                        if (top_node.GraphIndex() == goal_index)
+                        {
+                            break;
+                        }
+                        // Add the children to the frontier
+                        const std::vector<GraphEdge>& out_edges = graph.GetNodeImmutable(top_node.GraphIndex()).GetOutEdgesImmutable();
+                        for (size_t out_edge_idx = 0; out_edge_idx < out_edges.size(); out_edge_idx++)
+                        {
+                            // Get the next child node
+                            const GraphEdge& current_out_edge = out_edges[out_edge_idx];
+                            const int64_t child_node_index = current_out_edge.GetToIndex();
+                            // Compute the cost-to-come for the new child
+                            const double parent_cost_to_come = top_node.CostToCome();
+                            const double parent_to_child_cost = current_out_edge.GetWeight();
+                            const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
+                            // Now, check if a path to the child state has already been found
+                            const auto explored_itr = explored.find(child_node_index);
+                            // It is not in the explored list, or is there with a higher cost-to-come, then re-add to the frontier
+                            const bool in_explored = (explored_itr != explored.end());
+                            const bool in_explored_is_worse = (in_explored) ? (child_cost_to_come < explored_itr->second.second) : true;
+                            if (!in_explored || in_explored_is_worse)
+                            {
+                                // Compute the heuristic for the child
+                                const double child_heuristic = heuristic_function(child_node_index);
+                                // Compute the child value
+                                const double child_value = child_cost_to_come + child_heuristic;
+                                frontier.push(AstarNode(child_node_index, top_node.GraphIndex(), child_cost_to_come, child_value));
+                            }
                         }
                     }
                 }
+                return ExtractSolution(explored, start_index, goal_index);
             }
-            return ExtractSolution(explored, start_index, goal_index);
-        }
     };
 
+    template<typename NodeValueType, typename Allocator = std::allocator<NodeValueType>>
+    class GraphRandomWalk
+    {
+        protected:
+            GraphRandomWalk() {}
+
+        public:
+            typedef std::pair<std::vector<int64_t>, double> RandomWalkResult;
+
+            // HeuristicFn must be of a type that matches the following interface:
+            // std::function<double(const NodeValueType&, const NodeValueType&)>
+            template <class DistanceFn, typename Generator>
+            static RandomWalkResult PerformRandomBiasedWalk(
+                    const Graph<NodeValueType, Allocator>& graph,
+                    const int64_t start_index,
+                    const int64_t goal_index,
+                    const DistanceFn& distance_fn,
+                    Generator& generator)
+            {
+                const NodeValueType& goal = graph.GetNodeImmutable(goal_index).GetValueImmutable();
+                const double bias_ratio = 0.05;
+                std::uniform_real_distribution<double> uniform_unit_distribution(0.0, 1.0);
+                std::uniform_int_distribution<int64_t> uniform_int_distribution;
+
+                std::vector<int64_t> path(1, start_index);
+
+                while (path.back() != goal_index)
+                {
+                    const int64_t curr_index = path.back();
+                    const auto& out_edges = graph.GetNodeImmutable(curr_index).GetOutEdgesImmutable();
+                    const auto num_edges = out_edges.size();
+
+                    const bool take_random_step = uniform_unit_distribution(generator) > bias_ratio ? true : false;
+                    int64_t next_index = -1;
+                    //if (take_random_step)
+                    //{
+                        std::uniform_int_distribution<int64_t>::param_type params(0, (int64_t)(num_edges - 1));
+                        uniform_int_distribution.param(params);
+                        const int64_t next_step = uniform_int_distribution(generator);
+                        next_index = out_edges.at(next_step).GetToIndex();
+                    //}
+                    //else
+                    //{
+
+                    //}
+
+                    // If the next index is somewhere we've been already, then "trim" the loop off
+                    const auto it = std::find(path.begin(), path.end(), next_index);
+                    path.erase(it, path.end());
+
+                    // (Re)add the new index to the path
+                    path.push_back(next_index);
+                }
+
+                return std::make_pair(path, 0.0);
+            }
+    };
 }
 
 #endif // DIJKSTRAS_HPP

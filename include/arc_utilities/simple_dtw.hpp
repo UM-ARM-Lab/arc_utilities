@@ -14,7 +14,9 @@
 
 namespace simple_dtw
 {
-    template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator=std::allocator<FirstDatatype>, typename SecondAllocator=std::allocator<SecondDatatype>>
+    template<typename FirstDatatype, typename SecondDatatype, typename DistanceFn,
+             typename FirstAllocator = std::allocator<FirstDatatype>,
+             typename SecondAllocator = std::allocator<SecondDatatype>>
     class SimpleDTW
     {
     private:
@@ -55,7 +57,10 @@ namespace simple_dtw
             InitializeMatrix(first_sequence_size, second_sequence_size);
         }
 
-        double EvaluateWarpingCost(const std::vector<FirstDatatype, FirstAllocator>& first_sequence, const std::vector<SecondDatatype, SecondAllocator>& second_sequence, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
+        double EvaluateWarpingCost(
+                const std::vector<FirstDatatype, FirstAllocator>& first_sequence,
+                const std::vector<SecondDatatype, SecondAllocator>& second_sequence,
+                const DistanceFn& distance_fn)
         {
             InitializeMatrix(first_sequence.size(), second_sequence.size());
             //Compute DTW cost for the two sequences
@@ -95,10 +100,15 @@ namespace simple_dtw
         }
     };
 
-    template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator=std::allocator<FirstDatatype>, typename SecondAllocator=std::allocator<SecondDatatype>>
-    inline double ComputeDTWDistance(const std::vector<FirstDatatype, FirstAllocator>& first_sequence, const std::vector<SecondDatatype, SecondAllocator>& second_sequence, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
+    template<typename FirstDatatype, typename SecondDatatype, typename DistanceFn,
+             typename FirstAllocator = std::allocator<FirstDatatype>,
+             typename SecondAllocator = std::allocator<SecondDatatype>>
+    inline double ComputeDTWDistance(
+            const std::vector<FirstDatatype, FirstAllocator>& first_sequence,
+            const std::vector<SecondDatatype, SecondAllocator>& second_sequence,
+            const DistanceFn& distance_fn)
     {
-        SimpleDTW<FirstDatatype, SecondDatatype, FirstAllocator, SecondAllocator> dtw_evaluator;
+        SimpleDTW<FirstDatatype, SecondDatatype, DistanceFn, FirstAllocator, SecondAllocator> dtw_evaluator;
         return dtw_evaluator.EvaluateWarpingCost(first_sequence, second_sequence, distance_fn);
     }
 }
