@@ -9,6 +9,7 @@
 #include <array>
 #include <map>
 #include <unordered_map>
+#include <queue>
 #include <arc_utilities/eigen_helpers.hpp>
 #include <omp.h>
 
@@ -628,6 +629,176 @@ namespace arc_helpers
             }
             return k_nearests;
         }
+    }
+
+    class AstarPQueueElement
+    {
+    protected:
+
+        int64_t node_id_;
+        int64_t backpointer_;
+        double cost_to_come_;
+        double value_;
+
+    public:
+
+        AstarPQueueElement(const int64_t node_id_, const int64_t backpointer, const double cost_to_come, const double value) : node_id_(node_id_), backpointer_(backpointer), cost_to_come_(cost_to_come), value_(value) {}
+
+        inline int64_t NodeID() const { return node_id_; }
+
+        inline int64_t Backpointer() const { return backpointer_; }
+
+        inline double CostToCome() const { return cost_to_come_; }
+
+        inline double Value() const { return value_; }
+    };
+
+    class CompareAstarPQueueElementFn
+    {
+        public:
+
+            bool operator()(const AstarPQueueElement& lhs, const AstarPQueueElement& rhs) const
+            {
+                return lhs.Value() > rhs.Value();
+            }
+    };
+
+    // Return is a pair<path, cost>
+    // Path is a vector of node indices in the provided graph
+    // Cost is the computed cost-to-come of the goal node
+    typedef std::pair<std::vector<int64_t>, double> AstarResult;
+
+    inline AstarResult ExtractAstarResult(const std::unordered_map<int64_t, std::pair<int64_t, double>>& explored, const int64_t start_index, const int64_t goal_index)
+    {
+        // Check if a solution was found
+        const auto goal_index_itr = explored.find(goal_index);
+        // If no solution found
+        if (goal_index_itr == explored.end())
+        {
+            return std::make_pair(std::vector<int64_t>(), std::numeric_limits<double>::infinity());
+        }
+        // If a solution was found
+        else
+        {
+            // Extract the path indices in reverse order
+            std::vector<int64_t> solution_path_indices;
+            solution_path_indices.push_back(goal_index);
+            int64_t backpointer = goal_index_itr->second.first;
+            // Any backpointer >= 0 is a valid node in the graph
+            // The backpointer for start_index is -1
+            while (backpointer >= 0)
+            {
+                const int64_t current_index = backpointer;
+                solution_path_indices.push_back(current_index);
+                if (current_index == start_index)
+                {
+                    break;
+                }
+                else
+                {
+                    // Using map.at(key) throws an exception if key not found
+                    // This provides bounds safety check
+                    const auto current_index_data = explored.at(current_index);
+                    backpointer = current_index_data.first;
+                }
+            }
+            // Reverse
+            std::reverse(solution_path_indices.begin(), solution_path_indices.end());
+            // Get the cost of the path
+            const double solution_path_cost = goal_index_itr->second.second;
+            return std::make_pair(solution_path_indices, solution_path_cost);
+        }
+    }
+
+    inline AstarResult GenericAstarSearch(const int64_t start_id, const int64_t goal_id, const std::function<std::vector<int64_t>(const int64_t)>& generate_children_fn, const std::function<bool(const int64_t, const int64_t)>& edge_validity_check_fn, const std::function<double(const int64_t, const int64_t)>& distance_fn, const std::function<double(const int64_t, const int64_t)>& heuristic_fn, const bool limit_pqueue_duplicates)
+    {
+        // Enforced sanity checks
+        if (start_id == goal_id)
+        {
+            throw std::invalid_argument("Start and goal ID must be different");
+        }
+        // Make helper function
+        const auto heuristic_function = [&] (const int64_t node_index) { return heuristic_fn(node_index, goal_id); };
+        // Setup
+        std::priority_queue<AstarPQueueElement, std::vector<AstarPQueueElement>, CompareAstarPQueueElementFn> queue;
+        // Optional map to reduce the number of duplicate items added to the pqueue
+        // Key is the node ID
+        // Value is cost-to-come
+        std::unordered_map<int64_t, double> queue_members_map;
+        // Key is the node ID
+        // Value is a pair<backpointer, cost-to-come>
+        // backpointer is the parent node ID
+        std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
+        // Initialize
+        queue.push(AstarPQueueElement(start_id, -1, 0.0, heuristic_function(start_id)));
+        if (limit_pqueue_duplicates)
+        {
+            queue_members_map[start_id] = 0.0;
+        }
+        // Search
+        while (queue.size() > 0)
+        {
+            // Get the top of the priority queue
+            const AstarPQueueElement top_node = queue.top();
+            queue.pop();
+            // Remove from queue map if necessary
+            if (limit_pqueue_duplicates)
+            {
+                queue_members_map.erase(top_node.NodeID());
+            }
+            // Check if the node has already been discovered
+            const auto explored_itr = explored.find(top_node.NodeID());
+            // We have not been here before, or it is cheaper now
+            const bool in_explored = (explored_itr != explored.end());
+            const bool explored_is_better = (in_explored) ? (top_node.CostToCome() >= explored_itr->second.second) : false;
+            if (!explored_is_better)
+            {
+                // Add to the explored list
+                explored[top_node.NodeID()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
+                // Check if we have reached the goal
+                if (top_node.NodeID() == goal_id)
+                {
+                    break;
+                }
+                // Generate possible children
+                const std::vector<int64_t> candidate_children = generate_children_fn(top_node.NodeID());
+                // Loop through potential child nodes
+                for (const int64_t child_node_id : candidate_children)
+                {
+                    // Check if the top node->child edge is valid
+                    if (edge_validity_check_fn(top_node.NodeID(), child_node_id))
+                    {
+                        // Compute the cost-to-come for the new child
+                        const double parent_cost_to_come = top_node.CostToCome();
+                        const double parent_to_child_cost = distance_fn(top_node.NodeID(), child_node_id);
+                        const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
+                        // Check if the child state has already been explored
+                        const auto explored_itr = explored.find(child_node_id);
+                        // It is not in the explored list, or is there with a higher cost-to-come
+                        const bool in_explored = (explored_itr != explored.end());
+                        const bool explored_is_better = (in_explored) ? (child_cost_to_come >= explored_itr->second.second) : false;
+                        // Check if the child state is already in the queue
+                        bool queue_is_better = false;
+                        if (limit_pqueue_duplicates)
+                        {
+                            const auto queue_members_map_itr = queue_members_map.find(child_node_id);
+                            const bool in_queue = (queue_members_map_itr != queue_members_map.end());
+                            queue_is_better = (in_queue) ? (child_cost_to_come >= queue_members_map_itr->second) : false;
+                        }
+                        // Only add the new state if we need to
+                        if (!explored_is_better && !queue_is_better)
+                        {
+                            // Compute the heuristic for the child
+                            const double child_heuristic = heuristic_function(child_node_id);
+                            // Compute the child value
+                            const double child_value = child_cost_to_come + child_heuristic;
+                            queue.push(AstarPQueueElement(child_node_id, top_node.NodeID(), child_cost_to_come, child_value));
+                        }
+                    }
+                }
+            }
+        }
+        return ExtractAstarResult(explored, start_id, goal_id);
     }
 
     class SplitMix64PRNG
