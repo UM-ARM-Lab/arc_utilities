@@ -240,14 +240,14 @@ namespace simple_prm_planner
         }
 
         template<typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<T, Allocator>, double> QueryPathAndAddNodesSingleStartSingleGoal(const T& start, const T& goal, arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true)
+        static std::pair<std::vector<T, Allocator>, double> QueryPathAndAddNodesSingleStartSingleGoal(const T& start, const T& goal, arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true, const bool limit_astar_pqueue_duplicates=true)
         {
             // Add the start node to the roadmap
             const int64_t start_node_index = AddNodeToRoadmap(start, NEW_STATE_TO_ROADMAP, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
             // Add the goal node to the roadmap
             const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
             // Call graph A*
-            const std::pair<std::vector<int64_t>, double> astar_result = arc_dijkstras::SimpleGraphAstar<T, Allocator>::PerformAstar(roadmap, start_node_index, goal_node_index, distance_fn);
+            const std::pair<std::vector<int64_t>, double> astar_result = arc_dijkstras::SimpleGraphAstar<T, Allocator>::PerformAstar(roadmap, start_node_index, goal_node_index, distance_fn, limit_astar_pqueue_duplicates);
             // Convert the solution path from A* provided as indices into real states
             const std::vector<int64_t>& solution_path_indices = astar_result.first;
             std::vector<T, Allocator> solution_path;
@@ -262,14 +262,14 @@ namespace simple_prm_planner
         }
 
         template<typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<T, Allocator>, double> LazyQueryPathAndAddNodesSingleStartSingleGoal(const T& start, const T& goal, arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true)
+        static std::pair<std::vector<T, Allocator>, double> LazyQueryPathAndAddNodesSingleStartSingleGoal(const T& start, const T& goal, arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true, const bool limit_astar_pqueue_duplicates=true)
         {
             // Add the start node to the roadmap
             const int64_t start_node_index = AddNodeToRoadmap(start, NEW_STATE_TO_ROADMAP, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
             // Add the goal node to the roadmap
             const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
             // Call graph A*
-            const std::pair<std::vector<int64_t>, double> astar_result = arc_dijkstras::SimpleGraphAstar<T, Allocator>::PerformLazyAstar(roadmap, start_node_index, goal_node_index, edge_validity_check_fn, distance_fn, distance_fn);
+            const std::pair<std::vector<int64_t>, double> astar_result = arc_dijkstras::SimpleGraphAstar<T, Allocator>::PerformLazyAstar(roadmap, start_node_index, goal_node_index, edge_validity_check_fn, distance_fn, distance_fn, limit_astar_pqueue_duplicates);
             // Convert the solution path from A* provided as indices into real states
             const std::vector<int64_t>& solution_path_indices = astar_result.first;
             std::vector<T, Allocator> solution_path;
