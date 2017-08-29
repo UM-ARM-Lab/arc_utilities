@@ -851,7 +851,7 @@ namespace EigenHelpers
         }
     }
 
-    inline double Distance(const Eigen::Isometry3d& t1, const Eigen::Isometry3d& t2, const double alpha=0.5)
+    inline double Distance(const Eigen::Isometry3d& t1, const Eigen::Isometry3d& t2, const double alpha = 0.5)
     {
         assert(alpha >= 0.0);
         assert(alpha <= 1.0);
@@ -979,13 +979,26 @@ namespace EigenHelpers
         return CheckInContinuousRevoluteRange(start, range, val);
     }
 
+    // DistanceFn must match the following interface: std::function<double(const T&, const T&)>
+    template<typename T, class DistanceFn, typename Alloc = std::allocator<T>>
+    inline double CalculateTotalDistance(const std::vector<T, Alloc>& path, const DistanceFn& distance_fn)
+    {
+        double total_dist = 0;
+        for (size_t path_idx = 0; path_idx + 1 < path.size(); path_idx++)
+        {
+            const double delta = distance_fn(path[path_idx], path[path_idx + 1]);
+            total_dist += delta;
+        }
+        return total_dist;
+    }
+
     inline double CalculateTotalDistance(const EigenHelpers::VectorVector3d& points)
     {
         double distance = 0;
 
         for (size_t idx = 1; idx < points.size(); ++idx)
         {
-            const double delta = (points[idx] - points[idx-1]).norm();
+            const double delta = (points[idx] - points[idx - 1]).norm();
             distance += delta;
         }
 
@@ -1001,7 +1014,7 @@ namespace EigenHelpers
             distances[0] = 0.0;
             for (size_t idx = 1; idx < points.size(); ++idx)
             {
-                distances[idx] = (points[idx] - points[idx-1]).norm();
+                distances[idx] = (points[idx] - points[idx - 1]).norm();
             }
         }
 
@@ -1017,8 +1030,8 @@ namespace EigenHelpers
             distances[0] = 0.0;
             for (size_t idx = 1; idx < points.size(); ++idx)
             {
-                const double delta = (points[idx] - points[idx-1]).norm();
-                distances[idx] = distances[idx-1] + delta;
+                const double delta = (points[idx] - points[idx - 1]).norm();
+                distances[idx] = distances[idx - 1] + delta;
             }
         }
 
