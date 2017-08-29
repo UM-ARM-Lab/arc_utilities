@@ -774,122 +774,13 @@ namespace arc_dijkstras
     {
         protected:
 
-            class AstarNode
-            {
-            protected:
-
-                int64_t graph_index_;
-                int64_t backpointer_;
-                double cost_to_come_;
-                double value_;
-
-            public:
-
-                AstarNode(
-                        const int64_t graph_index,
-                        const int64_t backpointer,
-                        const double cost_to_come,
-                        const double value)
-                    : graph_index_(graph_index)
-                    , backpointer_(backpointer)
-                    , cost_to_come_(cost_to_come)
-                    , value_(value)
-                {}
-
-                inline int64_t GraphIndex() const
-                {
-                    return graph_index_;
-                }
-
-                inline int64_t Backpointer() const
-                {
-                    return backpointer_;
-                }
-
-                inline double CostToCome() const
-                {
-                    return cost_to_come_;
-                }
-
-                inline double Value() const
-                {
-                    return value_;
-                }
-            };
-
-            class CompareNodeFn
-            {
-                public:
-
-                    constexpr bool operator()(const AstarNode& lhs, const AstarNode& rhs) const
-                    {
-                        return lhs.Value() > rhs.Value();
-                    }
-            };
-
             SimpleGraphAstar()
             {}
 
         public:
 
-            // Return is a pair<path, cost>
-            // Path is a vector of node indices in the provided graph
-            // Cost is the computed cost-to-come of the goal node
-            typedef std::pair<std::vector<int64_t>, double> AstarResult;
-
-            static AstarResult ExtractSolution(
-                    const std::unordered_map<int64_t, std::pair<int64_t, double>>& explored,
-                    const int64_t start_index,
-                    const int64_t goal_index)
-            {
-                // Check if a solution was found
-                const auto goal_index_itr = explored.find(goal_index);
-                // If no solution found
-                if (goal_index_itr == explored.end())
-                {
-                    return std::make_pair(std::vector<int64_t>(), std::numeric_limits<double>::infinity());
-                }
-                // If a solution was found
-                else
-                {
-                    // Extract the path indices in reverse order
-                    std::vector<int64_t> solution_path_indices;
-                    solution_path_indices.push_back(goal_index);
-                    int64_t backpointer = goal_index_itr->second.first;
-                    // Any backpointer >= 0 is a valid node in the graph
-                    // The backpointer for start_index is -1
-                    while (backpointer >= 0)
-                    {
-                        const int64_t current_index = backpointer;
-                        solution_path_indices.push_back(current_index);
-                        if (current_index == start_index)
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            // Using map.at(key) throws an exception if key not found
-                            // This provides bounds safety check
-                            const auto current_index_data = explored.at(current_index);
-                            backpointer = current_index_data.first;
-                        }
-                    }
-                    // Reverse
-                    std::reverse(solution_path_indices.begin(), solution_path_indices.end());
-                    // Get the cost of the path
-                    const double solution_path_cost = goal_index_itr->second.second;
-                    return std::make_pair(solution_path_indices, solution_path_cost);
-                }
-            }
-
-            // HeuristicFn must be of a type that matches the following interface:
-            // std::function<double(const NodeValueType&, const NodeValueType&)>
-            template <class HeuristicFn>
-            static AstarResult PerformAstar(
-                    const Graph<NodeValueType, Allocator>& graph,
-                    const int64_t start_index,
-                    const int64_t goal_index,
-                    const HeuristicFn& heuristic_fn)
+            static arc_helpers::AstarResult PerformLazyAstar(
+                    const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<bool(const Graph<NodeValueType, Allocator>&, const GraphEdge&)>& edge_validity_check_fn, const std::function<double(const Graph<NodeValueType, Allocator>&, const GraphEdge&)>& distance_fn, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn, const bool limit_pqueue_duplicates)
             {
                 // Enforced sanity checks
                 if ((start_index < 0) && (start_index >= (int64_t)graph.GetNodesImmutable().size()))
@@ -904,66 +795,104 @@ namespace arc_dijkstras
                 {
                     throw std::invalid_argument("Start and goal indices must be different");
                 }
+                // Make helper function
+                const auto heuristic_function = [&] (const int64_t node_index) { return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable()); };
                 // Setup
-                std::priority_queue<AstarNode, std::vector<AstarNode>, CompareNodeFn> frontier;
+                std::priority_queue<arc_helpers::AstarPQueueElement, std::vector<arc_helpers::AstarPQueueElement>, arc_helpers::CompareAstarPQueueElementFn> queue;
+                // Optional map to reduce the number of duplicate items added to the pqueue
+                // Key is the node index in the provided graph
+                // Value is cost-to-come
+                std::unordered_map<int64_t, double> queue_members_map;
                 // Key is the node index in the provided graph
                 // Value is a pair<backpointer, cost-to-come>
                 // backpointer is the parent index in the provided graph
                 std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
-                const auto heuristic_function = [&] (const int64_t node_index)
-                {
-                    return heuristic_fn(graph.GetNodeImmutable(node_index).GetValueImmutable(), graph.GetNodeImmutable(goal_index).GetValueImmutable());
-                };
                 // Initialize
-                frontier.push(AstarNode(start_index, -1, 0.0, heuristic_function(start_index)));
+                queue.push(arc_helpers::AstarPQueueElement(start_index, -1, 0.0, heuristic_function(start_index)));
+                if (limit_pqueue_duplicates)
+                {
+                    queue_members_map[start_index] = 0.0;
+                }
                 // Search
-                while (frontier.size() > 0)
+                while (queue.size() > 0)
                 {
                     // Get the top of the priority queue
-                    const AstarNode top_node = frontier.top();
-                    frontier.pop();
+                    const arc_helpers::AstarPQueueElement top_node = queue.top();
+                    queue.pop();
+                    // Remove from queue map if necessary
+                    if (limit_pqueue_duplicates)
+                    {
+                        queue_members_map.erase(top_node.NodeID());
+                    }
                     // Check if the node has already been discovered
-                    const auto explored_itr = explored.find(top_node.GraphIndex());
+                    const auto explored_itr = explored.find(top_node.NodeID());
                     // We have not been here before, or it is cheaper now
                     const bool in_explored = (explored_itr != explored.end());
-                    const bool in_explored_is_worse = (in_explored) ? (top_node.CostToCome() < explored_itr->second.second) : true;
-                    if (!in_explored || in_explored_is_worse)
+                    const bool explored_is_better = (in_explored) ? (top_node.CostToCome() >= explored_itr->second.second) : false;
+                    if (!explored_is_better)
                     {
                         // Add to the explored list
-                        explored[top_node.GraphIndex()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
+                        explored[top_node.NodeID()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
                         // Check if we have reached the goal
-                        if (top_node.GraphIndex() == goal_index)
+                        if (top_node.NodeID() == goal_index)
                         {
                             break;
                         }
-                        // Add the children to the frontier
-                        const std::vector<GraphEdge>& out_edges = graph.GetNodeImmutable(top_node.GraphIndex()).GetOutEdgesImmutable();
+                        // Explore and add the children
+                        const std::vector<GraphEdge>& out_edges = graph.GetNodeImmutable(top_node.NodeID()).GetOutEdgesImmutable();
                         for (size_t out_edge_idx = 0; out_edge_idx < out_edges.size(); out_edge_idx++)
                         {
-                            // Get the next child node
+                            // Get the next potential child node
                             const GraphEdge& current_out_edge = out_edges[out_edge_idx];
                             const int64_t child_node_index = current_out_edge.GetToIndex();
-                            // Compute the cost-to-come for the new child
-                            const double parent_cost_to_come = top_node.CostToCome();
-                            const double parent_to_child_cost = current_out_edge.GetWeight();
-                            const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
-                            // Now, check if a path to the child state has already been found
-                            const auto explored_itr = explored.find(child_node_index);
-                            // It is not in the explored list, or is there with a higher cost-to-come, then re-add to the frontier
-                            const bool in_explored = (explored_itr != explored.end());
-                            const bool in_explored_is_worse = (in_explored) ? (child_cost_to_come < explored_itr->second.second) : true;
-                            if (!in_explored || in_explored_is_worse)
+                            // Check if the top node->child edge is valid
+                            if (edge_validity_check_fn(graph, current_out_edge))
                             {
-                                // Compute the heuristic for the child
-                                const double child_heuristic = heuristic_function(child_node_index);
-                                // Compute the child value
-                                const double child_value = child_cost_to_come + child_heuristic;
-                                frontier.push(AstarNode(child_node_index, top_node.GraphIndex(), child_cost_to_come, child_value));
+                                // Compute the cost-to-come for the new child
+                                const double parent_cost_to_come = top_node.CostToCome();
+                                const double parent_to_child_cost = distance_fn(graph, current_out_edge);
+                                const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
+                                // Check if the child state has already been explored
+                                const auto explored_itr = explored.find(child_node_index);
+                                // It is not in the explored list, or is there with a higher cost-to-come
+                                const bool in_explored = (explored_itr != explored.end());
+                                const bool explored_is_better = (in_explored) ? (child_cost_to_come >= explored_itr->second.second) : false;
+                                // Check if the child state is already in the queue
+                                bool queue_is_better = false;
+                                if (limit_pqueue_duplicates)
+                                {
+                                    const auto queue_members_map_itr = queue_members_map.find(child_node_index);
+                                    const bool in_queue = (queue_members_map_itr != queue_members_map.end());
+                                    queue_is_better = (in_queue) ? (child_cost_to_come >= queue_members_map_itr->second) : false;
+                                }
+                                // Only add the new state if we need to
+                                if (!explored_is_better && !queue_is_better)
+                                {
+                                    // Compute the heuristic for the child
+                                    const double child_heuristic = heuristic_function(child_node_index);
+                                    // Compute the child value
+                                    const double child_value = child_cost_to_come + child_heuristic;
+                                    queue.push(arc_helpers::AstarPQueueElement(child_node_index, top_node.NodeID(), child_cost_to_come, child_value));
+                                }
                             }
                         }
                     }
                 }
-                return ExtractSolution(explored, start_index, goal_index);
+                return arc_helpers::ExtractAstarResult(explored, start_index, goal_index);
+            }
+
+            static arc_helpers::AstarResult PerformLazyAstar(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<bool(const NodeValueType&, const NodeValueType&)>& edge_validity_check_fn, const std::function<double(const NodeValueType&, const NodeValueType&)>& distance_fn, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn, const bool limit_pqueue_duplicates)
+            {
+                const auto edge_validity_check_function = [&] (const Graph<NodeValueType, Allocator>& graph, const GraphEdge& edge) { return edge_validity_check_fn(graph.GetNodeImmutable(edge.GetFromIndex()).GetValueImmutable(), graph.GetNodeImmutable(edge.GetToIndex()).GetValueImmutable()); };
+                const auto distance_function = [&] (const Graph<NodeValueType, Allocator>& graph, const GraphEdge& edge) { return distance_fn(graph.GetNodeImmutable(edge.GetFromIndex()).GetValueImmutable(), graph.GetNodeImmutable(edge.GetToIndex()).GetValueImmutable()); };
+                return PerformLazyAstar(graph, start_index, goal_index, edge_validity_check_function, distance_function, heuristic_fn, limit_pqueue_duplicates);
+            }
+
+            static arc_helpers::AstarResult PerformAstar(const Graph<NodeValueType, Allocator>& graph, const int64_t start_index, const int64_t goal_index, const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn, const bool limit_pqueue_duplicates)
+            {
+                const auto edge_validity_check_function = [&] (const Graph<NodeValueType, Allocator>& graph, const GraphEdge& edge) { UNUSED(graph); if (edge.GetWeight() < std::numeric_limits<double>::infinity()) { return true; } else { return false; } };
+                const auto distance_function = [&] (const Graph<NodeValueType, Allocator>& graph, const GraphEdge& edge) { UNUSED(graph); return edge.GetWeight(); };
+                return PerformLazyAstar(graph, start_index, goal_index, edge_validity_check_function, distance_function, heuristic_fn, limit_pqueue_duplicates);
             }
     };
 
