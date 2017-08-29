@@ -318,6 +318,38 @@ namespace arc_dijkstras
 
             std::vector<GraphNode<NodeValueType, Allocator>> nodes_;
 
+            size_t MarkConnectedComponentUndirected(
+                    const int64_t starting_node_idx,
+                    std::vector<uint32_t>& components,
+                    const uint32_t component_id) const
+            {
+                // When we push into the queue, we mark as connected, so we don't need a separate "queued" tracker to
+                // avoid duplication, unlike what is used in CollisionMapGrid::MarkConnectedComponent
+                std::queue<int64_t> working_queue;
+                working_queue.push(starting_node_idx);
+                size_t num_marked = 1;
+
+                while (working_queue.size() > 0)
+                {
+                    const auto next_node_idx = working_queue.front();
+                    working_queue.pop();
+
+                    const auto& out_edges = nodes_[next_node_idx].GetOutEdgesImmutable();
+                    for (const auto& edge : out_edges)
+                    {
+                        const auto neighbour_idx = edge.GetToIndex();
+                        if (components[neighbour_idx] == 0)
+                        {
+                            components[neighbour_idx] = component_id;
+                            ++num_marked;
+                            working_queue.push(neighbour_idx);
+                        }
+                    }
+                }
+
+                return num_marked;
+            }
+
         public:
 
             static uint64_t Serialize(
@@ -562,6 +594,28 @@ namespace arc_dijkstras
                 const GraphEdge second_edge(second_index, first_index, edge_weight);
                 GetNodeMutable(second_index).AddOutEdge(second_edge);
                 GetNodeMutable(first_index).AddInEdge(second_edge);
+            }
+
+            /**
+             * @brief GetConnectedComponentsUndirected
+             * @return A vector of the component ids for each node, and the total number of components
+             */
+            std::pair<std::vector<uint32_t>, uint32_t> GetConnectedComponentsUndirected() const
+            {
+                size_t total_num_marked = 0;
+                auto connected_components = std::make_pair(std::vector<uint32_t>(nodes_.size(), 0), 0u);
+
+                for (size_t node_idx = 0; node_idx < nodes_.size() && total_num_marked < nodes_.size(); ++node_idx)
+                {
+                    // If we have not yet marked this node, then mark it and anything it can reach
+                    if (connected_components.first[node_idx] == 0)
+                    {
+                        connected_components.second++;
+                        size_t num_marked = MarkConnectedComponentUndirected(node_idx, connected_components.first, connected_components.second);
+                        total_num_marked += num_marked;
+                    }
+                }
+                return connected_components;
             }
     };
 
@@ -920,21 +974,14 @@ namespace arc_dijkstras
             GraphRandomWalk() {}
 
         public:
-            typedef std::pair<std::vector<int64_t>, double> RandomWalkResult;
 
-            // HeuristicFn must be of a type that matches the following interface:
-            // std::function<double(const NodeValueType&, const NodeValueType&)>
-            template <class DistanceFn, typename Generator>
-            static RandomWalkResult PerformRandomBiasedWalk(
+            template <typename Generator>
+            static std::vector<int64_t> PerformRandomWalk(
                     const Graph<NodeValueType, Allocator>& graph,
                     const int64_t start_index,
                     const int64_t goal_index,
-                    const DistanceFn& distance_fn,
                     Generator& generator)
             {
-                const NodeValueType& goal = graph.GetNodeImmutable(goal_index).GetValueImmutable();
-                const double bias_ratio = 0.05;
-                std::uniform_real_distribution<double> uniform_unit_distribution(0.0, 1.0);
                 std::uniform_int_distribution<int64_t> uniform_int_distribution;
 
                 std::vector<int64_t> path(1, start_index);
@@ -945,19 +992,10 @@ namespace arc_dijkstras
                     const auto& out_edges = graph.GetNodeImmutable(curr_index).GetOutEdgesImmutable();
                     const auto num_edges = out_edges.size();
 
-                    const bool take_random_step = uniform_unit_distribution(generator) > bias_ratio ? true : false;
-                    int64_t next_index = -1;
-                    //if (take_random_step)
-                    //{
-                        std::uniform_int_distribution<int64_t>::param_type params(0, (int64_t)(num_edges - 1));
-                        uniform_int_distribution.param(params);
-                        const int64_t next_step = uniform_int_distribution(generator);
-                        next_index = out_edges.at(next_step).GetToIndex();
-                    //}
-                    //else
-                    //{
-
-                    //}
+                    std::uniform_int_distribution<int64_t>::param_type params(0, (int64_t)(num_edges - 1));
+                    uniform_int_distribution.param(params);
+                    const int64_t next_step = uniform_int_distribution(generator);
+                    const auto next_index = out_edges.at(next_step).GetToIndex();
 
                     // If the next index is somewhere we've been already, then "trim" the loop off
                     const auto it = std::find(path.begin(), path.end(), next_index);
@@ -967,7 +1005,7 @@ namespace arc_dijkstras
                     path.push_back(next_index);
                 }
 
-                return std::make_pair(path, 0.0);
+                return path;
             }
     };
 }

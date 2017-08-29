@@ -133,6 +133,27 @@ namespace simple_prm_planner
     public:
 
         template<typename T, typename Allocator = std::allocator<T>>
+        static void ExtendRoadMap(
+                arc_dijkstras::Graph<T, Allocator>& roadmap,
+                const std::function<T(void)>& sampling_fn,
+                const std::function<double(const T&, const T&)>& distance_fn,
+                const std::function<bool(const T&)>& state_validity_check_fn,
+                const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
+                const std::function<bool(void)>& termination_check_fn,
+                const size_t K,
+                const bool distance_is_symmetric = true)
+        {
+            while (!termination_check_fn())
+            {
+                const T random_state = sampling_fn();
+                if (state_validity_check_fn(random_state))
+                {
+                    AddNodeToRoadmap(random_state, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+                }
+            }
+        }
+
+        template<typename T, typename Allocator = std::allocator<T>>
         static arc_dijkstras::Graph<T, Allocator> BuildRoadMap(
                 const std::function<T(void)>& sampling_fn,
                 const std::function<double(const T&, const T&)>& distance_fn,
@@ -143,14 +164,7 @@ namespace simple_prm_planner
                 const bool distance_is_symmetric = true)
         {
             arc_dijkstras::Graph<T, Allocator> roadmap;
-            while (!termination_check_fn())
-            {
-                const T random_state = sampling_fn();
-                if (state_validity_check_fn(random_state))
-                {
-                    AddNodeToRoadmap(random_state, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
-                }
-            }
+            ExtendRoadMap(roadmap, sampling_fn, distance_fn, state_validity_check_fn, edge_validity_check_fn, termination_check_fn, K, distance_is_symmetric);
             return roadmap;
         }
 
@@ -297,10 +311,11 @@ namespace simple_prm_planner
             // Add the goal node to the roadmap
             const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
             // Call the random walk algorithm
-            const std::pair<std::vector<int64_t>, double> random_walk_result = arc_dijkstras::GraphRandomWalk<T, Allocator>::PerformRandomBiasedWalk(roadmap, start_node_index, goal_node_index, distance_fn, generator);
+            const auto random_walk_result = arc_dijkstras::GraphRandomWalk<T, Allocator>::PerformRandomWalk(roadmap, start_node_index, goal_node_index, generator);
             // Convert the result into a path and return it
-            const std::vector<T, Allocator> solution_path = ExtractSolutionPath(roadmap, random_walk_result.first);
-            return std::make_pair(solution_path, random_walk_result.second);
+            const auto solution_path = ExtractSolutionPath(roadmap, random_walk_result);
+            const auto distance = EigenHelpers::CalculateTotalDistance(solution_path, distance_fn);
+            return std::make_pair(solution_path, distance);
         }
 
         // TODO - figure out a better way to balance parallelism between KNN queries inside path calls and multiple calls to Dijkstras

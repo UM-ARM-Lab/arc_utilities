@@ -44,7 +44,7 @@ namespace arc_helpers
     // Used to force a particular code execution order, even with aggressive optimization
     // https://stackoverflow.com/questions/37786547/enforcing-statement-order-in-c
     template <class T>
-    __attribute__((always_inline)) inline void DoNotOptimize(const T &value)
+    __attribute__((always_inline)) inline void DoNotOptimize(const T& value)
     {
         asm volatile("" : "+m"(const_cast<T &>(value)));
     }
