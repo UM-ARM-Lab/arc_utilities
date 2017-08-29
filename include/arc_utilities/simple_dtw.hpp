@@ -100,6 +100,7 @@ namespace simple_dtw
         }
     };
 
+    // DistanceFn must match the prototype std::function<double(const FirstDataype&, const SecondDatatype&)>
     template<typename FirstDatatype, typename SecondDatatype, typename DistanceFn,
              typename FirstAllocator = std::allocator<FirstDatatype>,
              typename SecondAllocator = std::allocator<SecondDatatype>>

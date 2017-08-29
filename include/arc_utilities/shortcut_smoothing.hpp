@@ -182,7 +182,7 @@ namespace shortcut_smoothing
             {
                 resampled_path.push_back(next_state);
             }
-            // If there is more than one segment, interpolate between previous_state and current_state (including the current_state)
+            // If there is more than one segment, interpolate between previous_state and current_state (including the next_state)
             else
             {
                 for (uint32_t segment = 1u; segment <= num_segments; segment++)
