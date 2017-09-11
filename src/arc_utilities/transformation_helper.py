@@ -369,6 +369,12 @@ def BuildMatrix(translation, quaternion):
     return tfmatrix
 
 
+def BuildMatrixRos(translation, quaternion):
+    quat = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
+    trans = [translation.x, translation.y, translation.z]
+    return BuildMatrix(trans, quat)
+
+
 ''' Generation Functions '''
 
 def BuildMatrixFromTransRot(trans, rot):
