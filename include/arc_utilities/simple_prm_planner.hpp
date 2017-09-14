@@ -292,8 +292,8 @@ namespace simple_prm_planner
             {
                 possible_solutions[goal_idx] = QueryPathMultiStartSingleGoal(starts, goals[goal_idx], roadmap, edge_validity_check_fn, distance_fn, K, distance_is_symmetric);
             }
-            const double best_solution_distance = std::numeric_limits<double>::infinity();
-            const int64_t best_solution_index = -1;
+            double best_solution_distance = std::numeric_limits<double>::infinity();
+            int64_t best_solution_index = -1;
             for (size_t goal_idx = 0; goal_idx < goals.size(); goal_idx++)
             {
                 const double solution_distance = possible_solutions[goal_idx].second;
