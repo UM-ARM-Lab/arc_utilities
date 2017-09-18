@@ -220,7 +220,6 @@ def AngleBetweenQuaternionsRos(q1, q2):
         return 0
 
 
-
 '''Assist functions'''
 
 
