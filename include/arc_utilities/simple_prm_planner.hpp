@@ -38,7 +38,7 @@ namespace simple_prm_planner
                 const size_t K,
                 const bool distance_is_symmetric = true)
         {
-            // Make the node->graph or graph->node distance function as needed
+            // Make the node->graph or graph->node distance function as needed, then call KNN
             std::function<double(const arc_dijkstras::GraphNode<T, Allocator>&, const T&)> graph_distance_fn = nullptr;
             if (nn_distance_direction == ROADMAP_TO_NEW_STATE)
             {
@@ -54,9 +54,25 @@ namespace simple_prm_planner
                     return distance_fn(state, node.GetValueImmutable());
                 };
             }
-            // Call KNN with the distance function
             const std::vector<std::pair<int64_t, double>> nearest_neighbors =
                     arc_helpers::GetKNearestNeighbors(roadmap.GetNodesImmutable(), state, graph_distance_fn, K);
+
+            // Check to see this node is already in the PRM, if it is, don't re-add it, returning the existing state index
+            for (const auto& nn_result : nearest_neighbors)
+            {
+                // If the distance is zero, check that the states are also equal
+                // This allows for a psuedo-metric and not just a true metric to be used as the distance function
+                if (nn_result.second == 0)
+                {
+                    const int64_t neighbour_node_idx = nn_result.first;
+                    const T& neighbour_state = roadmap.GetNodeImmutable(neighbour_node_idx).GetValueImmutable();
+                    if (neighbour_state == state)
+                    {
+                        return neighbour_node_idx;
+                    }
+                }
+            }
+
             // Add the new node AFTER KNN is performed
             const int64_t new_node_index = roadmap.AddNode(state);
             // Parallelize the collision-checking and distance computation
