@@ -1594,6 +1594,23 @@ namespace EigenHelpers
         return 0.001;
     }
 
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Resize / delete cols helper
+    ////////////////////////////////////////////////////////////////////////////
+    inline void removeCol(Eigen::MatrixXd& matrix, ssize_t colToRemove)
+    {
+        ssize_t numRows = matrix.rows();
+        ssize_t numCols = matrix.cols()-1;
+
+        if( colToRemove < numCols )
+            matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
+
+        matrix.conservativeResize(numRows,numCols);
+    }
+
+
     // Derived from code by Yohann Solaro ( http://listengine.tuxfamily.org/lists.tuxfamily.org/eigen/2010/01/msg00187.html )
     // see : http://en.wikipedia.org/wiki/Moore-Penrose_pseudoinverse#The_general_case_and_the_SVD_method
     inline Eigen::MatrixXd Pinv(const Eigen::MatrixXd& b, const double rcond, const bool enable_flip=true)
