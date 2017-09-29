@@ -11,6 +11,7 @@
 #include <vector>
 #include <Eigen/Geometry>
 #include <arc_utilities/arc_helpers.hpp>
+#include <arc_utilities/serialization.hpp>
 
 namespace arc_dijkstras
 {
@@ -47,9 +48,9 @@ namespace arc_dijkstras
         uint64_t SerializeSelf(std::vector<uint8_t>& buffer) const
         {
             const uint64_t start_buffer_size = buffer.size();
-            arc_helpers::SerializeFixedSizePOD<int64_t>(from_index_, buffer);
-            arc_helpers::SerializeFixedSizePOD<int64_t>(to_index_, buffer);
-            arc_helpers::SerializeFixedSizePOD<double>(weight_, buffer);
+            arc_utilities::SerializeFixedSizePOD<int64_t>(from_index_, buffer);
+            arc_utilities::SerializeFixedSizePOD<int64_t>(to_index_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(weight_, buffer);
             // Figure out how many bytes were written
             const uint64_t end_buffer_size = buffer.size();
             const uint64_t bytes_written = end_buffer_size - start_buffer_size;
@@ -60,13 +61,13 @@ namespace arc_dijkstras
         {
             assert(current < buffer.size());
             uint64_t current_position = current;
-            const std::pair<int64_t, uint64_t> deserialized_from_index = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
+            const std::pair<int64_t, uint64_t> deserialized_from_index = arc_utilities::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
             from_index_ = deserialized_from_index.first;
             current_position += deserialized_from_index.second;
-            const std::pair<int64_t, uint64_t> deserialized_to_index = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
+            const std::pair<int64_t, uint64_t> deserialized_to_index = arc_utilities::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
             to_index_ = deserialized_to_index.first;
             current_position += deserialized_to_index.second;
-            const std::pair<double, uint64_t> deserialized_weight = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> deserialized_weight = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             weight_ = deserialized_weight.first;
             current_position += deserialized_weight.second;
             // Figure out how many bytes were read
@@ -181,11 +182,11 @@ namespace arc_dijkstras
             // Serialize the value
             value_serializer(value_, buffer);
             // Serialize the distance
-            arc_helpers::SerializeFixedSizePOD<double>(distance_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(distance_, buffer);
             // Serialize the in edges
-            arc_helpers::SerializeVector<GraphEdge>(in_edges_, buffer, GraphEdge::Serialize);
+            arc_utilities::SerializeVector<GraphEdge>(in_edges_, buffer, GraphEdge::Serialize);
             // Serialize the in edges
-            arc_helpers::SerializeVector<GraphEdge>(out_edges_, buffer, GraphEdge::Serialize);
+            arc_utilities::SerializeVector<GraphEdge>(out_edges_, buffer, GraphEdge::Serialize);
             // Figure out how many bytes were written
             const uint64_t end_buffer_size = buffer.size();
             const uint64_t bytes_written = end_buffer_size - start_buffer_size;
@@ -204,15 +205,15 @@ namespace arc_dijkstras
             value_ = value_deserialized.first;
             current_position += value_deserialized.second;
             // Deserialize the distace
-            const std::pair<double, uint64_t> distance_deserialized = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> distance_deserialized = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             distance_ = distance_deserialized.first;
             current_position += distance_deserialized.second;
             // Deserialize the in edges
-            const std::pair<std::vector<GraphEdge>, uint64_t> in_edges_deserialized = arc_helpers::DeserializeVector<GraphEdge>(buffer, current_position, GraphEdge::Deserialize);
+            const std::pair<std::vector<GraphEdge>, uint64_t> in_edges_deserialized = arc_utilities::DeserializeVector<GraphEdge>(buffer, current_position, GraphEdge::Deserialize);
             in_edges_ = in_edges_deserialized.first;
             current_position += in_edges_deserialized.second;
             // Deserialize the out edges
-            const std::pair<std::vector<GraphEdge>, uint64_t> out_edges_deserialized = arc_helpers::DeserializeVector<GraphEdge>(buffer, current_position, GraphEdge::Deserialize);
+            const std::pair<std::vector<GraphEdge>, uint64_t> out_edges_deserialized = arc_utilities::DeserializeVector<GraphEdge>(buffer, current_position, GraphEdge::Deserialize);
             out_edges_ = out_edges_deserialized.first;
             current_position += out_edges_deserialized.second;
             // Figure out how many bytes were read
@@ -395,7 +396,7 @@ namespace arc_dijkstras
         {
             const uint64_t start_buffer_size = buffer.size();
             const auto graph_state_serializer = std::bind(GraphNode<NodeValueType, Allocator>::Serialize, std::placeholders::_1, std::placeholders::_2, value_serializer);
-            arc_helpers::SerializeVector<GraphNode<NodeValueType, Allocator>>(nodes_, buffer, graph_state_serializer);
+            arc_utilities::SerializeVector<GraphNode<NodeValueType, Allocator>>(nodes_, buffer, graph_state_serializer);
             // Figure out how many bytes were written
             const uint64_t end_buffer_size = buffer.size();
             const uint64_t bytes_written = end_buffer_size - start_buffer_size;
@@ -408,7 +409,7 @@ namespace arc_dijkstras
                 const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
         {
             const auto graph_state_deserializer = std::bind(GraphNode<NodeValueType, Allocator>::Deserialize, std::placeholders::_1, std::placeholders::_2, value_deserializer);
-            const auto deserialized_nodes = arc_helpers::DeserializeVector<GraphNode<NodeValueType, Allocator>>(buffer, current, graph_state_deserializer);
+            const auto deserialized_nodes = arc_utilities::DeserializeVector<GraphNode<NodeValueType, Allocator>>(buffer, current, graph_state_deserializer);
             nodes_ = deserialized_nodes.first;
             return deserialized_nodes.second;
         }
@@ -727,10 +728,10 @@ namespace arc_dijkstras
             // Serialize the graph
             result.first.SerializeSelf(buffer, value_serializer);
             // Serialize the previous index
-            const auto index_serializer = std::bind(arc_helpers::SerializeFixedSizePOD<int64_t>, std::placeholders::_1, std::placeholders::_2);
+            const auto index_serializer = std::bind(arc_utilities::SerializeFixedSizePOD<int64_t>, std::placeholders::_1, std::placeholders::_2);
             SerializeVector(result.second.first, index_serializer);
             // Serialze the distances
-            const auto distance_serializer = std::bind(arc_helpers::SerializeFixedSizePOD<double>, std::placeholders::_1, std::placeholders::_2);
+            const auto distance_serializer = std::bind(arc_utilities::SerializeFixedSizePOD<double>, std::placeholders::_1, std::placeholders::_2);
             SerializeVector(result.second.second, distance_serializer);
             // Figure out how many bytes were written
             const uint64_t end_buffer_size = buffer.size();
@@ -752,13 +753,13 @@ namespace arc_dijkstras
             deserialized.first.first = graph_deserialized.first;
             current_position += graph_deserialized.second;
             // Deserialize the previous index
-            const auto index_deserializer = std::bind(arc_helpers::DeserializeFixedSizePOD<int64_t>, std::placeholders::_1, std::placeholders::_2);
-            const auto prev_index_deserialized = arc_helpers::DeserializeVector<int64_t>(buffer, current_position, index_deserializer);
+            const auto index_deserializer = std::bind(arc_utilities::DeserializeFixedSizePOD<int64_t>, std::placeholders::_1, std::placeholders::_2);
+            const auto prev_index_deserialized = arc_utilities::DeserializeVector<int64_t>(buffer, current_position, index_deserializer);
             deserialized.first.second.first = prev_index_deserialized.first;
             current_position += prev_index_deserialized.second;
             // Deserialize the distances
-            const auto distance_deserializer = std::bind(arc_helpers::DeserializeFixedSizePOD<double>, std::placeholders::_1, std::placeholders::_2);
-            const auto distance_deserialized = arc_helpers::DeserializeVector<double>(buffer, current_position, distance_deserializer);
+            const auto distance_deserializer = std::bind(arc_utilities::DeserializeFixedSizePOD<double>, std::placeholders::_1, std::placeholders::_2);
+            const auto distance_deserialized = arc_utilities::DeserializeVector<double>(buffer, current_position, distance_deserializer);
             deserialized.first.second.second = distance_deserialized.first;
             current_position += distance_deserialized.second;
             // Figure out how many bytes were read
