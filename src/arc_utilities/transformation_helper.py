@@ -47,6 +47,8 @@ from geometry_msgs.msg import *
 #
 # list quaternion = NormalizeQuaternion(list quaternion)
 #
+# geometry_msgs/Quaternion quaternion = NormalizeQuaternionRos(geometry_msgs/Quaternion quaternion)
+#
 ##################################################
 # Conversion functions
 #
@@ -96,6 +98,10 @@ def SubtractPoints(point1, point2):
     difference.y = point2.y - point1.y
     difference.z = point2.z - point1.z
     return difference
+
+
+def TranslationNorm(trans):
+    return math.sqrt(trans.x**2 + trans.y**2 + trans.z**2)
 
 
 def ComposePoseWithPoint(pose, point):
@@ -204,6 +210,16 @@ def AngleBetweenQuaternions(q1, q2):
         return 0.0
 
 
+def AngleBetweenQuaternionsRos(q1, q2):
+    nq1 = NormalizeQuaternionRos(q1)
+    nq2 = NormalizeQuaternionRos(q2)
+    dot_product = abs(nq1.x * nq2.x + nq1.y * nq2.y + nq1.z * nq2.z + nq1.z * nq2.w)
+    if dot_product < 0.9999:
+        return math.acos(2.0 * (dot_product ** 2) - 1.0)
+    else:
+        return 0
+
+
 '''Assist functions'''
 
 
@@ -214,6 +230,16 @@ def NormalizeQuaternion(q_raw):
     z = q_raw[2] / magnitude
     w = q_raw[3] / magnitude
     return [x, y, z, w]
+
+
+def NormalizeQuaternionRos(q_raw):
+    magnitude = math.sqrt(q_raw.x**2 + q_raw.y**2 + q_raw.z**2 + q_raw.w**2)
+    q_unit = Quaternion()
+    q_unit.x = q_raw.x / magnitude
+    q_unit.y = q_raw.y / magnitude
+    q_unit.z = q_raw.z / magnitude
+    q_unit.w = q_raw.w / magnitude
+    return q_unit
 
 
 '''Conversion functions'''
@@ -340,6 +366,12 @@ def BuildMatrix(translation, quaternion):
     tfmatrix[1][3] = translation[1]
     tfmatrix[2][3] = translation[2]
     return tfmatrix
+
+
+def BuildMatrixRos(translation, quaternion):
+    quat = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
+    trans = [translation.x, translation.y, translation.z]
+    return BuildMatrix(trans, quat)
 
 
 ''' Generation Functions '''
