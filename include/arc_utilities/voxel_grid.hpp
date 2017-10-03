@@ -8,6 +8,7 @@
 #include <Eigen/Geometry>
 #include <stdexcept>
 #include <arc_utilities/arc_helpers.hpp>
+#include <arc_utilities/serialization.hpp>
 #include <arc_utilities/eigen_helpers.hpp>
 
 #ifndef VOXEL_GRID_HPP
@@ -384,29 +385,29 @@ namespace VoxelGrid
         {
             const uint64_t start_buffer_size = buffer.size();
             // Serialize the initialized
-            arc_helpers::SerializeFixedSizePOD<uint8_t>((uint8_t)initialized_, buffer);
+            arc_utilities::SerializeFixedSizePOD<uint8_t>((uint8_t)initialized_, buffer);
             // Serialize the transforms
             EigenHelpers::Serialize<Eigen::Isometry3d>(origin_transform_, buffer);
             EigenHelpers::Serialize<Eigen::Isometry3d>(inverse_origin_transform_, buffer);
             // Serialize the data
-            arc_helpers::SerializeVector<T, Allocator>(data_, buffer, value_serializer);
+            arc_utilities::SerializeVector<T, Allocator>(data_, buffer, value_serializer);
             // Serialize the cell sizes
-            arc_helpers::SerializeFixedSizePOD<double>(cell_x_size_, buffer);
-            arc_helpers::SerializeFixedSizePOD<double>(cell_y_size_, buffer);
-            arc_helpers::SerializeFixedSizePOD<double>(cell_z_size_, buffer);
-            arc_helpers::SerializeFixedSizePOD<double>(inv_cell_x_size_, buffer);
-            arc_helpers::SerializeFixedSizePOD<double>(inv_cell_y_size_, buffer);
-            arc_helpers::SerializeFixedSizePOD<double>(inv_cell_z_size_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(cell_x_size_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(cell_y_size_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(cell_z_size_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(inv_cell_x_size_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(inv_cell_y_size_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(inv_cell_z_size_, buffer);
             // Serialize the grid sizes
-            arc_helpers::SerializeFixedSizePOD<double>(x_size_, buffer);
-            arc_helpers::SerializeFixedSizePOD<double>(y_size_, buffer);
-            arc_helpers::SerializeFixedSizePOD<double>(z_size_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(x_size_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(y_size_, buffer);
+            arc_utilities::SerializeFixedSizePOD<double>(z_size_, buffer);
             // Serialize the control/bounds values
-            arc_helpers::SerializeFixedSizePOD<int64_t>(stride1_, buffer);
-            arc_helpers::SerializeFixedSizePOD<int64_t>(stride2_, buffer);
-            arc_helpers::SerializeFixedSizePOD<int64_t>(num_x_cells_, buffer);
-            arc_helpers::SerializeFixedSizePOD<int64_t>(num_y_cells_, buffer);
-            arc_helpers::SerializeFixedSizePOD<int64_t>(num_z_cells_, buffer);
+            arc_utilities::SerializeFixedSizePOD<int64_t>(stride1_, buffer);
+            arc_utilities::SerializeFixedSizePOD<int64_t>(stride2_, buffer);
+            arc_utilities::SerializeFixedSizePOD<int64_t>(num_x_cells_, buffer);
+            arc_utilities::SerializeFixedSizePOD<int64_t>(num_y_cells_, buffer);
+            arc_utilities::SerializeFixedSizePOD<int64_t>(num_z_cells_, buffer);
             // Serialize the default value
             value_serializer(default_value_, buffer);
             // Serialize the OOB value
@@ -421,7 +422,7 @@ namespace VoxelGrid
         {
             uint64_t current_position = current;
             // Deserialize the initialized
-            const std::pair<uint8_t, uint64_t> initialized_deserialized = arc_helpers::DeserializeFixedSizePOD<uint8_t>(buffer, current_position);
+            const std::pair<uint8_t, uint64_t> initialized_deserialized = arc_utilities::DeserializeFixedSizePOD<uint8_t>(buffer, current_position);
             initialized_ = (bool)initialized_deserialized.first;
             current_position += initialized_deserialized.second;
             // Deserialize the transforms
@@ -432,52 +433,52 @@ namespace VoxelGrid
             inverse_origin_transform_ = inverse_origin_transform_deserialized.first;
             current_position += inverse_origin_transform_deserialized.second;
             // Deserialize the data
-            const std::pair<std::vector<T, Allocator>, uint64_t> data_deserialized = arc_helpers::DeserializeVector<T, Allocator>(buffer, current_position, value_deserializer);
+            const std::pair<std::vector<T, Allocator>, uint64_t> data_deserialized = arc_utilities::DeserializeVector<T, Allocator>(buffer, current_position, value_deserializer);
             data_ = data_deserialized.first;
             current_position += data_deserialized.second;
             // Deserialize the cell sizes
-            const std::pair<double, uint64_t> cell_x_size_deserialized = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> cell_x_size_deserialized = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             cell_x_size_ = cell_x_size_deserialized.first;
             current_position += cell_x_size_deserialized.second;
-            const std::pair<double, uint64_t> cell_y_size_deserialized = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> cell_y_size_deserialized = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             cell_y_size_ = cell_y_size_deserialized.first;
             current_position += cell_y_size_deserialized.second;
-            const std::pair<double, uint64_t> cell_z_size_deserialized = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> cell_z_size_deserialized = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             cell_z_size_ = cell_z_size_deserialized.first;
             current_position += cell_z_size_deserialized.second;
-            const std::pair<double, uint64_t> inv_cell_x_size_deserialized = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> inv_cell_x_size_deserialized = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             inv_cell_x_size_ = inv_cell_x_size_deserialized.first;
             current_position += inv_cell_x_size_deserialized.second;
-            const std::pair<double, uint64_t> inv_cell_y_size_deserialized = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> inv_cell_y_size_deserialized = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             inv_cell_y_size_ = inv_cell_y_size_deserialized.first;
             current_position += inv_cell_y_size_deserialized.second;
-            const std::pair<double, uint64_t> inv_cell_z_size_deserialized = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> inv_cell_z_size_deserialized = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             inv_cell_z_size_ = inv_cell_z_size_deserialized.first;
             current_position += inv_cell_z_size_deserialized.second;
             // Deserialize the grid sizes
-            const std::pair<double, uint64_t> x_size_deserialized = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> x_size_deserialized = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             x_size_ = x_size_deserialized.first;
             current_position += x_size_deserialized.second;
-            const std::pair<double, uint64_t> y_size_deserialized = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> y_size_deserialized = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             y_size_ = y_size_deserialized.first;
             current_position += y_size_deserialized.second;
-            const std::pair<double, uint64_t> z_size_deserialized = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+            const std::pair<double, uint64_t> z_size_deserialized = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             z_size_ = z_size_deserialized.first;
             current_position += z_size_deserialized.second;
             // Deserialize the control/bounds values
-            const std::pair<int64_t, uint64_t> stride1_deserialized = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
+            const std::pair<int64_t, uint64_t> stride1_deserialized = arc_utilities::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
             stride1_ = stride1_deserialized.first;
             current_position += stride1_deserialized.second;
-            const std::pair<int64_t, uint64_t> stride2_deserialized = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
+            const std::pair<int64_t, uint64_t> stride2_deserialized = arc_utilities::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
             stride2_ = stride2_deserialized.first;
             current_position += stride2_deserialized.second;
-            const std::pair<int64_t, uint64_t> num_x_cells_deserialized = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
+            const std::pair<int64_t, uint64_t> num_x_cells_deserialized = arc_utilities::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
             num_x_cells_ = num_x_cells_deserialized.first;
             current_position += num_x_cells_deserialized.second;
-            const std::pair<int64_t, uint64_t> num_y_cells_deserialized = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
+            const std::pair<int64_t, uint64_t> num_y_cells_deserialized = arc_utilities::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
             num_y_cells_ = num_y_cells_deserialized.first;
             current_position += num_y_cells_deserialized.second;
-            const std::pair<int64_t, uint64_t> num_z_cells_deserialized = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
+            const std::pair<int64_t, uint64_t> num_z_cells_deserialized = arc_utilities::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
             num_z_cells_ = num_z_cells_deserialized.first;
             current_position += num_z_cells_deserialized.second;
             // Deserialize the default value

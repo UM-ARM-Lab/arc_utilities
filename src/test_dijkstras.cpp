@@ -82,8 +82,8 @@ int main(int argc, char* argv[])
         const uint64_t start_buffer_size = buffer.size();
         uint64_t running_total = 0;
 
-        running_total += arc_helpers::SerializeFixedSizePOD<double>(value(0), buffer);
-        running_total += arc_helpers::SerializeFixedSizePOD<double>(value(1), buffer);
+        running_total += arc_utilities::SerializeFixedSizePOD<double>(value(0), buffer);
+        running_total += arc_utilities::SerializeFixedSizePOD<double>(value(1), buffer);
 
         const uint64_t end_buffer_size = buffer.size();
         const uint64_t bytes_written = end_buffer_size - start_buffer_size;
@@ -99,9 +99,9 @@ int main(int argc, char* argv[])
         uint64_t current_position = current;
 
         // Deserialze 2 doubles
-        std::pair<double, uint64_t> x = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+        std::pair<double, uint64_t> x = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
         current_position += x.second;
-        std::pair<double, uint64_t> y = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
+        std::pair<double, uint64_t> y = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
         current_position += y.second;
 
         const Eigen::Vector2d deserialized(x.first, y.first);

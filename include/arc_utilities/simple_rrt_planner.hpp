@@ -9,7 +9,7 @@
 #include <chrono>
 #include <random>
 #include <memory>
-#include <arc_utilities/arc_helpers.hpp>
+#include <arc_utilities/serialization.hpp>
 
 #ifndef SIMPLE_RRT_PLANNER_HPP
 #define SIMPLE_RRT_PLANNER_HPP
@@ -76,11 +76,11 @@ namespace simple_rrt_planner
         {
             const uint64_t start_buffer_size = buffer.size();
             // Serialize the initialized
-            arc_helpers::SerializeFixedSizePOD<uint8_t>((uint8_t)initialized_, buffer);
+            arc_utilities::SerializeFixedSizePOD<uint8_t>((uint8_t)initialized_, buffer);
             // Serialize the parent index
-            arc_helpers::SerializeFixedSizePOD<int64_t>(parent_index_, buffer);
+            arc_utilities::SerializeFixedSizePOD<int64_t>(parent_index_, buffer);
             // Serialize the child indices
-            arc_helpers::SerializeVector<int64_t>(child_indices_, buffer, arc_helpers::SerializeFixedSizePOD<int64_t>);
+            arc_utilities::SerializeVector<int64_t>(child_indices_, buffer, arc_utilities::SerializeFixedSizePOD<int64_t>);
             // Serialize the value
             value_serializer(value_, buffer);
             // Figure out how many bytes were written
@@ -93,15 +93,15 @@ namespace simple_rrt_planner
         {
             uint64_t current_position = current;
             // Deserialize the initialized
-            const std::pair<uint8_t, uint64_t> initialized_deserialized = arc_helpers::DeserializeFixedSizePOD<uint8_t>(buffer, current_position);
+            const std::pair<uint8_t, uint64_t> initialized_deserialized = arc_utilities::DeserializeFixedSizePOD<uint8_t>(buffer, current_position);
             initialized_ = (bool)initialized_deserialized.first;
             current_position += initialized_deserialized.second;
             // Deserialize the parent index
-            const std::pair<int64_t, uint64_t> parent_index_deserialized = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
+            const std::pair<int64_t, uint64_t> parent_index_deserialized = arc_utilities::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
             parent_index_ = parent_index_deserialized.first;
             current_position += parent_index_deserialized.second;
             // Deserialize the child indices
-            const std::pair<std::vector<int64_t>, uint64_t> child_indices_deserialized = arc_helpers::DeserializeVector<int64_t>(buffer, current_position, arc_helpers::DeserializeFixedSizePOD<int64_t>);
+            const std::pair<std::vector<int64_t>, uint64_t> child_indices_deserialized = arc_utilities::DeserializeVector<int64_t>(buffer, current_position, arc_utilities::DeserializeFixedSizePOD<int64_t>);
             child_indices_ = child_indices_deserialized.first;
             current_position += child_indices_deserialized.second;
             // Deserialize the value
