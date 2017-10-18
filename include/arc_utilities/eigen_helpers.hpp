@@ -1389,7 +1389,7 @@ namespace EigenHelpers
         const auto real_unit_vector = unit_vector.normalized();
         if (!CloseEnough(unit_vector.norm(), 1.0, 1e-13))
         {
-        //    std::cerr << "[Distance to line]: unit vector was not normalized: " << unit_vector.transpose() << " Norm: " << unit_vector.norm() << std::endl;
+            std::cerr << "[Distance to line]: unit vector was not normalized: " << unit_vector.transpose() << " Norm: " << unit_vector.norm() << std::endl;
         }
 
         const auto delta = x - point_on_line;
