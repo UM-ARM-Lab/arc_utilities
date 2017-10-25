@@ -1383,13 +1383,17 @@ namespace EigenHelpers
      * @param x
      * @return The distance to the line, and the displacement along the line
      */
-    inline std::pair<double, double> DistanceToLine(const Eigen::Vector3d& point_on_line, const Eigen::Vector3d& unit_vector, const Eigen::Vector3d x)
+    inline std::pair<double, double> DistanceToLine(
+            const Eigen::Vector3d& point_on_line,
+            const Eigen::Vector3d& unit_vector,
+            const Eigen::Vector3d x)
     {
         // Ensure that our input data is valid
         const auto real_unit_vector = unit_vector.normalized();
         if (!CloseEnough(unit_vector.norm(), 1.0, 1e-13))
         {
-            std::cerr << "[Distance to line]: unit vector was not normalized: " << unit_vector.transpose() << " Norm: " << unit_vector.norm() << std::endl;
+            std::cerr << "[Distance to line]: unit vector was not normalized: "
+                      << unit_vector.transpose() << " Norm: " << unit_vector.norm() << std::endl;
         }
 
         const auto delta = x - point_on_line;
@@ -1398,7 +1402,8 @@ namespace EigenHelpers
         const double distance_to_line = (x_projected_onto_line - x).norm();
 
         // A simple neccescary (but not sufficient) check to look for math errors
-        assert(IsApprox(distance_to_line * distance_to_line + displacement_along_line * displacement_along_line, delta.squaredNorm(), 1e-10));
+        assert(IsApprox(distance_to_line * distance_to_line +
+                        displacement_along_line * displacement_along_line, delta.squaredNorm(), 1e-10));
 
         return std::make_pair(distance_to_line, displacement_along_line);
     }
@@ -1416,7 +1421,8 @@ namespace EigenHelpers
         EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedB);
         EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedV);
         EIGEN_STATIC_ASSERT_SAME_VECTOR_SIZE(DerivedB, DerivedV)
-        static_assert(std::is_same<typename DerivedB::Scalar, typename DerivedV::Scalar>::value, "base_vector and vector_to_project must have the same data type");
+        static_assert(std::is_same<typename DerivedB::Scalar, typename DerivedV::Scalar>::value,
+                      "base_vector and vector_to_project must have the same data type");
         // Perform projection
         const typename DerivedB::Scalar b_squared_norm = base_vector.squaredNorm();
         if (b_squared_norm > 0)
@@ -1440,8 +1446,26 @@ namespace EigenHelpers
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    // Weighted dot product, norm, and angle functions
+    // (Weighted) dot product, norm, and angle functions
     ////////////////////////////////////////////////////////////////////////////
+
+    // Returns the (non-negative) angle defined by the vectors (b - a), and (b - c)
+    template <typename DerivedA, typename DerivedB, typename DerivedC>
+    inline double AngleDefinedByPoints(const Eigen::MatrixBase<DerivedA>& a, const Eigen::MatrixBase<DerivedB>& b, const Eigen::MatrixBase<DerivedC>& c)
+    {
+        // Check for potential numerical problems
+        if (a.isApprox(b) || (b.isApprox(c)))
+        {
+            std::cerr << "Warning: Potential numerical stability problems in AngleDefinedByPoints\n";
+        }
+
+        // Do the actual math here
+        const auto vec1 = (a - b).normalized();
+        const auto vec2 = (c - b).normalized();
+        const double cosine_raw = vec1.dot(vec2);
+        const double cosine = std::max(-1.0, std::min(cosine_raw, 1.0));
+        return std::acos(cosine);
+    }
 
     inline double WeightedDotProduct(const Eigen::VectorXd& vec1, const Eigen::VectorXd& vec2, const Eigen::VectorXd& weights)
     {
@@ -1464,7 +1488,7 @@ namespace EigenHelpers
         const double vec2_norm = WeightedNorm(vec2, weights);
         assert(vec1_norm > 0 && vec2_norm > 0);
         const double result = WeightedDotProduct(vec1, vec2, weights) / (vec1_norm * vec2_norm);
-        return std::max(-1.0, std::min(result, 1.0));;
+        return std::max(-1.0, std::min(result, 1.0));
     }
 
     inline double WeightedAngleBetweenVectors(const Eigen::VectorXd& vec1, const Eigen::VectorXd& vec2, const Eigen::VectorXd& weights)
