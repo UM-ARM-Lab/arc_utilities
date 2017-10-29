@@ -4,7 +4,6 @@
 #include <Eigen/Jacobi>
 #include <Eigen/SVD>
 #include <unsupported/Eigen/MatrixFunctions>
-#include <stdio.h>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -124,18 +123,35 @@ namespace EigenHelpers
 
     inline bool CloseEnough(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double threshold)
     {
-        double real_threshold = fabs(threshold);
-        if (fabs(v1.x() - v2.x()) > real_threshold)
+        double real_threshold = std::fabs(threshold);
+        if (std::fabs(v1.x() - v2.x()) > real_threshold)
         {
             return false;
         }
-        if (fabs(v1.y() - v2.y()) > real_threshold)
+        if (std::fabs(v1.y() - v2.y()) > real_threshold)
         {
             return false;
         }
-        if (fabs(v1.z() - v2.z()) > real_threshold)
+        if (std::fabs(v1.z() - v2.z()) > real_threshold)
         {
             return false;
+        }
+        return true;
+    }
+
+    template <typename EigenType, typename Allocator=Eigen::aligned_allocator<EigenType>>
+    inline bool CloseEnough(const std::vector<EigenType, Allocator>& a, const std::vector<EigenType, Allocator>& b, const double threshold)
+    {
+        if (a.size() != b.size())
+        {
+            return false;
+        }
+        for (size_t idx = 0; idx < a.size(); idx++)
+        {
+            if (!CloseEnough(a[idx], b[idx], threshold))
+            {
+                return false;
+            }
         }
         return true;
     }
@@ -146,6 +162,24 @@ namespace EigenHelpers
         const double smallest_element = std::min(std::abs(p1), std::abs(p2));
         const double threshold = precision * smallest_element;
         return CloseEnough(p1, p2, threshold);
+    }
+
+    template <typename EigenType, typename Allocator=Eigen::aligned_allocator<EigenType>>
+    inline bool IsApprox(const std::vector<EigenType, Allocator>& a, const std::vector<EigenType, Allocator>& b,
+                         const typename EigenType::Scalar& precision = Eigen::NumTraits<typename EigenType::Scalar>::dummy_precision())
+    {
+        if (a.size() != b.size())
+        {
+            return false;
+        }
+        for (size_t idx = 0; idx < a.size(); idx++)
+        {
+            if (!a[idx].isApprox(b[idx], precision))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     template <typename Derived>
@@ -586,7 +620,7 @@ namespace EigenHelpers
 
     inline Eigen::Matrix3d ExpMatrixExact(const Eigen::Matrix3d& hatted_rot_velocity, const double delta_t)
     {
-        assert(fabs(Unskew(hatted_rot_velocity).norm() - 1.0) < 1e-10);
+        assert(std::fabs(Unskew(hatted_rot_velocity).norm() - 1.0) < 1e-10);
         const Eigen::Matrix3d exp_matrix = Eigen::Matrix3d::Identity() + (hatted_rot_velocity * sin(delta_t)) + (hatted_rot_velocity * hatted_rot_velocity * (1.0 - cos(delta_t)));
         return exp_matrix;
     }
@@ -674,7 +708,7 @@ namespace EigenHelpers
         // Interpolate
         double interpolated = 0.0;
         double diff = real_p2 - real_p1;
-        if (fabs(diff) <= M_PI)
+        if (std::fabs(diff) <= M_PI)
         {
             interpolated = real_p1 + diff * real_ratio;
         }
@@ -840,7 +874,7 @@ namespace EigenHelpers
 
     inline double Distance(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2)
     {
-        const double dq = fabs((q1.w() * q2.w()) + (q1.x() * q2.x()) + (q1.y() * q2.y()) + (q1.z() * q2.z()));
+        const double dq = std::fabs((q1.w() * q2.w()) + (q1.x() * q2.x()) + (q1.y() * q2.y()) + (q1.z() * q2.z()));
         if (dq < (1.0 - std::numeric_limits<double>::epsilon()))
         {
             return acos(2.0 * (dq * dq) - 1.0);
@@ -922,7 +956,7 @@ namespace EigenHelpers
 
     inline double ContinuousRevoluteDistance(const double p1, const double p2)
     {
-        return fabs(ContinuousRevoluteSignedDistance(p1, p2));
+        return std::fabs(ContinuousRevoluteSignedDistance(p1, p2));
     }
 
     inline double AddContinuousRevoluteValues(const double start, const double change)
@@ -1643,7 +1677,7 @@ namespace EigenHelpers
         Eigen::VectorXd vPseudoInvertedSingular(svdA.matrixV().cols());
         for (int iRow = 0; iRow < vSingular.rows(); iRow++)
         {
-            if (fabs(vSingular(iRow)) <= rcond) // Todo : Put epsilon in parameter
+            if (std::fabs(vSingular(iRow)) <= rcond) // Todo : Put epsilon in parameter
             {
                 vPseudoInvertedSingular(iRow)= 0.0;
             }

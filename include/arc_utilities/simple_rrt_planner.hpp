@@ -1,14 +1,11 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <vector>
 #include <string>
-#include <sstream>
-#include <iostream>
-#include <stdexcept>
 #include <functional>
 #include <chrono>
 #include <random>
 #include <memory>
+#include <Eigen/Dense>
 #include <arc_utilities/serialization.hpp>
 
 #ifndef SIMPLE_RRT_PLANNER_HPP
