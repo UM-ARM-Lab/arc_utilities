@@ -745,7 +745,26 @@ namespace EigenHelpers
         return q1.slerp(real_ratio, q2);
     }
 
-    inline Eigen::Vector3d Interpolate(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double ratio)
+    inline Eigen::Vector3d Interpolate3d(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double ratio)
+    {
+        // Safety check ratio
+        double real_ratio = ratio;
+        if (real_ratio < 0.0)
+        {
+            real_ratio = 0.0;
+            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
+        }
+        else if (real_ratio > 1.0)
+        {
+            real_ratio = 1.0;
+            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
+        }
+        // Interpolate
+        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
+        return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
+    }
+
+    inline Eigen::Vector4d Interpolate4d(const Eigen::Vector4d& v1, const Eigen::Vector4d& v2, const double ratio)
     {
         // Safety check ratio
         double real_ratio = ratio;
@@ -783,7 +802,7 @@ namespace EigenHelpers
         const Eigen::Quaterniond q1(t1.rotation());
         const Eigen::Vector3d v2 = t2.translation();
         const Eigen::Quaterniond q2(t2.rotation());
-        const Eigen::Vector3d vint = Interpolate(v1, v2, real_ratio);
+        const Eigen::Vector3d vint = Interpolate3d(v1, v2, real_ratio);
         const Eigen::Quaterniond qint = Interpolate(q1, q2, real_ratio);
         const Eigen::Isometry3d tint = ((Eigen::Translation3d)vint) * qint;
         return tint;

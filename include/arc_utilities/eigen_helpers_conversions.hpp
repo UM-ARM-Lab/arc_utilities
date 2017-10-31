@@ -8,7 +8,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Transform.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <arc_utilities/eigen_helpers.hpp>
 
 #ifndef EIGEN_HELPERS_CONVERSIONS_HPP
@@ -137,6 +137,14 @@ namespace EigenHelpersConversions
         geom_transform.rotation.y = quat.y();
         geom_transform.rotation.z = quat.z();
         return geom_transform;
+    }
+
+    inline geometry_msgs::TransformStamped EigenIsometry3dToGeometryTransformStamped(const Eigen::Isometry3d& transform, const std::string& frame_id)
+    {
+        geometry_msgs::TransformStamped transform_stamped;
+        transform_stamped.header.frame_id = frame_id;
+        transform_stamped.transform = EigenIsometry3dToGeometryTransform(transform);
+        return transform_stamped;
     }
 
     inline Eigen::Matrix3Xd VectorGeometryPointToEigenMatrix3Xd(const std::vector<geometry_msgs::Point>& vector_geom)

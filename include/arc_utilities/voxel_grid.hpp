@@ -62,6 +62,11 @@ namespace VoxelGrid
             return (x_index * stride1_) + (y_index * stride2_) + z_index;
         }
 
+        inline int64_t GetDataIndex(const GRID_INDEX& index) const
+        {
+            return (index.x * stride1_) + (index.y * stride2_) + index.z;
+        }
+
         inline void SetContents(const T& value)
         {
             data_.clear();
@@ -516,6 +521,7 @@ namespace VoxelGrid
 
         inline bool IndexInBounds(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
         {
+            assert(initialized_);
             if (x_index >= 0 && y_index >= 0 && z_index >= 0 && x_index < num_x_cells_ && y_index < num_y_cells_ && z_index < num_z_cells_)
             {
                 return true;
@@ -526,13 +532,43 @@ namespace VoxelGrid
             }
         }
 
-        inline std::pair<const T&, bool> GetImmutable3d(const Eigen::Vector3d& location) const
+        inline bool IndexInBounds(const GRID_INDEX& index) const
         {
             assert(initialized_);
-            const std::vector<int64_t> indices = LocationToGridIndex3d(location);
-            if (indices.size() == 3)
+            if (index.x >= 0 && index.y >= 0 && index.z >= 0 && index.x < num_x_cells_ && index.y < num_y_cells_ && index.z < num_z_cells_)
             {
-                return GetImmutable(indices[0], indices[1], indices[2]);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        inline bool LocationInBounds(const double x, const double y, const double z) const
+        {
+            const GRID_INDEX index = LocationToGridIndex(x, y, z);
+            return IndexInBounds(index);
+        }
+
+        inline bool LocationInBounds3d(const Eigen::Vector3d& location) const
+        {
+            const GRID_INDEX index = LocationToGridIndex3d(location);
+            return IndexInBounds(index);
+        }
+
+        inline bool LocationInBounds4d(const Eigen::Vector4d& location) const
+        {
+            const GRID_INDEX index = LocationToGridIndex4d(location);
+            return IndexInBounds(index);
+        }
+
+        inline std::pair<const T&, bool> GetImmutable3d(const Eigen::Vector3d& location) const
+        {
+            const GRID_INDEX index = LocationToGridIndex3d(location);
+            if (IndexInBounds(index))
+            {
+                return GetImmutable(index);
             }
             else
             {
@@ -542,11 +578,10 @@ namespace VoxelGrid
 
         inline std::pair<const T&, bool> GetImmutable4d(const Eigen::Vector4d& location) const
         {
-            assert(initialized_);
-            const std::vector<int64_t> indices = LocationToGridIndex4d(location);
-            if (indices.size() == 3)
+            const GRID_INDEX index = LocationToGridIndex4d(location);
+            if (IndexInBounds(index))
             {
-                return GetImmutable(indices[0], indices[1], indices[2]);
+                return GetImmutable(index);
             }
             else
             {
@@ -562,12 +597,20 @@ namespace VoxelGrid
 
         inline std::pair<const T&, bool> GetImmutable(const GRID_INDEX& index) const
         {
-            return GetImmutable(index.x, index.y, index.z);
+            if (IndexInBounds(index))
+            {
+                const int64_t data_index = GetDataIndex(index);
+                assert(data_index >= 0 && data_index < (int64_t)data_.size());
+                return std::pair<const T&, bool>(data_[data_index], true);
+            }
+            else
+            {
+                return std::pair<const T&, bool>(oob_value_, false);
+            }
         }
 
         inline std::pair<const T&, bool> GetImmutable(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
         {
-            assert(initialized_);
             if (IndexInBounds(x_index, y_index, z_index))
             {
                 const int64_t data_index = GetDataIndex(x_index, y_index, z_index);
@@ -582,11 +625,10 @@ namespace VoxelGrid
 
         inline std::pair<T&, bool> GetMutable3d(const Eigen::Vector3d& location)
         {
-            assert(initialized_);
-            const std::vector<int64_t> indices = LocationToGridIndex3d(location);
-            if (indices.size() == 3)
+            const GRID_INDEX index = LocationToGridIndex3d(location);
+            if (IndexInBounds(index))
             {
-                return GetMutable(indices[0], indices[1], indices[2]);
+                return GetMutable(index);
             }
             else
             {
@@ -596,11 +638,10 @@ namespace VoxelGrid
 
         inline std::pair<T&, bool> GetMutable4d(const Eigen::Vector4d& location)
         {
-            assert(initialized_);
-            const std::vector<int64_t> indices = LocationToGridIndex4d(location);
-            if (indices.size() == 3)
+            const GRID_INDEX index = LocationToGridIndex4d(location);
+            if (IndexInBounds(index))
             {
-                return GetMutable(indices[0], indices[1], indices[2]);
+                return GetMutable(index);
             }
             else
             {
@@ -616,12 +657,20 @@ namespace VoxelGrid
 
         inline std::pair<T&, bool> GetMutable(const GRID_INDEX& index)
         {
-            return GetMutable(index.x, index.y, index.z);
+            if (IndexInBounds(index))
+            {
+                const int64_t data_index = GetDataIndex(index);
+                assert(data_index >= 0 && data_index < (int64_t)data_.size());
+                return std::pair<T&, bool>(data_[data_index], true);
+            }
+            else
+            {
+                return std::pair<T&, bool>(oob_value_, false);
+            }
         }
 
         inline std::pair<T&, bool> GetMutable(const int64_t x_index, const int64_t y_index, const int64_t z_index)
         {
-            assert(initialized_);
             if (IndexInBounds(x_index, y_index, z_index))
             {
                 const int64_t data_index = GetDataIndex(x_index, y_index, z_index);
@@ -636,11 +685,10 @@ namespace VoxelGrid
 
         inline bool SetValue3d(const Eigen::Vector3d& location, const T& value)
         {
-            assert(initialized_);
-            const std::vector<int64_t> indices = LocationToGridIndex3d(location);
-            if (indices.size() == 3)
+            const GRID_INDEX index = LocationToGridIndex3d(location);
+            if (IndexInBounds(index))
             {
-                return SetValue(indices[0], indices[1], indices[2], value);
+                return SetValue(index, value);
             }
             else
             {
@@ -650,11 +698,10 @@ namespace VoxelGrid
 
         inline bool SetValue4d(const Eigen::Vector4d& location, const T& value)
         {
-            assert(initialized_);
-            const std::vector<int64_t> indices = LocationToGridIndex4d(location);
-            if (indices.size() == 3)
+            const GRID_INDEX index = LocationToGridIndex4d(location);
+            if (IndexInBounds(index))
             {
-                return SetValue(indices[0], indices[1], indices[2], value);
+                return SetValue(index, value);
             }
             else
             {
@@ -670,12 +717,21 @@ namespace VoxelGrid
 
         inline bool SetValue(const GRID_INDEX& index, const T& value)
         {
-            return SetValue(index.x, index.y, index.z, value);
+            if (IndexInBounds(index))
+            {
+                const int64_t data_index = GetDataIndex(index);
+                assert(data_index >= 0 && data_index < (int64_t)data_.size());
+                data_[data_index] = value;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         inline bool SetValue(const int64_t x_index, const int64_t y_index, const int64_t z_index, const T& value)
         {
-            assert(initialized_);
             if (IndexInBounds(x_index, y_index, z_index))
             {
                 const int64_t data_index = GetDataIndex(x_index, y_index, z_index);
@@ -691,11 +747,10 @@ namespace VoxelGrid
 
         inline bool SetValue3d(const Eigen::Vector3d& location, T&& value)
         {
-            assert(initialized_);
-            const std::vector<int64_t> indices = LocationToGridIndex3d(location);
-            if (indices.size() == 3)
+            const GRID_INDEX index = LocationToGridIndex3d(location);
+            if (IndexInBounds(index))
             {
-                return SetValue(indices[0], indices[1], indices[2], value);
+                return SetValue(index, value);
             }
             else
             {
@@ -705,11 +760,10 @@ namespace VoxelGrid
 
         inline bool SetValue4d(const Eigen::Vector4d& location, T&& value)
         {
-            assert(initialized_);
-            const std::vector<int64_t> indices = LocationToGridIndex4d(location);
-            if (indices.size() == 3)
+            const GRID_INDEX index = LocationToGridIndex4d(location);
+            if (IndexInBounds(index))
             {
-                return SetValue(indices[0], indices[1], indices[2], value);
+                return SetValue(index, value);
             }
             else
             {
@@ -725,12 +779,21 @@ namespace VoxelGrid
 
         inline bool SetValue(const GRID_INDEX& index, T&& value)
         {
-            return SetValue(index.x, index.y, index.z, value);
+            if (IndexInBounds(index))
+            {
+                const int64_t data_index = GetDataIndex(index);
+                assert(data_index >= 0 && data_index < (int64_t)data_.size());
+                data_[data_index] = value;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         inline bool SetValue(const int64_t x_index, const int64_t y_index, const int64_t z_index, T&& value)
         {
-            assert(initialized_);
             if (IndexInBounds(x_index, y_index, z_index))
             {
                 const int64_t data_index = GetDataIndex(x_index, y_index, z_index);
@@ -809,64 +872,46 @@ namespace VoxelGrid
             return inverse_origin_transform_;
         }
 
-        inline std::vector<int64_t> LocationToGridIndex(const double x, const double y, const double z) const
+        inline GRID_INDEX LocationToGridIndex(const double x, const double y, const double z) const
         {
             const Eigen::Vector4d point(x, y, z, 1.0);
             return LocationToGridIndex4d(point);
         }
 
-        inline std::vector<int64_t> LocationToGridIndex3d(const Eigen::Vector3d& location) const
+        inline GRID_INDEX LocationToGridIndex3d(const Eigen::Vector3d& location) const
         {
             assert(initialized_);
             const Eigen::Vector3d point_in_grid_frame = inverse_origin_transform_ * location;
             const int64_t x_cell = (int64_t)(point_in_grid_frame.x() * inv_cell_x_size_);
             const int64_t y_cell = (int64_t)(point_in_grid_frame.y() * inv_cell_y_size_);
             const int64_t z_cell = (int64_t)(point_in_grid_frame.z() * inv_cell_z_size_);
-            if (IndexInBounds(x_cell, y_cell, z_cell))
-            {
-                return std::vector<int64_t>{x_cell, y_cell, z_cell};
-            }
-            else
-            {
-                return std::vector<int64_t>();
-            }
+            return GRID_INDEX(x_cell, y_cell, z_cell);
         }
 
-        inline std::vector<int64_t> LocationToGridIndex4d(const Eigen::Vector4d& location) const
+        inline GRID_INDEX LocationToGridIndex4d(const Eigen::Vector4d& location) const
         {
             assert(initialized_);
             const Eigen::Vector4d point_in_grid_frame = inverse_origin_transform_ * location;
             const int64_t x_cell = (int64_t)(point_in_grid_frame(0) * inv_cell_x_size_);
             const int64_t y_cell = (int64_t)(point_in_grid_frame(1) * inv_cell_y_size_);
             const int64_t z_cell = (int64_t)(point_in_grid_frame(2) * inv_cell_z_size_);
-            if (IndexInBounds(x_cell, y_cell, z_cell))
-            {
-                return std::vector<int64_t>{x_cell, y_cell, z_cell};
-            }
-            else
-            {
-                return std::vector<int64_t>();
-            }
+            return GRID_INDEX(x_cell, y_cell, z_cell);
         }
 
-        inline std::vector<double> GridIndexToLocation(const GRID_INDEX& index) const
-        {
-            return GridIndexToLocation(index.x, index.y, index.z);
-        }
-
-        inline std::vector<double> GridIndexToLocation(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
+        inline Eigen::Vector4d GridIndexToLocation(const GRID_INDEX& index) const
         {
             assert(initialized_);
-            if (IndexInBounds(x_index, y_index, z_index))
-            {
-                const Eigen::Vector3d point_in_grid_frame(cell_x_size_ * ((double)x_index + 0.5), cell_y_size_ * ((double)y_index + 0.5), cell_z_size_ * ((double)z_index + 0.5));
-                const Eigen::Vector3d point = origin_transform_ * point_in_grid_frame;
-                return std::vector<double>{point.x(), point.y(), point.z()};
-            }
-            else
-            {
-                return std::vector<double>();
-            }
+            const Eigen::Vector4d point_in_grid_frame(cell_x_size_ * ((double)index.x + 0.5), cell_y_size_ * ((double)index.y + 0.5), cell_z_size_ * ((double)index.z + 0.5), 1.0);
+            const Eigen::Vector4d point = origin_transform_ * point_in_grid_frame;
+            return point;
+        }
+
+        inline Eigen::Vector4d GridIndexToLocation(const int64_t x_index, const int64_t y_index, const int64_t z_index) const
+        {
+            assert(initialized_);
+            const Eigen::Vector4d point_in_grid_frame(cell_x_size_ * ((double)x_index + 0.5), cell_y_size_ * ((double)y_index + 0.5), cell_z_size_ * ((double)z_index + 0.5), 1.0);
+            const Eigen::Vector4d point = origin_transform_ * point_in_grid_frame;
+            return point;
         }
 
         inline const std::vector<T>& GetRawData() const
