@@ -5,9 +5,13 @@ from threading import Lock
 
 
 class Listener:
-    def __init__(self, topic_name, topic_type, lock=None):
+    def __init__(self, topic_name, topic_type):
         """
         Listener is a wrapper around a subscriber where the callback simply records the latest msg.
+
+        Listener does not consume the message 
+            (for consuming behavior, use the standard ros callback pattern)
+        Listener does not check timestamps of message headers
 
         Parameters:
             topic_name (str): name of topic to subscribe to
@@ -16,9 +20,7 @@ class Listener:
         """
 
         self.data = None
-        self.lock = lock
-        if self.lock is None:
-            self.lock = Lock()
+        self.lock = Lock()
             
         self.subscriber = rospy.Subscriber(topic_name, topic_type, self.callback)
         
