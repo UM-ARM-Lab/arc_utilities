@@ -17,7 +17,6 @@ class Listener:
         Parameters:
             topic_name (str): name of topic to subscribe to
             topic_type (msg_type): type of message received on topic
-            lock (Lock): optional lock object used when setting stored data
         """
 
         self.data = None
