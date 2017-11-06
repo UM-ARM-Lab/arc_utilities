@@ -3,7 +3,7 @@
 import rospy
 import time
 from threading import Lock
-
+from sensor_msgs.msg import Joy
 
 class Listener:
     def __init__(self, topic_name, topic_type):
@@ -41,6 +41,16 @@ class Listener:
         with self.lock:
             return self.data
 
+    
+def wait_for(func):
+    """
+    Waits for function evaluation to be true. Exits cleanly from ros.
+
+    Introduces sleep delay, not recommended for time critical operations
+    """
+    
+    while not func() and not rospy.is_shutdown():
+        time.sleep(0.01)
 
 def joy_to_xbox(joy):
     """
@@ -52,9 +62,9 @@ def joy_to_xbox(joy):
     Returns:
     xbox struct where fields are the button names
     """
-    class Xbox():
+    class Xbox_msg():
         pass
-    x = Xbox()
+    x = Xbox_msg()
     x.A, x.B, x.X, x.Y, x.LB, x.RB, \
         x.back, x.start, x.power,\
         x.stick_button_left, x.stick_button_right, \
@@ -63,27 +73,23 @@ def joy_to_xbox(joy):
     return x
         
 
-    
-def wait_for(func):
-    """
-    Waits for function evaluation to be true. Exits cleanly from ros.
 
-    Introduces sleep delay, not recommended for time critical operations
-    """
-    
-    while not func() and not rospy.is_shutdown():
-        time.sleep(0.01)
-    
+class Xbox():
+    def __init__(self):
+        self.xbox_listener = Listener("/joy", Joy)
 
-def wait_for_xbox(xbox, button, message=True):
-    """
-    Waits for button press on xbox.
+    def get_buttons_state(self):
+        return joy_to_xbox(self.xbox_listener.get(True))
 
-    example: wait for the "A" button on the xbox controller
-    xbox = Listener("/joy", Joy)
-    wait_for_xbox(xbox, "A")
-    """
-    if message:
-        rospy.loginfo("Waiting for xbox button: " + button)
-        
-    wait_for(lambda: getattr(joy_to_xbox(xbox.get(True)), button))
+    def wait_for_button(self, button, message=True):
+        """
+        Waits for button press on xbox.
+
+        Parameters:
+        button (str):   Name of xbox button. "A", "B", "X", ...
+        message (bool): log a message informing the user?
+        """
+        if message:
+            rospy.loginfo("Waiting for xbox button: " + button)
+            
+        wait_for(lambda: getattr(self.get_buttons_state(), button))
