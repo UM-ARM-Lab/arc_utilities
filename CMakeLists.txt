@@ -81,6 +81,7 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/first_order_deformation.h
     include/${PROJECT_NAME}/get_neighbours.hpp
     include/${PROJECT_NAME}/serialization.hpp
+    include/${PROJECT_NAME}/serialization_eigen.hpp
     include/${PROJECT_NAME}/serialization_ros.hpp
     include/${PROJECT_NAME}/filesystem.hpp
     src/${PROJECT_NAME}/zlib_helpers.cpp
