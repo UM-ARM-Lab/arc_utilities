@@ -11,12 +11,12 @@ namespace arc_utilities
     {
         public:
             Stopwatch()
-                : start_time_(std::chrono::high_resolution_clock::now())
+                : start_time_(std::chrono::steady_clock::now())
             {}
 
             double operator() (const StopwatchControl control = READ)
             {
-                const auto end_time = std::chrono::high_resolution_clock::now();
+                const auto end_time = std::chrono::steady_clock::now();
                 if (control == RESET)
                 {
                     start_time_ = end_time;
@@ -26,7 +26,7 @@ namespace arc_utilities
             }
 
         private:
-            std::chrono::high_resolution_clock::time_point start_time_;
+            std::chrono::steady_clock::time_point start_time_;
     };
 
     double GlobalStopwatch(const StopwatchControl control = READ);
