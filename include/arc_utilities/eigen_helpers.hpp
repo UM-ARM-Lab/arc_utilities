@@ -1024,6 +1024,54 @@ namespace EigenHelpers
         return std::vector<double>{quat.x(), quat.y(), quat.z(), quat.w()};
     }
 
+    // Stack Matrix into a Vector
+    inline Eigen::VectorXd EigenMatrix3XdToVectorXd(const Eigen::Matrix3Xd& configuration_matrix)
+    {
+        return Eigen::VectorXd::Map(configuration_matrix.data(), configuration_matrix.cols()*3);
+    }
+
+    inline std::vector<Eigen::VectorXd> EigenMatrix3XdsToVectorXds(const std::vector<Eigen::Matrix3Xd>& configuration_matrixes)
+    {
+        std::vector<Eigen::VectorXd> stacked_vectors;
+        for (size_t ind = 0; ind < configuration_matrixes.size(); ind++)
+        {
+            stacked_vectors.push_back(EigenMatrix3XdToVectorXd(configuration_matrixes.at(ind)));
+        }
+        return stacked_vectors;
+    }
+
+    // Resize vector to matrix3d,
+    inline Eigen::Matrix3Xd EigenVectorXdToMatrix3Xd(const Eigen::VectorXd& stacked_vector)
+    {
+        ssize_t num_cols = stacked_vector.rows()/3;
+        assert(num_cols * 3 == stacked_vector.rows());
+
+        return Eigen::Matrix3Xd::Map(stacked_vector.data(), 3, num_cols);
+        //return stacked_vector.resize(3, num_cols);
+    }
+
+    inline std::vector<Eigen::Matrix3Xd> EigenVectorXdsToMatrix3Xds(const std::vector<Eigen::VectorXd>& stacked_vectors)
+    {
+        std::vector<Eigen::Matrix3Xd> matrixes;
+        for (size_t ind = 0; ind < stacked_vectors.size(); ind++)
+        {
+            matrixes.push_back(EigenVectorXdToMatrix3Xd(stacked_vectors.at(ind)));
+        }
+        return matrixes;
+    }
+
+    inline Eigen::MatrixXd stdVectorsToMatrixXd(const std::vector<Eigen::VectorXd>& stacked_vectors)
+    {
+        assert(stacked_vectors.size() > 0);
+        Eigen::MatrixXd matrix = Eigen::MatrixXd::Zero(stacked_vectors.at(0).rows(), stacked_vectors.size());
+        for (size_t ind = 0; ind < stacked_vectors.size(); ind++)
+        {
+            matrix.col(ind) = stacked_vectors.at(ind);
+        }
+        return matrix;
+    }
+
+
     ////////////////////////////////////////////////////////////////////////////
     // Averaging functions
     // Numerically more stable averages taken from http://people.ds.cam.ac.uk/fanf2/hermes/doc/antiforgery/stats.pdf
@@ -1482,6 +1530,23 @@ namespace EigenHelpers
     {
         return 0.001;
     }
+
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Resize / delete cols helper
+    ////////////////////////////////////////////////////////////////////////////
+    inline void removeCol(Eigen::MatrixXd& matrix, ssize_t colToRemove)
+    {
+        ssize_t numRows = matrix.rows();
+        ssize_t numCols = matrix.cols()-1;
+
+        if( colToRemove < numCols )
+            matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
+
+        matrix.conservativeResize(numRows,numCols);
+    }
+
 
     // Derived from code by Yohann Solaro ( http://listengine.tuxfamily.org/lists.tuxfamily.org/eigen/2010/01/msg00187.html )
     // see : http://en.wikipedia.org/wiki/Moore-Penrose_pseudoinverse#The_general_case_and_the_SVD_method
