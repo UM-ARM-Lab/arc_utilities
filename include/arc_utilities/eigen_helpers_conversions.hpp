@@ -240,6 +240,24 @@ namespace EigenHelpersConversions
         return vector_geom;
     }
 
+    // Convert bool type msgs for occlusion information
+    inline std::vector<bool> VectorInt8ToVectorBool(const std::vector<int8_t> int8_vector)
+    {
+        std::vector<bool> bool_vector;
+        for (ssize_t ind = 0; ind < int8_vector.size(); ind++)
+        {
+            if(int8_vector.at(ind) == 1)
+            {
+                bool_vector.push_back(true);
+            }
+            else
+            {
+                bool_vector.push_back(false);
+            }
+        }
+        return bool_vector;
+    }
+
     // Convert wrench (force and torque) ROS message to Eigen typed data
     inline std::pair<Eigen::Vector3d, Eigen::Vector3d> GeometryWrenchToEigenPairVector(const geometry_msgs::Wrench& wrench)
     {
