@@ -745,6 +745,30 @@ namespace EigenHelpers
         return q1.slerp(real_ratio, q2);
     }
 
+    inline Eigen::VectorXd InterpolateXd(const Eigen::VectorXd& v1, const Eigen::VectorXd& v2, const double ratio)
+    {
+        // Safety check sizes
+        if (v1.size() != v2.size())
+        {
+            throw std::invalid_argument("Vectors v1 and v2 must be the same size");
+        }
+        // Safety check ratio
+        double real_ratio = ratio;
+        if (real_ratio < 0.0)
+        {
+            real_ratio = 0.0;
+            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
+        }
+        else if (real_ratio > 1.0)
+        {
+            real_ratio = 1.0;
+            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
+        }
+        // Interpolate
+        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
+        return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
+    }
+
     inline Eigen::Vector3d Interpolate3d(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double ratio)
     {
         // Safety check ratio
@@ -1384,10 +1408,10 @@ namespace EigenHelpers
     template <typename DerivedB, typename DerivedV>
     inline Eigen::Matrix<typename DerivedB::Scalar, Eigen::Dynamic, 1> VectorRejection(
             const Eigen::MatrixBase<DerivedB>& base_vector,
-            const Eigen::MatrixBase<DerivedV>& vector_to_project)
+            const Eigen::MatrixBase<DerivedV>& vector_to_reject)
     {
         // Rejection is defined in relation to projection
-        return vector_to_project - VectorProjection(base_vector, vector_to_project);
+        return vector_to_reject - VectorProjection(base_vector, vector_to_reject);
     }
 
     ////////////////////////////////////////////////////////////////////////////

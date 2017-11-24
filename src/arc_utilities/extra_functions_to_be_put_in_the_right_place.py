@@ -2,6 +2,7 @@ from std_msgs.msg import *
 from geometry_msgs.msg import *
 from color_mapping import *
 
+
 def make_pose((px, py, pz), (rx, ry, rz, rw)):
     new_pose = Pose()
     new_pose.position.x = px
