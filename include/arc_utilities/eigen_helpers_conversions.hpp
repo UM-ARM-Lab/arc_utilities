@@ -69,6 +69,21 @@ namespace EigenHelpersConversions
         return geom_vector;
     }
 
+    inline Eigen::Vector4d GeometryVector3ToEigenVector4d(const geometry_msgs::Vector3& vector)
+    {
+        Eigen::Vector4d eigen_vector(vector.x, vector.y, vector.z, 0.0);
+        return eigen_vector;
+    }
+
+    inline geometry_msgs::Vector3 EigenVector4dToGeometryVector3(const Eigen::Vector4d& vector)
+    {
+        geometry_msgs::Vector3 geom_vector;
+        geom_vector.x = vector(0);
+        geom_vector.y = vector(1);
+        geom_vector.z = vector(2);
+        return geom_vector;
+    }
+
     inline Eigen::Quaterniond GeometryQuaternionToEigenQuaterniond(const geometry_msgs::Quaternion& quat)
     {
         Eigen::Quaterniond eigen_quaternion(quat.w, quat.x, quat.y, quat.z);

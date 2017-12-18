@@ -504,12 +504,12 @@ namespace arc_helpers
     }
 
     template<typename Datatype, typename Allocator=std::allocator<Datatype>>
-    inline Eigen::MatrixXd BuildDistanceMatrix(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
+    inline Eigen::MatrixXd BuildDistanceMatrixParallel(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
     {
         Eigen::MatrixXd distance_matrix(data.size(), data.size());
-#ifdef ENABLE_PARALLEL_DISTANCE_MATRIX
+        #if defined(_OPENMP)
         #pragma omp parallel for
-#endif
+        #endif
         for (size_t idx = 0; idx < data.size(); idx++)
         {
             for (size_t jdx = idx; jdx < data.size(); jdx++)
@@ -531,12 +531,52 @@ namespace arc_helpers
     }
 
     template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator=std::allocator<FirstDatatype>, typename SecondAllocator=std::allocator<SecondDatatype>>
-    inline Eigen::MatrixXd BuildDistanceMatrix(const std::vector<FirstDatatype, FirstAllocator>& data1, const std::vector<SecondDatatype, SecondAllocator>& data2, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
+    inline Eigen::MatrixXd BuildDistanceMatrixParallel(const std::vector<FirstDatatype, FirstAllocator>& data1, const std::vector<SecondDatatype, SecondAllocator>& data2, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
     {
         Eigen::MatrixXd distance_matrix(data1.size(), data1.size());
-#ifdef ENABLE_PARALLEL_DISTANCE_MATRIX
+        #if defined(_OPENMP)
         #pragma omp parallel for
-#endif
+        #endif
+        for (size_t idx = 0; idx < data1.size(); idx++)
+        {
+            for (size_t jdx = 0; jdx < data2.size(); jdx++)
+            {
+                const double distance = distance_fn(data1[idx], data2[jdx]);
+                distance_matrix((ssize_t)idx, (ssize_t)jdx) = distance;
+                distance_matrix((ssize_t)jdx, (ssize_t)idx) = distance;
+            }
+        }
+        return distance_matrix;
+    }
+
+    template<typename Datatype, typename Allocator=std::allocator<Datatype>>
+    inline Eigen::MatrixXd BuildDistanceMatrixSerial(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
+    {
+        Eigen::MatrixXd distance_matrix(data.size(), data.size());
+        for (size_t idx = 0; idx < data.size(); idx++)
+        {
+            for (size_t jdx = idx; jdx < data.size(); jdx++)
+            {
+                if (idx != jdx)
+                {
+                    const double distance = distance_fn(data[idx], data[jdx]);
+                    distance_matrix((ssize_t)idx, (ssize_t)jdx) = distance;
+                    distance_matrix((ssize_t)jdx, (ssize_t)idx) = distance;
+                }
+                else
+                {
+                    distance_matrix((ssize_t)idx, (ssize_t)jdx) = 0.0;
+                    distance_matrix((ssize_t)jdx, (ssize_t)idx) = 0.0;
+                }
+            }
+        }
+        return distance_matrix;
+    }
+
+    template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator=std::allocator<FirstDatatype>, typename SecondAllocator=std::allocator<SecondDatatype>>
+    inline Eigen::MatrixXd BuildDistanceMatrixSerial(const std::vector<FirstDatatype, FirstAllocator>& data1, const std::vector<SecondDatatype, SecondAllocator>& data2, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
+    {
+        Eigen::MatrixXd distance_matrix(data1.size(), data1.size());
         for (size_t idx = 0; idx < data1.size(); idx++)
         {
             for (size_t jdx = 0; jdx < data2.size(); jdx++)
@@ -550,7 +590,7 @@ namespace arc_helpers
     }
 
     template<typename Item, typename Value, typename ItemAlloc=std::allocator<Item>>
-    std::vector<std::pair<int64_t, double>> GetKNearestNeighbors(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
+    std::vector<std::pair<int64_t, double>> GetKNearestNeighborsParallel(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
     {
         if (K == 0)
         {
@@ -560,22 +600,18 @@ namespace arc_helpers
         {
             std::function<bool(const std::pair<int64_t, double>&, const std::pair<int64_t, double>&)> compare_fn = [] (const std::pair<int64_t, double>& index1, const std::pair<int64_t, double>& index2) { return index1.second < index2.second; };
             std::vector<std::vector<std::pair<int64_t, double>>> per_thread_nearests(GetNumOMPThreads(), std::vector<std::pair<int64_t, double>>(K, std::make_pair(-1, std::numeric_limits<double>::infinity())));
-    #ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
+            #if defined(_OPENMP)
             #pragma omp parallel for
-    #endif
+            #endif
             for (size_t idx = 0; idx < items.size(); idx++)
             {
                 const Item& item = items[idx];
                 const double distance = distance_fn(item, current);
-#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
                 #if defined(_OPENMP)
                 const size_t thread_num = (size_t)omp_get_thread_num();
                 #else
                 const size_t thread_num = 0;
                 #endif
-#else
-                const size_t thread_num = 0;
-#endif
                 std::vector<std::pair<int64_t, double>>& current_thread_nearests = per_thread_nearests[thread_num];
                 auto itr = std::max_element(current_thread_nearests.begin(), current_thread_nearests.end(), compare_fn);
                 const double worst_distance = itr->second;
@@ -618,9 +654,47 @@ namespace arc_helpers
         else
         {
             std::vector<std::pair<int64_t, double>> k_nearests(items.size(), std::make_pair(-1, std::numeric_limits<double>::infinity()));
-#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
+            #if defined(_OPENMP)
             #pragma omp parallel for
-#endif
+            #endif
+            for (size_t idx = 0; idx < items.size(); idx++)
+            {
+                const Item& item = items[idx];
+                const double distance = distance_fn(item, current);
+                k_nearests[idx] = std::make_pair((int64_t)idx, distance);
+            }
+            return k_nearests;
+        }
+    }
+
+    template<typename Item, typename Value, typename ItemAlloc=std::allocator<Item>>
+    std::vector<std::pair<int64_t, double>> GetKNearestNeighborsSerial(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
+    {
+        if (K == 0)
+        {
+            return std::vector<std::pair<int64_t, double>>();
+        }
+        if (items.size() > K)
+        {
+            std::function<bool(const std::pair<int64_t, double>&, const std::pair<int64_t, double>&)> compare_fn = [] (const std::pair<int64_t, double>& index1, const std::pair<int64_t, double>& index2) { return index1.second < index2.second; };
+            std::vector<std::pair<int64_t, double>> k_nearests(K, std::make_pair(-1, std::numeric_limits<double>::infinity()));
+            for (size_t idx = 0; idx < items.size(); idx++)
+            {
+                const Item& item = items[idx];
+                const double distance = distance_fn(item, current);
+                auto itr = std::max_element(k_nearests.begin(), k_nearests.end(), compare_fn);
+                const double worst_distance = itr->second;
+                if (worst_distance > distance)
+                {
+                    itr->first = (int64_t)idx;
+                    itr->second = distance;
+                }
+            }
+            return k_nearests;
+        }
+        else
+        {
+            std::vector<std::pair<int64_t, double>> k_nearests(items.size(), std::make_pair(-1, std::numeric_limits<double>::infinity()));
             for (size_t idx = 0; idx < items.size(); idx++)
             {
                 const Item& item = items[idx];

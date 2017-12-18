@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     }
     std::cout << "Clustering " << num_points << " points..." << std::endl;
     std::function<double(const Eigen::Vector3d&, const Eigen::Vector3d&)> distance_fn = [] (const Eigen::Vector3d& v1, const Eigen::Vector3d& v2) { return EigenHelpers::Distance(v1, v2); };
-    const Eigen::MatrixXd distance_matrix = arc_helpers::BuildDistanceMatrix(random_points, distance_fn);
+    const Eigen::MatrixXd distance_matrix = arc_helpers::BuildDistanceMatrixParallel(random_points, distance_fn);
     const std::vector<std::vector<size_t>> clusters = simple_hierarchical_clustering::SimpleHierarchicalClustering::Cluster(indices, distance_matrix, 1.0).first;
     for (size_t cluster_idx = 0; cluster_idx < clusters.size(); cluster_idx++)
     {

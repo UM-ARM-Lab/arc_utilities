@@ -257,7 +257,11 @@ namespace simple_hierarchical_clustering
         template<typename Datatype, typename Allocator=std::allocator<Datatype>>
         static std::pair<std::vector<std::vector<Datatype, Allocator>>, double> Cluster(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn, const double max_cluster_distance)
         {
-            const Eigen::MatrixXd distance_matrix = arc_helpers::BuildDistanceMatrix(data, distance_fn);
+#ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
+            const Eigen::MatrixXd distance_matrix = arc_helpers::BuildDistanceMatrixParallel(data, distance_fn);
+#else
+            const Eigen::MatrixXd distance_matrix = arc_helpers::BuildDistanceMatrixSerial(data, distance_fn);
+#endif
             return Cluster(data, distance_matrix, max_cluster_distance);
         }
 

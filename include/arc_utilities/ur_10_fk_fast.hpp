@@ -13,28 +13,26 @@
 namespace UR_10_FK_FAST
 {
     const size_t UR_10_NUM_ACTIVE_JOINTS = 6;
-    const size_t UR_10_NUM_LINKS = 8;
+    const size_t UR_10_NUM_LINKS = 7;
 
-    const std::string UR_10_ACTIVE_JOINT_1_NAME = "iiwa_joint_1";
-    const std::string UR_10_ACTIVE_JOINT_2_NAME = "iiwa_joint_2";
-    const std::string UR_10_ACTIVE_JOINT_3_NAME = "iiwa_joint_3";
-    const std::string UR_10_ACTIVE_JOINT_4_NAME = "iiwa_joint_4";
-    const std::string UR_10_ACTIVE_JOINT_5_NAME = "iiwa_joint_5";
-    const std::string UR_10_ACTIVE_JOINT_6_NAME = "iiwa_joint_6";
-    const std::string UR_10_ACTIVE_JOINT_7_NAME = "iiwa_joint_7";
+    const std::string UR_10_ACTIVE_JOINT_1_NAME = "shoulder_pan_joint";
+    const std::string UR_10_ACTIVE_JOINT_2_NAME = "shoulder_lift_joint";
+    const std::string UR_10_ACTIVE_JOINT_3_NAME = "elbow_joint";
+    const std::string UR_10_ACTIVE_JOINT_4_NAME = "wrist_1_joint";
+    const std::string UR_10_ACTIVE_JOINT_5_NAME = "wrist_2_joint";
+    const std::string UR_10_ACTIVE_JOINT_6_NAME = "wrist_3_joint";
 
-    const std::string UR_10_LINK_1_NAME = "iiwa_link_0";
-    const std::string UR_10_LINK_2_NAME = "iiwa_link_1";
-    const std::string UR_10_LINK_3_NAME = "iiwa_link_2";
-    const std::string UR_10_LINK_4_NAME = "iiwa_link_3";
-    const std::string UR_10_LINK_5_NAME = "iiwa_link_4";
-    const std::string UR_10_LINK_6_NAME = "iiwa_link_5";
-    const std::string UR_10_LINK_7_NAME = "iiwa_link_6";
-    const std::string UR_10_LINK_8_NAME = "iiwa_link_7";
+    const std::string UR_10_LINK_1_NAME = "base_link";
+    const std::string UR_10_LINK_2_NAME = "shoulder_link";
+    const std::string UR_10_LINK_3_NAME = "upper_arm_link";
+    const std::string UR_10_LINK_4_NAME = "forearm_link";
+    const std::string UR_10_LINK_5_NAME = "wrist_1_link";
+    const std::string UR_10_LINK_6_NAME = "wrist_2_link";
+    const std::string UR_10_LINK_7_NAME = "wrist_3_link";
 
     inline Eigen::Isometry3d Get_link_0_joint_1_LinkJointTransform(const double joint_val)
     {
-        const Eigen::Translation3d pre_joint_translation(0.0, 0.0, 0.1575);
+        const Eigen::Translation3d pre_joint_translation(0.0, 0.0, 0.1273);
         const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(0.0, 0.0, 0.0);
         const Eigen::Isometry3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         const Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
@@ -45,41 +43,41 @@ namespace UR_10_FK_FAST
 
     inline Eigen::Isometry3d Get_link_1_joint_2_LinkJointTransform(const double joint_val)
     {
-        const Eigen::Translation3d pre_joint_translation(0.0, 0.0, 0.2025);
-        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(M_PI_2, 0.0, M_PI);
+        const Eigen::Translation3d pre_joint_translation(0.0, 0.220941, 0.0);
+        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(0.0, M_PI_2, 0.0);
         const Eigen::Isometry3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         const Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        const Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitZ()));
+        const Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitY()));
         const Eigen::Isometry3d joint_transform = joint_translation * joint_rotation;
         return (pre_joint_transform * joint_transform);
     }
 
     inline Eigen::Isometry3d Get_link_2_joint_3_LinkJointTransform(const double joint_val)
     {
-        const Eigen::Translation3d pre_joint_translation(0.0, 0.2045, 0.0);
-        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(M_PI_2, 0.0, M_PI);
+        const Eigen::Translation3d pre_joint_translation(0.0, -0.1719, 0.612);
+        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(0.0, 0.0, 0.0);
         const Eigen::Isometry3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         const Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        const Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitZ()));
+        const Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitY()));
         const Eigen::Isometry3d joint_transform = joint_translation * joint_rotation;
         return (pre_joint_transform * joint_transform);
     }
 
     inline Eigen::Isometry3d Get_link_3_joint_4_LinkJointTransform(const double joint_val)
     {
-        const Eigen::Translation3d pre_joint_translation(0.0, 0.0, 0.2155);
-        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(M_PI_2, 0.0, 0.0);
+        const Eigen::Translation3d pre_joint_translation(0.0, 0.0, 0.5723);
+        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(0.0, M_PI_2, 0.0);
         const Eigen::Isometry3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         const Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        const Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitZ()));
+        const Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitY()));
         const Eigen::Isometry3d joint_transform = joint_translation * joint_rotation;
         return (pre_joint_transform * joint_transform);
     }
 
     inline Eigen::Isometry3d Get_link_4_joint_5_LinkJointTransform(const double joint_val)
     {
-        const Eigen::Translation3d pre_joint_translation(0.0, 0.1845, 0.0);
-        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(-M_PI_2, M_PI, 0.0);
+        const Eigen::Translation3d pre_joint_translation(0.0, 0.1149, 0.0);
+        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(0.0, 0.0, 0.0);
         const Eigen::Isometry3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         const Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
         const Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitZ()));
@@ -89,22 +87,11 @@ namespace UR_10_FK_FAST
 
     inline Eigen::Isometry3d Get_link_5_joint_6_LinkJointTransform(const double joint_val)
     {
-        const Eigen::Translation3d pre_joint_translation(0.0, 0.0, 0.2155);
-        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(M_PI_2, 0.0, 0.0);
+        const Eigen::Translation3d pre_joint_translation(0.0, 0.0, 0.1157);
+        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(0.0, 0.0, 0.0);
         const Eigen::Isometry3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
         const Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        const Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitZ()));
-        const Eigen::Isometry3d joint_transform = joint_translation * joint_rotation;
-        return (pre_joint_transform * joint_transform);
-    }
-
-    inline Eigen::Isometry3d Get_link_6_joint_7_LinkJointTransform(const double joint_val)
-    {
-        const Eigen::Translation3d pre_joint_translation(0.0, 0.081, 0.0);
-        const Eigen::Quaterniond pre_joint_rotation = EigenHelpers::QuaternionFromUrdfRPY(-M_PI_2, M_PI, 0.0);
-        const Eigen::Isometry3d pre_joint_transform = pre_joint_translation * pre_joint_rotation;
-        const Eigen::Translation3d joint_translation(0.0, 0.0, 0.0);
-        const Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitZ()));
+        const Eigen::Quaterniond joint_rotation(Eigen::AngleAxisd(joint_val, Eigen::Vector3d::UnitY()));
         const Eigen::Isometry3d joint_transform = joint_translation * joint_rotation;
         return (pre_joint_transform * joint_transform);
     }
@@ -120,7 +107,6 @@ namespace UR_10_FK_FAST
         link_transforms[4] = link_transforms[3] * Get_link_3_joint_4_LinkJointTransform(configuration[3]);
         link_transforms[5] = link_transforms[4] * Get_link_4_joint_5_LinkJointTransform(configuration[4]);
         link_transforms[6] = link_transforms[5] * Get_link_5_joint_6_LinkJointTransform(configuration[5]);
-        link_transforms[7] = link_transforms[6] * Get_link_6_joint_7_LinkJointTransform(configuration[6]);
         return link_transforms;
     }
 
@@ -133,7 +119,6 @@ namespace UR_10_FK_FAST
         configuration_vector[3] = arc_helpers::RetrieveOrDefault(configuration, UR_10_ACTIVE_JOINT_4_NAME, 0.0);
         configuration_vector[4] = arc_helpers::RetrieveOrDefault(configuration, UR_10_ACTIVE_JOINT_5_NAME, 0.0);
         configuration_vector[5] = arc_helpers::RetrieveOrDefault(configuration, UR_10_ACTIVE_JOINT_6_NAME, 0.0);
-        configuration_vector[6] = arc_helpers::RetrieveOrDefault(configuration, UR_10_ACTIVE_JOINT_7_NAME, 0.0);
         return GetLinkTransforms(configuration_vector, base_transform);
     }
 
@@ -148,7 +133,6 @@ namespace UR_10_FK_FAST
         link_transforms_map[UR_10_LINK_5_NAME] = link_transforms[4];
         link_transforms_map[UR_10_LINK_6_NAME] = link_transforms[5];
         link_transforms_map[UR_10_LINK_7_NAME] = link_transforms[6];
-        link_transforms_map[UR_10_LINK_8_NAME] = link_transforms[7];
         return link_transforms_map;
     }
 
@@ -163,7 +147,6 @@ namespace UR_10_FK_FAST
         link_transforms_map[UR_10_LINK_5_NAME] = link_transforms[4];
         link_transforms_map[UR_10_LINK_6_NAME] = link_transforms[5];
         link_transforms_map[UR_10_LINK_7_NAME] = link_transforms[6];
-        link_transforms_map[UR_10_LINK_8_NAME] = link_transforms[7];
         return link_transforms_map;
     }
 }

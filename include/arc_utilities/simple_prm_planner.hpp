@@ -44,7 +44,8 @@ namespace simple_prm_planner
                 const std::function<double(const T&, const T&)>& distance_fn,
                 const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
                 const size_t K,
-                const bool distance_is_symmetric = true)
+                const bool distance_is_symmetric = true,
+                const bool add_duplicate_states = false)
         {
             // Make the node->graph or graph->node distance function as needed
             std::function<double(const arc_dijkstras::GraphNode<T, Allocator>&, const T&)> graph_distance_fn = nullptr;
@@ -63,8 +64,25 @@ namespace simple_prm_planner
                 };
             }
             // Call KNN with the distance function
+#ifdef ENABLE_PARALLEL_ROADMAP
             const std::vector<std::pair<int64_t, double>> nearest_neighbors =
-                    arc_helpers::GetKNearestNeighbors(roadmap.GetNodesImmutable(), state, graph_distance_fn, K);
+                    arc_helpers::GetKNearestNeighborsParallel(roadmap.GetNodesImmutable(), state, graph_distance_fn, K);
+#else
+            const std::vector<std::pair<int64_t, double>> nearest_neighbors =
+                    arc_helpers::GetKNearestNeighborsSerial(roadmap.GetNodesImmutable(), state, graph_distance_fn, K);
+#endif
+            // Check if we already have this state in the roadmap (and we don't want to add duplicates)
+            if (add_duplicate_states == false)
+            {
+                for (size_t idx = 0; idx < nearest_neighbors.size(); idx++)
+                {
+                    const std::pair<int64_t, double>& neighbor = nearest_neighbors[idx];
+                    if (neighbor.second == 0.0)
+                    {
+                        return neighbor.first;
+                    }
+                }
+            }
             // Add the new node AFTER KNN is performed
             const int64_t new_node_index = roadmap.AddNode(state);
             // Parallelize the collision-checking and distance computation
@@ -126,7 +144,9 @@ namespace simple_prm_planner
                                                                const std::function<bool(const T&)>& state_validity_check_fn,
                                                                const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
                                                                const std::function<bool(void)>& termination_check_fn,
-                                                               const size_t K, const bool distance_is_symmetric=true)
+                                                               const size_t K,
+                                                               const bool distance_is_symmetric = true,
+                                                               const bool add_duplicate_states = false)
         {
             arc_dijkstras::Graph<T, Allocator> roadmap;
             while (!termination_check_fn())
@@ -134,7 +154,7 @@ namespace simple_prm_planner
                 const T random_state = sampling_fn();
                 if (state_validity_check_fn(random_state))
                 {
-                    AddNodeToRoadmap(random_state, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+                    AddNodeToRoadmap(random_state, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric, add_duplicate_states);
                 }
             }
             return roadmap;
@@ -174,17 +194,24 @@ namespace simple_prm_planner
         }
 
         template<typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<T, Allocator>, double> QueryPathAndAddNodesMultiStartSingleGoal(const std::vector<T, Allocator>& starts, const T& goal, arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true)
+        static std::pair<std::vector<T, Allocator>, double> QueryPathAndAddNodesMultiStartSingleGoal(const std::vector<T, Allocator>& starts,
+                                                                                                     const T& goal,
+                                                                                                     arc_dijkstras::Graph<T, Allocator>& roadmap,
+                                                                                                     const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
+                                                                                                     const std::function<double(const T&, const T&)>& distance_fn,
+                                                                                                     const size_t K,
+                                                                                                     const bool distance_is_symmetric = true,
+                                                                                                     const bool add_duplicate_states = false)
         {
             // Add the multiple start nodes to the roadmap
             std::vector<int64_t> start_node_indices(starts.size());
             for (size_t start_idx = 0; start_idx < starts.size(); start_idx++)
             {
                 const T& start = starts[start_idx];
-                start_node_indices[start_idx] = AddNodeToRoadmap(start, NEW_STATE_TO_ROADMAP, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+                start_node_indices[start_idx] = AddNodeToRoadmap(start, NEW_STATE_TO_ROADMAP, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric, add_duplicate_states);
             }
             // Add the goal node to the roadmap
-            const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+            const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric, add_duplicate_states);
             // Call Dijkstra's
             const auto dijkstras_solution = arc_dijkstras::SimpleDijkstrasAlgorithm<T, Allocator>::PerformDijkstrasAlgorithm(roadmap, goal_node_index);
             // Identify the lowest-distance starting state
@@ -240,12 +267,20 @@ namespace simple_prm_planner
         }
 
         template<typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<T, Allocator>, double> QueryPathAndAddNodesSingleStartSingleGoal(const T& start, const T& goal, arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true, const bool limit_astar_pqueue_duplicates=true)
+        static std::pair<std::vector<T, Allocator>, double> QueryPathAndAddNodesSingleStartSingleGoal(const T& start,
+                                                                                                      const T& goal,
+                                                                                                      arc_dijkstras::Graph<T, Allocator>& roadmap,
+                                                                                                      const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
+                                                                                                      const std::function<double(const T&, const T&)>& distance_fn,
+                                                                                                      const size_t K,
+                                                                                                      const bool distance_is_symmetric = true,
+                                                                                                      const bool add_duplicate_states = false,
+                                                                                                      const bool limit_astar_pqueue_duplicates=true)
         {
             // Add the start node to the roadmap
-            const int64_t start_node_index = AddNodeToRoadmap(start, NEW_STATE_TO_ROADMAP, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+            const int64_t start_node_index = AddNodeToRoadmap(start, NEW_STATE_TO_ROADMAP, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric, add_duplicate_states);
             // Add the goal node to the roadmap
-            const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+            const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric, add_duplicate_states);
             // Call graph A*
             const std::pair<std::vector<int64_t>, double> astar_result = arc_dijkstras::SimpleGraphAstar<T, Allocator>::PerformAstar(roadmap, start_node_index, goal_node_index, distance_fn, limit_astar_pqueue_duplicates);
             // Convert the solution path from A* provided as indices into real states
@@ -262,12 +297,20 @@ namespace simple_prm_planner
         }
 
         template<typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<T, Allocator>, double> LazyQueryPathAndAddNodesSingleStartSingleGoal(const T& start, const T& goal, arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true, const bool limit_astar_pqueue_duplicates=true)
+        static std::pair<std::vector<T, Allocator>, double> LazyQueryPathAndAddNodesSingleStartSingleGoal(const T& start,
+                                                                                                          const T& goal,
+                                                                                                          arc_dijkstras::Graph<T, Allocator>& roadmap,
+                                                                                                          const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
+                                                                                                          const std::function<double(const T&, const T&)>& distance_fn,
+                                                                                                          const size_t K,
+                                                                                                          const bool distance_is_symmetric = true,
+                                                                                                          const bool add_duplicate_states = false,
+                                                                                                          const bool limit_astar_pqueue_duplicates = true)
         {
             // Add the start node to the roadmap
-            const int64_t start_node_index = AddNodeToRoadmap(start, NEW_STATE_TO_ROADMAP, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+            const int64_t start_node_index = AddNodeToRoadmap(start, NEW_STATE_TO_ROADMAP, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric, add_duplicate_states);
             // Add the goal node to the roadmap
-            const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric);
+            const int64_t goal_node_index = AddNodeToRoadmap(goal, ROADMAP_TO_NEW_STATE, roadmap, distance_fn, edge_validity_check_fn, K, distance_is_symmetric, add_duplicate_states);
             // Call graph A*
             const std::pair<std::vector<int64_t>, double> astar_result = arc_dijkstras::SimpleGraphAstar<T, Allocator>::PerformLazyAstar(roadmap, start_node_index, goal_node_index, edge_validity_check_fn, distance_fn, distance_fn, limit_astar_pqueue_duplicates);
             // Convert the solution path from A* provided as indices into real states
@@ -285,12 +328,19 @@ namespace simple_prm_planner
 
         // TODO - figure out a better way to balance parallelism between KNN queries inside path calls and multiple calls to Dijkstras
         template<typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<T, Allocator>, double> QueryPathMultiStartMultiGoal(const std::vector<T, Allocator>& starts, const std::vector<T, Allocator>& goals, const arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true)
+        static std::pair<std::vector<T, Allocator>, double> QueryPathMultiStartMultiGoal(const std::vector<T, Allocator>& starts,
+                                                                                         const std::vector<T, Allocator>& goals,
+                                                                                         const arc_dijkstras::Graph<T, Allocator>& roadmap,
+                                                                                         const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
+                                                                                         const std::function<double(const T&, const T&)>& distance_fn,
+                                                                                         const size_t K,
+                                                                                         const bool distance_is_symmetric = true,
+                                                                                         const bool add_duplicate_states = false)
         {
             std::vector<std::pair<std::vector<T, Allocator>, double>> possible_solutions(goals.size());
             for (size_t goal_idx = 0; goal_idx < goals.size(); goal_idx++)
             {
-                possible_solutions[goal_idx] = QueryPathMultiStartSingleGoal(starts, goals[goal_idx], roadmap, edge_validity_check_fn, distance_fn, K, distance_is_symmetric);
+                possible_solutions[goal_idx] = QueryPathMultiStartSingleGoal(starts, goals[goal_idx], roadmap, edge_validity_check_fn, distance_fn, K, distance_is_symmetric, add_duplicate_states);
             }
             double best_solution_distance = std::numeric_limits<double>::infinity();
             int64_t best_solution_index = -1;
@@ -314,27 +364,48 @@ namespace simple_prm_planner
         }
 
         template<typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<T, Allocator>, double> QueryPathMultiStartSingleGoal(const std::vector<T, Allocator>& starts, const T& goal, const arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true)
+        static std::pair<std::vector<T, Allocator>, double> QueryPathMultiStartSingleGoal(const std::vector<T, Allocator>& starts,
+                                                                                          const T& goal,
+                                                                                          const arc_dijkstras::Graph<T, Allocator>& roadmap,
+                                                                                          const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
+                                                                                          const std::function<double(const T&, const T&)>& distance_fn,
+                                                                                          const size_t K,
+                                                                                          const bool distance_is_symmetric = true,
+                                                                                          const bool add_duplicate_states = false)
         {
             arc_dijkstras::Graph<T, Allocator> working_copy = roadmap;
-            return QueryPathAndAddNodesMultiStartSingleGoal(starts, goal, working_copy, edge_validity_check_fn, distance_fn, K, distance_is_symmetric);
+            return QueryPathAndAddNodesMultiStartSingleGoal(starts, goal, working_copy, edge_validity_check_fn, distance_fn, K, distance_is_symmetric, add_duplicate_states);
         }
 
         template<typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<T, Allocator>, double> QueryPathSingleStartSingleGoal(const T& start, const T& goal, const arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true)
+        static std::pair<std::vector<T, Allocator>, double> QueryPathSingleStartSingleGoal(const T& start,
+                                                                                           const T& goal,
+                                                                                           const arc_dijkstras::Graph<T, Allocator>& roadmap,
+                                                                                           const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
+                                                                                           const std::function<double(const T&, const T&)>& distance_fn,
+                                                                                           const size_t K,
+                                                                                           const bool distance_is_symmetric=true,
+                                                                                           const bool add_duplicate_states = false,
+                                                                                           const bool limit_astar_pqueue_duplicates=true)
         {
             arc_dijkstras::Graph<T, Allocator> working_copy = roadmap;
-            return QueryPathAndAddNodesSingleStartSingleGoal(start, goal, working_copy, edge_validity_check_fn, distance_fn, K, distance_is_symmetric);
+            return QueryPathAndAddNodesSingleStartSingleGoal(start, goal, working_copy, edge_validity_check_fn, distance_fn, K, distance_is_symmetric, add_duplicate_states, limit_astar_pqueue_duplicates);
         }
 
         template<typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<T, Allocator>, double> LazyQueryPathSingleStartSingleGoal(const T& start, const T& goal, const arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn, const size_t K, const bool distance_is_symmetric=true)
+        static std::pair<std::vector<T, Allocator>, double> LazyQueryPathSingleStartSingleGoal(const T& start,
+                                                                                               const T& goal,
+                                                                                               const arc_dijkstras::Graph<T, Allocator>& roadmap,
+                                                                                               const std::function<bool(const T&, const T&)>& edge_validity_check_fn,
+                                                                                               const std::function<double(const T&, const T&)>& distance_fn,
+                                                                                               const size_t K,
+                                                                                               const bool distance_is_symmetric=true,
+                                                                                               const bool add_duplicate_states = false,
+                                                                                               const bool limit_astar_pqueue_duplicates=true)
         {
             arc_dijkstras::Graph<T, Allocator> working_copy = roadmap;
-            return LazyQueryPathAndAddNodesSingleStartSingleGoal(start, goal, working_copy, edge_validity_check_fn, distance_fn, K, distance_is_symmetric);
+            return LazyQueryPathAndAddNodesSingleStartSingleGoal(start, goal, working_copy, edge_validity_check_fn, distance_fn, K, distance_is_symmetric, add_duplicate_states, limit_astar_pqueue_duplicates);
         }
-
-        // TODO update to provide lazy and non-lazy variants of single start/single goal
     };
 }
 
