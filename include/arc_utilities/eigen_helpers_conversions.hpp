@@ -94,7 +94,45 @@ namespace EigenHelpersConversions
         return eigen_pose;
     }
 
+    inline Eigen::Affine3d GeometryPoseToEigenAffine3d(const geometry_msgs::Pose& pose)
+    {
+        const Eigen::Translation3d trans(pose.position.x, pose.position.y, pose.position.z);
+        const Eigen::Quaterniond quat(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+        const Eigen::Affine3d eigen_pose = trans * quat;
+        return eigen_pose;
+    }
+
     inline geometry_msgs::Pose EigenIsometry3dToGeometryPose(const Eigen::Isometry3d& transform)
+    {
+        const Eigen::Vector3d trans = transform.translation();
+        const Eigen::Quaterniond quat(transform.rotation());
+        geometry_msgs::Pose geom_pose;
+        geom_pose.position.x = trans.x();
+        geom_pose.position.y = trans.y();
+        geom_pose.position.z = trans.z();
+        geom_pose.orientation.w = quat.w();
+        geom_pose.orientation.x = quat.x();
+        geom_pose.orientation.y = quat.y();
+        geom_pose.orientation.z = quat.z();
+        return geom_pose;
+    }
+
+    inline geometry_msgs::Pose EigenAffine3fToGeometryPose(const Eigen::Affine3f& transform)
+    {
+        const Eigen::Vector3f trans = transform.translation();
+        const Eigen::Quaternionf quat(transform.rotation());
+        geometry_msgs::Pose geom_pose;
+        geom_pose.position.x = trans.x();
+        geom_pose.position.y = trans.y();
+        geom_pose.position.z = trans.z();
+        geom_pose.orientation.w = quat.w();
+        geom_pose.orientation.x = quat.x();
+        geom_pose.orientation.y = quat.y();
+        geom_pose.orientation.z = quat.z();
+        return geom_pose;
+    }
+
+    inline geometry_msgs::Pose EigenAffine3dToGeometryPose(const Eigen::Affine3d& transform)
     {
         const Eigen::Vector3d trans = transform.translation();
         const Eigen::Quaterniond quat(transform.rotation());
@@ -117,6 +155,14 @@ namespace EigenHelpersConversions
         return pose_stamped;
     }
 
+    inline geometry_msgs::PoseStamped EigenAffine3dToGeometryPoseStamped(const Eigen::Isometry3d& transform, const std::string& frame_id)
+    {
+        geometry_msgs::PoseStamped pose_stamped;
+        pose_stamped.header.frame_id = frame_id;
+        pose_stamped.pose = EigenAffine3dToGeometryPose(transform);
+        return pose_stamped;
+    }
+
     inline Eigen::Isometry3d GeometryTransformToEigenIsometry3d(const geometry_msgs::Transform& transform)
     {
         const Eigen::Translation3d trans(transform.translation.x, transform.translation.y, transform.translation.z);
@@ -125,7 +171,30 @@ namespace EigenHelpersConversions
         return eigen_transform;
     }
 
+    inline Eigen::Affine3d GeometryTransformToEigenAffine3d(const geometry_msgs::Transform& transform)
+    {
+        const Eigen::Translation3d trans(transform.translation.x, transform.translation.y, transform.translation.z);
+        const Eigen::Quaterniond quat(transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z);
+        const Eigen::Affine3d eigen_transform = trans * quat;
+        return eigen_transform;
+    }
+
     inline geometry_msgs::Transform EigenIsometry3dToGeometryTransform(const Eigen::Isometry3d& transform)
+    {
+        const Eigen::Vector3d trans = transform.translation();
+        const Eigen::Quaterniond quat(transform.rotation());
+        geometry_msgs::Transform geom_transform;
+        geom_transform.translation.x = trans.x();
+        geom_transform.translation.y = trans.y();
+        geom_transform.translation.z = trans.z();
+        geom_transform.rotation.w = quat.w();
+        geom_transform.rotation.x = quat.x();
+        geom_transform.rotation.y = quat.y();
+        geom_transform.rotation.z = quat.z();
+        return geom_transform;
+    }
+
+    inline geometry_msgs::Transform EigenAffine3dToGeometryTransform(const Eigen::Affine3d& transform)
     {
         const Eigen::Vector3d trans = transform.translation();
         const Eigen::Quaterniond quat(transform.rotation());
@@ -210,12 +279,22 @@ namespace EigenHelpersConversions
         return vector_eigen;
     }
 
-    inline EigenHelpers::VectorIsometry3d VectorGeometryPoseToVectorIsometry3d(const std::vector<geometry_msgs::Transform>& vector_geom)
+    inline EigenHelpers::VectorIsometry3d VectorGeometryTransformToVectorIsometry3d(const std::vector<geometry_msgs::Transform>& vector_geom)
     {
         EigenHelpers::VectorIsometry3d vector_eigen(vector_geom.size());
         for (size_t idx = 0; idx < vector_geom.size(); idx++)
         {
             vector_eigen[idx] = GeometryTransformToEigenIsometry3d(vector_geom[idx]);
+        }
+        return vector_eigen;
+    }
+
+    inline EigenHelpers::VectorAffine3d VectorGeometryTransformToVectorAffine3d(const std::vector<geometry_msgs::Transform>& vector_geom)
+    {
+        EigenHelpers::VectorAffine3d vector_eigen(vector_geom.size());
+        for (size_t idx = 0; idx < vector_geom.size(); idx++)
+        {
+            vector_eigen[idx] = GeometryTransformToEigenAffine3d(vector_geom[idx]);
         }
         return vector_eigen;
     }
@@ -230,12 +309,32 @@ namespace EigenHelpersConversions
         return vector_geom;
     }
 
+    inline std::vector<geometry_msgs::Pose> VectorAffine3dToVectorGeometryPose(const EigenHelpers::VectorAffine3d& vector_eigen)
+    {
+        std::vector<geometry_msgs::Pose> vector_geom(vector_eigen.size());
+        for (size_t idx = 0; idx < vector_eigen.size(); idx++)
+        {
+            vector_geom[idx] = EigenAffine3dToGeometryPose(vector_eigen[idx]);
+        }
+        return vector_geom;
+    }
+
     inline std::vector<geometry_msgs::Transform> VectorIsometry3dToVectorGeometryTransform(const EigenHelpers::VectorIsometry3d& vector_eigen)
     {
         std::vector<geometry_msgs::Transform> vector_geom(vector_eigen.size());
         for (size_t idx = 0; idx < vector_eigen.size(); idx++)
         {
             vector_geom[idx] = EigenIsometry3dToGeometryTransform(vector_eigen[idx]);
+        }
+        return vector_geom;
+    }
+
+    inline std::vector<geometry_msgs::Transform> VectorAffine3dToVectorGeometryTransform(const EigenHelpers::VectorAffine3d& vector_eigen)
+    {
+        std::vector<geometry_msgs::Transform> vector_geom(vector_eigen.size());
+        for (size_t idx = 0; idx < vector_eigen.size(); idx++)
+        {
+            vector_geom[idx] = EigenAffine3dToGeometryTransform(vector_eigen[idx]);
         }
         return vector_geom;
     }
