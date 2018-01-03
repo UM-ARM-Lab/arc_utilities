@@ -176,7 +176,7 @@ namespace arc_utilities
     }
 
 
-    // TODO: Double check these code is not duplicated. They are copied from the previous EigenHelper. ---- Mengyao
+    // TODO: These pieces of code are copied from the previous EigenHelper. ---- Mengyao
     // Serialization/Deserialization functions
     ////////////////////////////////////////////////////////////////////////////
 
