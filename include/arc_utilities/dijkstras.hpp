@@ -1,6 +1,3 @@
-#ifndef DIJKSTRAS_HPP
-#define DIJKSTRAS_HPP
-
 #include <cstdint>
 #include <functional>
 #include <limits>
@@ -10,6 +7,9 @@
 #include <vector>
 #include <Eigen/Geometry>
 #include <arc_utilities/arc_helpers.hpp>
+
+#ifndef DIJKSTRAS_HPP
+#define DIJKSTRAS_HPP
 
 namespace arc_dijkstras
 {
@@ -57,7 +57,6 @@ namespace arc_dijkstras
 
             uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer, const uint64_t current)
             {
-                assert(current < buffer.size());
                 uint64_t current_position = current;
                 const std::pair<int64_t, uint64_t> deserialized_from_index = arc_helpers::DeserializeFixedSizePOD<int64_t>(buffer, current_position);
                 from_index_ = deserialized_from_index.first;
@@ -177,7 +176,6 @@ namespace arc_dijkstras
 
             uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
             {
-                assert(current < buffer.size());
                 uint64_t current_position = current;
                 // Deserialize the value
                 const std::pair<NodeValueType, uint64_t> value_deserialized = value_deserializer(buffer, current_position);
@@ -483,16 +481,12 @@ namespace arc_dijkstras
 
             const GraphNode<NodeValueType, Allocator>& GetNodeImmutable(const int64_t index) const
             {
-                assert(index >= 0);
-                assert(index < (int64_t)nodes_.size());
-                return nodes_[(size_t)index];
+                return nodes_.at((size_t)index);
             }
 
             GraphNode<NodeValueType, Allocator>& GetNodeMutable(const int64_t index)
             {
-                assert(index >= 0);
-                assert(index < (int64_t)nodes_.size());
-                return nodes_[(size_t)index];
+                return nodes_.at((size_t)index);
             }
 
             int64_t AddNode(const GraphNode<NodeValueType, Allocator>& new_node)
@@ -509,29 +503,33 @@ namespace arc_dijkstras
 
             void AddEdgeBetweenNodes(const int64_t from_index, const int64_t to_index, const double edge_weight)
             {
-                assert(from_index >= 0);
-                assert(from_index < (int64_t)nodes_.size());
-                assert(to_index >= 0);
-                assert(to_index < (int64_t)nodes_.size());
-                assert(from_index != to_index);
+                // We retrieve the nodes first, since retrieval performs bounds checks first
+                GraphNode<NodeValueType, Allocator>& from_node = GetNodeMutable(from_index);
+                GraphNode<NodeValueType, Allocator>& to_node = GetNodeMutable(to_index);
+                if (from_index == to_index)
+                {
+                    throw std::invalid_argument("Invalid circular edge from==to not allowed");
+                }
                 const GraphEdge new_edge(from_index, to_index, edge_weight);
-                GetNodeMutable(from_index).AddOutEdge(new_edge);
-                GetNodeMutable(to_index).AddInEdge(new_edge);
+                from_node.AddOutEdge(new_edge);
+                to_node.AddInEdge(new_edge);
             }
 
             void AddEdgesBetweenNodes(const int64_t first_index, const int64_t second_index, const double edge_weight)
             {
-                assert(first_index >= 0);
-                assert(first_index < (int64_t)nodes_.size());
-                assert(second_index >= 0);
-                assert(second_index < (int64_t)nodes_.size());
-                assert(first_index != second_index);
+                // We retrieve the nodes first, since retrieval performs bounds checks first
+                GraphNode<NodeValueType, Allocator>& first_node = GetNodeMutable(first_index);
+                GraphNode<NodeValueType, Allocator>& second_node = GetNodeMutable(second_index);
+                if (first_index == second_index)
+                {
+                    throw std::invalid_argument("Invalid circular edge first==second not allowed");
+                }
                 const GraphEdge first_edge(first_index, second_index, edge_weight);
-                GetNodeMutable(first_index).AddOutEdge(first_edge);
-                GetNodeMutable(second_index).AddInEdge(first_edge);
+                first_node.AddOutEdge(first_edge);
+                second_node.AddInEdge(first_edge);
                 const GraphEdge second_edge(second_index, first_index, edge_weight);
-                GetNodeMutable(second_index).AddOutEdge(second_edge);
-                GetNodeMutable(first_index).AddInEdge(second_edge);
+                second_node.AddOutEdge(second_edge);
+                first_node.AddInEdge(second_edge);
             }
     };
 
@@ -632,7 +630,6 @@ namespace arc_dijkstras
                 return std::make_pair(working_copy, std::make_pair(previous_index_map, distances));
             }
 
-            // These functions have not been tested.  Use with care.
             static uint64_t SerializeDijstrasResult(const DijkstrasResult& result, std::vector<uint8_t>& buffer, const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer)
             {
                 const uint64_t start_buffer_size = buffer.size();
@@ -648,10 +645,8 @@ namespace arc_dijkstras
                 return bytes_written;
             }
 
-            // These functions have not been tested.  Use with care.
             static std::pair<DijkstrasResult, uint64_t> DijstrasResult(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
             {
-                assert(current < buffer.size());
                 uint64_t current_position = current;
                 // Deserialize the graph itself
                 std::pair<DijkstrasResult, uint64_t> deserialized;

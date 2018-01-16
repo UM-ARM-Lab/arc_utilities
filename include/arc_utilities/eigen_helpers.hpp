@@ -78,6 +78,7 @@ namespace EigenHelpers
     // Typedefs for aligned STL containers using Eigen types
     ////////////////////////////////////////////////////////////////////////////
 
+    typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>> VectorVector2f;
     typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VectorVector2d;
     typedef std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> VectorVector3f;
     typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VectorVector3d;
@@ -87,6 +88,8 @@ namespace EigenHelpers
     typedef std::vector<Eigen::Quaterniond, Eigen::aligned_allocator<Eigen::Quaterniond>> VectorQuaterniond;
     typedef std::vector<Eigen::Isometry3f, Eigen::aligned_allocator<Eigen::Isometry3f>> VectorIsometry3f;
     typedef std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>> VectorIsometry3d;
+    typedef std::map<std::string, Eigen::Vector2f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector2f>>> MapStringVector2f;
+    typedef std::map<std::string, Eigen::Vector2d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector2d>>> MapStringVector2d;
     typedef std::map<std::string, Eigen::Vector3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3f>>> MapStringVector3f;
     typedef std::map<std::string, Eigen::Vector3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3d>>> MapStringVector3d;
     typedef std::map<std::string, Eigen::Vector4f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4f>>> MapStringVector4f;
@@ -1468,6 +1471,11 @@ namespace EigenHelpers
         }
 
         Hyperplane() {}
+
+        size_t GetDimensionality() const
+        {
+            return (size_t)plane_origin_.size();
+        }
 
         const Eigen::VectorXd& GetOrigin() const
         {

@@ -163,7 +163,10 @@ namespace simple_prm_planner
         template<typename T, typename Allocator=std::allocator<T>>
         static void UpdateRoadMapEdges(arc_dijkstras::Graph<T, Allocator>& roadmap, const std::function<bool(const T&, const T&)>& edge_validity_check_fn, const std::function<double(const T&, const T&)>& distance_fn)
         {
-            assert(roadmap.CheckGraphLinkage());
+            if (roadmap.CheckGraphLinkage() == false)
+            {
+                throw std::invalid_argument("Provided roadmap has invalid linkage");
+            }
 #ifdef ENABLE_PARALLEL_ROADMAP
             #pragma omp parallel for
 #endif

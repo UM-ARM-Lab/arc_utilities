@@ -277,8 +277,8 @@ namespace simple_rrt_planner
                                                                       const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                       const std::chrono::duration<double>& time_limit)
         {
-            std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
-            const std::function<bool(void)> termination_check_fn = [&](void) { return (((std::chrono::time_point<std::chrono::high_resolution_clock>)std::chrono::high_resolution_clock::now() - start_time) > time_limit); };
+            std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
+            const std::function<bool(void)> termination_check_fn = [&](void) { return (((std::chrono::time_point<std::chrono::steady_clock>)std::chrono::steady_clock::now() - start_time) > time_limit); };
             return Plan(start, nearest_neighbor_fn, goal_reached_fn, sampling_fn, forward_propagation_fn, termination_check_fn);
         }
 
@@ -501,9 +501,15 @@ namespace simple_rrt_planner
                                                                       const std::function<bool(void)>& termination_check_fn)
         {
             // Make sure we've been given a start state
-            assert(nodes.size() > 0);
+            if (nodes.empty())
+            {
+                throw std::invalid_argument("Must be called with at least one node in tree");
+            }
             // Make sure the tree is properly linked
-            assert(CheckTreeLinkage(nodes));
+            if(CheckTreeLinkage(nodes) == false)
+            {
+                throw std::invalid_argument("Provided tree has invalid linkage");
+            }
             // Keep track of statistics
             std::map<std::string, double> statistics;
             statistics["total_samples"] = 0.0;
@@ -522,7 +528,7 @@ namespace simple_rrt_planner
                 }
             }
             // Update the start time
-            std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
+            std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
             // Plan
             while (!termination_check_fn())
             {
@@ -551,10 +557,11 @@ namespace simple_rrt_planner
                         if (current_relative_parent_index >= 0)
                         {
                             const int64_t current_relative_index = (int64_t)idx;
-                            assert(current_relative_parent_index < current_relative_index);
+                            if (current_relative_parent_index >= current_relative_index)
+                            {
+                                throw std::invalid_argument("Linkage with relative parent index >= current relative index is invalid");
+                            }
                             const int64_t current_relative_offset = current_relative_parent_index - current_relative_index;
-                            assert(current_relative_offset < 0);
-                            assert(current_relative_offset >= -(int64_t)propagated.size());
                             const int64_t current_nodes_size = (int64_t)nodes.size();
                             node_parent_index = current_nodes_size + current_relative_offset; // Offset is negative!
                         }
@@ -587,9 +594,12 @@ namespace simple_rrt_planner
             }
             // Put together the results
             // Make sure the tree is properly linked
-            assert(CheckTreeLinkage(nodes));
+            if(CheckTreeLinkage(nodes) == false)
+            {
+                throw std::runtime_error("Tree linkage was corrupted during planning");
+            }
             std::vector<std::vector<T, Allocator>> planned_paths = ExtractSolutionPaths(nodes, goal_state_indices);
-            std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();
+            std::chrono::time_point<std::chrono::steady_clock> cur_time = std::chrono::steady_clock::now();
             std::chrono::duration<double> planning_time(cur_time - start_time);
             statistics["planning_time"] = planning_time.count();
             statistics["total_states"] = nodes.size();
@@ -709,8 +719,7 @@ namespace simple_rrt_planner
             int64_t parent_index = goal_state.GetParentIndex();
             while (parent_index >= 0)
             {
-                assert(parent_index < nodes.size());
-                const SimpleRRTPlannerState<T, Allocator>& parent_state = nodes[parent_index];
+                const SimpleRRTPlannerState<T, Allocator>& parent_state = nodes.at(parent_index);
                 const T& parent = parent_state.GetValueImmutable();
                 solution_path.push_back(parent);
                 parent_index = parent_state.GetParentIndex();
@@ -745,8 +754,8 @@ namespace simple_rrt_planner
                     [] (std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t) { ; };
             std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)> dummy_goal_bridge_callback_fn =
                     [] (std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t) { ; };
-            std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
-            const std::function<bool(void)> termination_check_fn = [&](void) { return (((std::chrono::time_point<std::chrono::high_resolution_clock>)std::chrono::high_resolution_clock::now() - start_time) > time_limit); };
+            std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
+            const std::function<bool(void)> termination_check_fn = [&](void) { return (((std::chrono::time_point<std::chrono::steady_clock>)std::chrono::steady_clock::now() - start_time) > time_limit); };
             bool solution_found = false;
             const std::function<bool(const T&, const T&)> real_states_connected_fn = [&](const T& state1, const T& state2) { if (states_connected_fn(state1, state2)) { solution_found = true; return true; } else {return false;} };
             const std::function<bool(void)> real_termination_check_fn = [&](void) { if (!solution_found) { return termination_check_fn(); } else {return true;} };
@@ -865,10 +874,22 @@ namespace simple_rrt_planner
                                                                                                               const std::function<bool(void)>& termination_check_fn,
                                                                                                               RNG& rng)
         {
-            assert(start_tree.size() > 0);
-            assert(goal_tree.size() > 0);
-            assert(SimpleHybridRRTPlanner::CheckTreeLinkage(start_tree));
-            assert(SimpleHybridRRTPlanner::CheckTreeLinkage(goal_tree));
+            if (start_tree.empty())
+            {
+                throw std::invalid_argument("Must be called with at least one node in start tree");
+            }
+            if (goal_tree.empty())
+            {
+                throw std::invalid_argument("Must be called with at least one node in goal tree");
+            }
+            if (SimpleHybridRRTPlanner::CheckTreeLinkage(start_tree) == false)
+            {
+                throw std::invalid_argument("Provided start tree has invalid linkage");
+            }
+            if (SimpleHybridRRTPlanner::CheckTreeLinkage(goal_tree) == false)
+            {
+                throw std::invalid_argument("Provided goal tree has invalid linkage");
+            }
             // Keep track of the "goal bridges" between the trees
             std::vector<std::pair<int64_t, int64_t>> goal_bridges;
             // Keep track of the active treee
@@ -880,6 +901,7 @@ namespace simple_rrt_planner
             statistics["total_samples"] = 0.0;
             statistics["successful_samples"] = 0.0;
             statistics["failed_samples"] = 0.0;
+            statistics["active_tree_swaps"] = 0.0;
             // Safety check before doing real work
             for (size_t start_tree_idx = 0; start_tree_idx < start_tree.size(); start_tree_idx++)
             {
@@ -894,7 +916,7 @@ namespace simple_rrt_planner
                 }
             }
             // Update the start time
-            std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
+            std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
             // Plan
             while (!termination_check_fn())
             {
@@ -934,10 +956,11 @@ namespace simple_rrt_planner
                         if (current_relative_parent_index >= 0)
                         {
                             const int64_t current_relative_index = (int64_t)idx;
-                            assert(current_relative_parent_index < current_relative_index);
+                            if (current_relative_parent_index >= current_relative_index)
+                            {
+                                throw std::invalid_argument("Linkage with relative parent index >= current relative index is invalid");
+                            }
                             const int64_t current_relative_offset = current_relative_parent_index - current_relative_index;
-                            assert(current_relative_offset < 0);
-                            assert(current_relative_offset >= -(int64_t)propagated.size());
                             const int64_t current_nodes_size = (int64_t)active_tree.size();
                             node_parent_index = current_nodes_size + current_relative_offset; // Offset is negative!
                         }
@@ -983,11 +1006,18 @@ namespace simple_rrt_planner
                 if (unit_real_distribution(rng) <= p_switch_tree)
                 {
                     start_tree_active = !start_tree_active;
+                    statistics["active_tree_swaps"] += 1.0;
                 }
             }
             // Put together the results
-            assert(SimpleHybridRRTPlanner::CheckTreeLinkage(start_tree));
-            assert(SimpleHybridRRTPlanner::CheckTreeLinkage(goal_tree));
+            if (SimpleHybridRRTPlanner::CheckTreeLinkage(start_tree) == false)
+            {
+                throw std::runtime_error("Start tree linkage was corrupted during planning");
+            }
+            if (SimpleHybridRRTPlanner::CheckTreeLinkage(goal_tree) == false)
+            {
+                throw std::runtime_error("Goal tree linkage was corrupted during planning");
+            }
             std::vector<std::vector<T, Allocator>> planned_paths;
             // Extract the solution paths
             for (size_t goal_bridge_idx = 0; goal_bridge_idx < goal_bridges.size(); goal_bridge_idx++)
@@ -1003,7 +1033,7 @@ namespace simple_rrt_planner
                 start_path.insert(start_path.end(), goal_path.begin(), goal_path.end());
                 planned_paths.push_back(start_path);
             }
-            std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();
+            std::chrono::time_point<std::chrono::steady_clock> cur_time = std::chrono::steady_clock::now();
             std::chrono::duration<double> planning_time(cur_time - start_time);
             statistics["planning_time"] = planning_time.count();
             statistics["total_states"] = (double)(start_tree.size() + goal_tree.size());
