@@ -77,6 +77,10 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/simple_dtw.hpp
     include/${PROJECT_NAME}/dijkstras.hpp
     include/${PROJECT_NAME}/shortcut_smoothing.hpp
+    include/${PROJECT_NAME}/simple_se2_robot_model.hpp
+    include/${PROJECT_NAME}/simple_se3_robot_model.hpp
+    include/${PROJECT_NAME}/simple_linked_robot_model.hpp
+    include/${PROJECT_NAME}/simple_robot_models.hpp
     include/${PROJECT_NAME}/first_order_visibility_graph.hpp
     include/${PROJECT_NAME}/time_optimal_trajectory_parametrization.hpp
     src/${PROJECT_NAME}/time_optimal_trajectory_parametrization.cpp
