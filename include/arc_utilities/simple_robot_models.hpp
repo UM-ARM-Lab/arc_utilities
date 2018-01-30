@@ -41,7 +41,7 @@ namespace simple_robot_models
             : geometry_type_(geometry_type),
               geometry_(geometry) {}
 
-        PointSphereGeometry() : geometry_type_(POINTS) {}
+        PointSphereGeometry() : geometry_type_(POINTS), geometry_(new EigenHelpers::VectorVector4d()) {}
 
         const MODEL_GEOMETRY_TYPE& GeometryType() const { return geometry_type_; }
 
