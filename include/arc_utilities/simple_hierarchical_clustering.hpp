@@ -18,6 +18,8 @@
 
 namespace simple_hierarchical_clustering
 {
+    enum CLUSTER_STRATEGY { SINGLE_LINK, COMPLETE_LINK };
+
     class SimpleHierarchicalClustering
     {
     private:
@@ -38,7 +40,7 @@ namespace simple_hierarchical_clustering
 #endif
         }
 
-        static std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> GetClosestPair(const std::vector<uint8_t>& datapoint_mask, const Eigen::MatrixXd& distance_matrix, const std::vector<std::vector<int64_t>>& clusters)
+        static std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> GetClosestPair(const std::vector<uint8_t>& datapoint_mask, const Eigen::MatrixXd& distance_matrix, const std::vector<std::vector<int64_t>>& clusters, const CLUSTER_STRATEGY strategy)
         {
             // Compute distances between unclustered points <-> unclustered points, unclustered_points <-> clusters, and clusters <-> clusters
             // Compute the minimum unclustered point <-> unclustered point / unclustered_point <-> cluster distance
@@ -82,16 +84,16 @@ namespace simple_hierarchical_clustering
                         if (clusters[cdx].size() > 0)
                         {
                             // Compute the distance to the current cluster
-                            double current_distance = 0.0;
+                            double complete_link_distance = 0.0;
+                            double single_link_distance = INFINITY;
                             for (size_t cpdx = 0; cpdx < clusters[cdx].size(); cpdx++)
                             {
                                 const int64_t& current_cluster_point_index = clusters[cdx][cpdx];
                                 const double& new_distance = distance_matrix((ssize_t)idx, (ssize_t)current_cluster_point_index);
-                                if (new_distance > current_distance)
-                                {
-                                    current_distance = new_distance;
-                                }
+                                complete_link_distance = std::max(complete_link_distance, new_distance);
+                                single_link_distance = std::min(single_link_distance, new_distance);
                             }
+                            const double current_distance = (strategy == COMPLETE_LINK) ? complete_link_distance : single_link_distance;
                             // Update the closest cluster
                             if (current_distance < min_point_cluster_distance)
                             {
@@ -177,7 +179,8 @@ namespace simple_hierarchical_clustering
                             if (second_cluster.size() > 0)
                             {
                                 // Compute the cluster <-> cluster distance
-                                double max_point_point_distance = 0.0;
+                                double complete_link_distance = 0.0;
+                                double single_link_distance = INFINITY;
                                 // Find the maximum-pointwise distance between clusters
                                 for (size_t fcpx = 0; fcpx < first_cluster.size(); fcpx++)
                                 {
@@ -186,13 +189,11 @@ namespace simple_hierarchical_clustering
                                     {
                                         const int64_t& scp_index = second_cluster[scpx];
                                         const double& new_distance = distance_matrix(fcp_index, scp_index);
-                                        if (new_distance > max_point_point_distance)
-                                        {
-                                            max_point_point_distance = new_distance;
-                                        }
+                                        complete_link_distance = std::max(complete_link_distance, new_distance);
+                                        single_link_distance = std::min(single_link_distance, new_distance);
                                     }
                                 }
-                                const double cluster_cluster_distance = max_point_point_distance;
+                                const double cluster_cluster_distance = (strategy == COMPLETE_LINK) ? complete_link_distance : single_link_distance;
 #ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
                                 const size_t thread_num = (size_t)omp_get_thread_num();
                                 double& per_thread_min_cluster_cluster_distance = per_thread_min_cluster_cluster_distances[thread_num];
@@ -255,18 +256,18 @@ namespace simple_hierarchical_clustering
     public:
 
         template<typename Datatype, typename Allocator=std::allocator<Datatype>>
-        static std::pair<std::vector<std::vector<Datatype, Allocator>>, double> Cluster(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn, const double max_cluster_distance)
+        static std::pair<std::vector<std::vector<Datatype, Allocator>>, double> Cluster(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn, const double max_cluster_distance, const CLUSTER_STRATEGY strategy)
         {
 #ifdef ENABLE_PARALLEL_COMPLETE_LINK_CLUSTERING
             const Eigen::MatrixXd distance_matrix = arc_helpers::BuildDistanceMatrixParallel(data, distance_fn);
 #else
             const Eigen::MatrixXd distance_matrix = arc_helpers::BuildDistanceMatrixSerial(data, distance_fn);
 #endif
-            return Cluster(data, distance_matrix, max_cluster_distance);
+            return Cluster(data, distance_matrix, max_cluster_distance, strategy);
         }
 
         template<typename Datatype, typename Allocator=std::allocator<Datatype>>
-        static std::pair<std::vector<std::vector<Datatype, Allocator>>, double> Cluster(const std::vector<Datatype, Allocator>& data, const Eigen::MatrixXd& distance_matrix, const double max_cluster_distance)
+        static std::pair<std::vector<std::vector<Datatype, Allocator>>, double> Cluster(const std::vector<Datatype, Allocator>& data, const Eigen::MatrixXd& distance_matrix, const double max_cluster_distance, const CLUSTER_STRATEGY strategy)
         {
             assert((size_t)distance_matrix.rows() == data.size());
             assert((size_t)distance_matrix.cols() == data.size());
@@ -277,7 +278,7 @@ namespace simple_hierarchical_clustering
             while (!complete)
             {
                 // Get closest pair of elements (an element can be a cluster or single data value!)
-                const std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> closest_element_pair = GetClosestPair(datapoint_mask, distance_matrix, cluster_indices);
+                const std::pair<std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>, double> closest_element_pair = GetClosestPair(datapoint_mask, distance_matrix, cluster_indices, strategy);
                 const std::pair<std::pair<bool, int64_t>, std::pair<bool, int64_t>>& closest_elements = closest_element_pair.first;
                 closest_distance = closest_element_pair.second;
                 //std::cout << "Element pair: " << PrettyPrint::PrettyPrint(closest_element_pair, true) << std::endl;

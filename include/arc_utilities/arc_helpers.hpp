@@ -12,6 +12,9 @@
 #include <queue>
 #include <arc_utilities/eigen_helpers.hpp>
 #include <omp.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <fcntl.h>
 
 #ifndef ARC_HELPERS_HPP
 #define ARC_HELPERS_HPP
@@ -42,6 +45,58 @@
 
 namespace arc_helpers
 {
+    /*
+     * See: https://stackoverflow.com/questions/3596781/how-to-detect-if-the-current-process-is-being-run-by-gdb
+     */
+    inline bool IsDebuggerPresent()
+    {
+        const int status_fd = open("/proc/self/status", O_RDONLY);
+        if (status_fd == -1)
+        {
+            return false;
+        }
+        char buf[1024];
+        const ssize_t num_read = read(status_fd, buf, sizeof(buf) - 1);
+        if (num_read > 0)
+        {
+            static const char TracerPid[] = "TracerPid:";
+            char *tracer_pid;
+            buf[num_read] = 0;
+            tracer_pid = strstr(buf, TracerPid);
+            if (tracer_pid)
+            {
+                if (!!atoi(tracer_pid + sizeof(TracerPid) - 1))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    inline void InteractiveWaitToContinue()
+    {
+        if (IsDebuggerPresent() == false)
+        {
+            std::cout << "Press ENTER to continue..." << std::endl;
+            std::cin.get();
+        }
+        else
+        {
+            std::cout << "Process is under debugger, use breakpoints for interactive flow control instead" << std::endl;
+        }
+    }
+
+    inline void ConditionalPrintWaitForInteractiveInput(const std::string& msg, const int32_t msg_level, const int32_t print_level)
+    {
+        if (unlikely(msg_level <= print_level))
+        {
+            const std::string printstr = "[" + std::to_string(msg_level) + "/" + std::to_string(print_level) + "] " + msg + "\n";
+            std::cout << printstr << std::flush;
+            InteractiveWaitToContinue();
+        }
+    }
+
     template<typename T>
     inline bool CheckAlignment(const T& item, const uint64_t desired_alignment)
     {

@@ -533,9 +533,9 @@ namespace simple_rrt_planner
             while (!termination_check_fn())
             {
                 // Sample a random goal
-                T random_target = sampling_fn();
+                const T random_target = sampling_fn();
                 // Get the nearest neighbor
-                int64_t nearest_neighbor_index = nearest_neighbor_fn(nodes, random_target);
+                const int64_t nearest_neighbor_index = nearest_neighbor_fn(nodes, random_target);
                 const T& nearest_neighbor = nodes.at(nearest_neighbor_index).GetValueImmutable();
                 // Forward propagate towards the goal
                 std::vector<std::pair<T, int64_t>> propagated = forward_propagation_fn(nearest_neighbor, random_target);
@@ -934,7 +934,7 @@ namespace simple_rrt_planner
                 // Sample a target state
                 const T target_state = (sample_from_tree) ? target_tree.at(target_tree_node_index).GetValueImmutable() : state_sampling_fn();
                 // Get the nearest neighbor
-                int64_t nearest_neighbor_index = nearest_neighbor_fn(active_tree, target_state);
+                const int64_t nearest_neighbor_index = nearest_neighbor_fn(active_tree, target_state);
                 const T& nearest_neighbor = active_tree.at(nearest_neighbor_index).GetValueImmutable();
                 // Forward propagate towards the goal
                 std::vector<std::pair<T, int64_t>> propagated = forward_propagation_fn(nearest_neighbor, target_state);
