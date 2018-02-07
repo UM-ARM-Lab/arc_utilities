@@ -907,6 +907,96 @@ namespace EigenHelpers
         return distances;
     }
 
+    /**
+     * @brief Computes the squared distance between each point in a given set
+     *
+     * @param set The set of points to compute distances on, arranged with each point as a column
+     *
+     * @return The distances between each pair of nodes
+     */
+    template<typename ScalarType, int VectorLength, int NumVectors>
+    inline Eigen::Matrix<double, NumVectors, NumVectors> CalculateSquaredDistanceMatrix(const Eigen::Matrix<ScalarType, VectorLength, NumVectors>& set)
+    {
+        assert (set.cols() > 0);
+        const ssize_t num_vectors = set.cols(); // TODO: if NumVectors != Eigen::Dynamic, this is known at compile time
+
+        Eigen::MatrixXd squared_dist(num_vectors, num_vectors);
+        #ifdef ENABLE_PARALLEL_DISTANCE_MATRIX
+            #pragma omp parallel for
+        #endif
+        for (ssize_t i = 0; i < num_vectors; i++)
+        {
+            for (ssize_t j = i; j < num_vectors; j++)
+            {
+                const double sq_dist = (set.col(i) - set.col(j)).squaredNorm();
+                squared_dist(i, j) = sq_dist;
+                squared_dist(j, i) = sq_dist;
+            }
+        }
+
+        return squared_dist;
+    }
+
+    /**
+     * @brief Computes the distance between each point in a given set
+     *
+     * @param set The set of points to compute distances on, arranged with each point as a column
+     *
+     * @return The distances between each pair of nodes
+     */
+    template<typename ScalarType, int VectorLength, int NumVectors>
+    inline Eigen::Matrix<double, NumVectors, NumVectors> CalculateDistanceMatrix(const Eigen::Matrix<ScalarType, VectorLength, NumVectors>& set)
+    {
+        return CalculateSquaredDistanceMatrix(set).cwiseSqrt();
+    }
+
+    /**
+     * @brief Computes the squared distance between a given point, and every point in a set
+     *
+     * @param set The set of points to compute distances on, arranged with each point as a column
+     * @param point The point to measure the distance to
+     *
+     * @return The distances between each pair of nodes
+     */
+    template<typename ScalarType, int VectorLength, int NumVectors>
+    inline Eigen::Matrix<double, NumVectors, 1> CalculateSquaredDistanceToSet(const Eigen::Matrix<ScalarType, VectorLength, NumVectors>& set, const Eigen::Matrix<ScalarType, VectorLength, 1>& point)
+    {
+        return (set.colwise() - point).colwise().squaredNorm();
+    }
+
+    /**
+     * @brief Computes the distance between a given point, and every point in a set
+     *
+     * @param set The set of points to compute distances on, arranged with each point as a column
+     * @param point The point to measure the distance to
+     *
+     * @return The distances between each pair of nodes
+     */
+    template<typename ScalarType, int VectorLength, int NumVectors>
+    inline Eigen::Matrix<double, NumVectors, 1> CalculateDistanceToSet(const Eigen::Matrix<ScalarType, VectorLength, NumVectors>& set, const Eigen::Matrix<ScalarType, VectorLength, 1>& point)
+    {
+        return CalculateSquaredDistanceToSet(set, point).cwiseSqrt();
+    }
+
+    /**
+     * @brief Finds the closest point in the set to a given point
+     *
+     * @param set The set of points to compute distances on, arranged with each point as a column
+     * @param point The point to measure the distance to
+     *
+     * @return The index of the point in the set
+     */
+    template<typename ScalarType, int VectorLength, int NumVectors>
+    inline ssize_t ClosestPointInSet(const Eigen::Matrix<ScalarType, VectorLength, NumVectors>& set, const Eigen::Matrix<ScalarType, VectorLength, 1>& point)
+    {
+        assert (set.cols() > 0);
+        ssize_t min_ind = 0;
+        const Eigen::VectorXd squared_dist = CalculateSquaredDistanceToSet(set, point);
+        squared_dist.minCoeff(&min_ind);
+        return min_ind;
+    }
+
+
     ////////////////////////////////////////////////////////////////////////////
     // Conversion functions
     ////////////////////////////////////////////////////////////////////////////
@@ -1108,9 +1198,9 @@ namespace EigenHelpers
      * This function is really only going to work well for "approximately continuous"
      *  types, i.e. floats and doubles, due to the implementation
      */
-    template<typename ScalarType, int Rows, typename Allocator = std::allocator<Eigen::Matrix<ScalarType, Rows, 1>>>
-    inline Eigen::Matrix<ScalarType, Rows, 1> AverageEigenVector(
-            const std::vector<Eigen::Matrix<ScalarType, Rows, 1>, Allocator>& vectors,
+    template<typename ScalarType, int VectorLength, typename Allocator = std::allocator<Eigen::Matrix<ScalarType, VectorLength, 1>>>
+    inline Eigen::Matrix<ScalarType, VectorLength, 1> AverageEigenVector(
+            const std::vector<Eigen::Matrix<ScalarType, VectorLength, 1>, Allocator>& vectors,
             const std::vector<double>& weights = std::vector<double>())
     {
         // Get the weights
@@ -1126,7 +1216,7 @@ namespace EigenHelpers
         // If all weights are zero, result is undefined
         assert(starting_idx < vectors.size());
         // Start the recursive definition with the base case
-        Eigen::Matrix<ScalarType, Rows, 1> avg_vector = vectors[starting_idx];
+        Eigen::Matrix<ScalarType, VectorLength, 1> avg_vector = vectors[starting_idx];
         const double starting_weight = use_weights ? std::abs(weights[starting_idx]) : 1.0;
         assert(starting_weight > 0.0);
         double weights_running_sum = starting_weight;
@@ -1136,8 +1226,8 @@ namespace EigenHelpers
             const double weight = use_weights ? std::abs(weights[idx]) : 1.0;
             weights_running_sum += weight;
             const double effective_weight = weight / weights_running_sum;
-            const Eigen::Matrix<ScalarType, Rows, 1> prev_avg_vector = avg_vector;
-            const Eigen::Matrix<ScalarType, Rows, 1>& current = vectors[idx];
+            const Eigen::Matrix<ScalarType, VectorLength, 1> prev_avg_vector = avg_vector;
+            const Eigen::Matrix<ScalarType, VectorLength, 1>& current = vectors[idx];
             avg_vector = prev_avg_vector + (effective_weight * (current - prev_avg_vector));
         }
         return avg_vector;
