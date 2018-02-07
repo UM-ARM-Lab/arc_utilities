@@ -1198,9 +1198,9 @@ namespace EigenHelpers
      * This function is really only going to work well for "approximately continuous"
      *  types, i.e. floats and doubles, due to the implementation
      */
-    template<typename ScalarType, int VectorLength, typename Allocator = std::allocator<Eigen::Matrix<ScalarType, VectorLength, 1>>>
-    inline Eigen::Matrix<ScalarType, VectorLength, 1> AverageEigenVector(
-            const std::vector<Eigen::Matrix<ScalarType, VectorLength, 1>, Allocator>& vectors,
+    template<typename ScalarType, int Rows, typename Allocator = std::allocator<Eigen::Matrix<ScalarType, Rows, 1>>>
+    inline Eigen::Matrix<ScalarType, Rows, 1> AverageEigenVector(
+            const std::vector<Eigen::Matrix<ScalarType, Rows, 1>, Allocator>& vectors,
             const std::vector<double>& weights = std::vector<double>())
     {
         // Get the weights
@@ -1216,7 +1216,7 @@ namespace EigenHelpers
         // If all weights are zero, result is undefined
         assert(starting_idx < vectors.size());
         // Start the recursive definition with the base case
-        Eigen::Matrix<ScalarType, VectorLength, 1> avg_vector = vectors[starting_idx];
+        Eigen::Matrix<ScalarType, Rows, 1> avg_vector = vectors[starting_idx];
         const double starting_weight = use_weights ? std::abs(weights[starting_idx]) : 1.0;
         assert(starting_weight > 0.0);
         double weights_running_sum = starting_weight;
@@ -1226,8 +1226,8 @@ namespace EigenHelpers
             const double weight = use_weights ? std::abs(weights[idx]) : 1.0;
             weights_running_sum += weight;
             const double effective_weight = weight / weights_running_sum;
-            const Eigen::Matrix<ScalarType, VectorLength, 1> prev_avg_vector = avg_vector;
-            const Eigen::Matrix<ScalarType, VectorLength, 1>& current = vectors[idx];
+            const Eigen::Matrix<ScalarType, Rows, 1> prev_avg_vector = avg_vector;
+            const Eigen::Matrix<ScalarType, Rows, 1>& current = vectors[idx];
             avg_vector = prev_avg_vector + (effective_weight * (current - prev_avg_vector));
         }
         return avg_vector;
