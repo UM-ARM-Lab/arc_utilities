@@ -1,15 +1,17 @@
 #include <stdlib.h>
 #include <iostream>
+#include <iomanip>
+#include <chrono>
 #include <functional>
-#include <Eigen/Eigenvalues>
-#include <Eigen/Geometry>
-#include <Eigen/Cholesky>
 #include <type_traits>
 #include <random>
 #include <array>
 #include <map>
 #include <unordered_map>
 #include <queue>
+#include <Eigen/Eigenvalues>
+#include <Eigen/Geometry>
+#include <Eigen/Cholesky>
 #include <arc_utilities/eigen_helpers.hpp>
 #include <omp.h>
 
@@ -1458,6 +1460,18 @@ namespace arc_helpers
             map[cur_key] = cur_value;
         }
         return map;
+    }
+
+    // Get a time string formated as YYYY-MM-DD__HH-MM-SS
+    // May not be threadsafe due to std::localtime usage
+    inline std::string GetCurrentTimeAsString()
+    {
+        const auto t = std::time(nullptr);
+        auto tm = *std::localtime(&t);
+        std::ostringstream oss;
+        oss << std::put_time(&tm, "%Y-%m-%d__%H-%M-%S");
+        const std::string timestamp = oss.str();
+        return timestamp;
     }
 }
 
