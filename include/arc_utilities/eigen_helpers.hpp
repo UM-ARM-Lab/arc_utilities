@@ -517,6 +517,17 @@ namespace EigenHelpers
         }
     }
 
+    inline double Sum(const std::vector<double>& vec)
+    {
+        double sum = 0.0;
+        for (size_t idx = 0; idx < vec.size(); idx++)
+        {
+            const double element = vec[idx];
+            sum += element;
+        }
+        return sum;
+    }
+
     inline Eigen::Matrix3d Skew(const Eigen::Vector3d& vector)
     {
         Eigen::Matrix3d skewed;
