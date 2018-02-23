@@ -389,6 +389,21 @@ namespace EigenHelpersConversions
 
         return vector_eigen_output;
     }
+
+    template<typename data_type>
+    inline std::vector<data_type> EigenVectorXToStdVector(const Eigen::Matrix<data_type, Eigen::Dynamic, 1>& eig_vec)
+    {
+        std::vector<data_type> std_vec(eig_vec.data(), eig_vec.data() + eig_vec.size());
+        return std_vec;
+    }
+
+    template<typename data_type>
+    inline Eigen::Matrix<data_type, Eigen::Dynamic, 1> StdVectorToEigenVectorX(const std::vector<data_type>& std_vec)
+    {
+        Eigen::Matrix<data_type, Eigen::Dynamic, 1> eig_vec(std_vec.size());
+        memcpy(eig_vec.data(), std_vec.data(), std_vec.size() * sizeof(data_type));
+        return eig_vec;
+    }
 }
 
 #endif // EIGEN_HELPERS_CONVERSIONS_HPP
