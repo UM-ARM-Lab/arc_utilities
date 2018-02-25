@@ -7,7 +7,7 @@
 
 namespace arc_utilities
 {
-    void CreateDirectory(const boost::filesystem::path& p)
+    inline void CreateDirectory(const boost::filesystem::path& p)
     {
         if (!boost::filesystem::is_directory(p))
         {
