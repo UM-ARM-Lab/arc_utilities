@@ -357,53 +357,6 @@ namespace EigenHelpersConversions
         const std::pair<Eigen::Vector3d, Eigen::Vector3d> eigen_wrench = std::make_pair(eigen_force, eigen_torque);
         return eigen_wrench;
     }
-
-    template<typename data_type, int LENGTH>
-    inline Eigen::Matrix<data_type, Eigen::Dynamic, 1> VectorEigenVectorToEigenVectorX(const std::vector<Eigen::Matrix<data_type, LENGTH, 1>>& vector_eigen_input)
-    {
-        assert(vector_eigen_input.size() > 0);
-
-        Eigen::Matrix<data_type, Eigen::Dynamic, 1> eigen_result;
-        eigen_result.resize((ssize_t)vector_eigen_input.size() * vector_eigen_input[0].rows());
-
-        for (size_t idx = 0; idx < vector_eigen_input.size(); idx++)
-        {
-            eigen_result.segment((ssize_t)idx * LENGTH, LENGTH) = vector_eigen_input[idx];
-        }
-
-        return eigen_result;
-    }
-
-    template<typename data_type, int LENGTH>
-    inline std::vector<Eigen::Matrix<data_type, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<data_type, LENGTH, 1>>> EigenVectorXToVectorEigenVector(const Eigen::Matrix<data_type, Eigen::Dynamic, 1>& eigen_input)
-    {
-        assert(eigen_input.rows() % LENGTH == 0);
-        size_t num_vectors = eigen_input.rows() / LENGTH;
-
-        std::vector<Eigen::Matrix<data_type, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<data_type, LENGTH, 1>>> vector_eigen_output(num_vectors);
-
-        for (size_t idx = 0; idx < num_vectors; idx++)
-        {
-            vector_eigen_output[idx] = eigen_input.segment<LENGTH>((ssize_t)idx * LENGTH);
-        }
-
-        return vector_eigen_output;
-    }
-
-    template<typename data_type>
-    inline std::vector<data_type> EigenVectorXToStdVector(const Eigen::Matrix<data_type, Eigen::Dynamic, 1>& eig_vec)
-    {
-        std::vector<data_type> std_vec(eig_vec.data(), eig_vec.data() + eig_vec.size());
-        return std_vec;
-    }
-
-    template<typename data_type>
-    inline Eigen::Matrix<data_type, Eigen::Dynamic, 1> StdVectorToEigenVectorX(const std::vector<data_type>& std_vec)
-    {
-        Eigen::Matrix<data_type, Eigen::Dynamic, 1> eig_vec(std_vec.size());
-        memcpy(eig_vec.data(), std_vec.data(), std_vec.size() * sizeof(data_type));
-        return eig_vec;
-    }
 }
 
 #endif // EIGEN_HELPERS_CONVERSIONS_HPP
