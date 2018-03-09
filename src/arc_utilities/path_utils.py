@@ -56,4 +56,71 @@ def closest_point(path, query_point):
         ind_close += 1
         
     return point_close, ind_close, alpha_close
+
+
+def travel_along(path, distance, starting_point=None):
+    """
+    Travels along the path from the starting point for distance
+
+    Parameters:
+    path: path
+    distance: total euclidean distance to travel. Negative follows backwards
+    starting_point: path traversal starts at the closest point on the path to this point
+
+    Returns: 
+    new_path: subpath which lies completely on original path while following inputs as best as possible
+    """
+
+    direction = np.sign(distance)
+    dist_to_go = abs(distance)
+
+    q, ind, alpha = closest_point(path, starting_point)
+    newpath = [q]
+
+    path = np.array(path)
+
+
+    if alpha != 0:
+        ind += 1
+        path = np.concatenate((path[0:ind], [q], path[ind:]))
+
+    
+
+
+    while dist_to_go > 0:
+        if direction == 1 and ind == len(path) - 1:
+            return newpath
+
+        if direction == -1 and ind == 0:
+            return newpath
+
+        ind = ind + int(direction)
+        dist_to_next = dist(q, path[ind])
+
+        if dist_to_next > dist_to_go:
+            motion = path[ind] - q
+            motion = motion/np.linalg.norm(motion)
+            newpath.append(motion*dist_to_go + q)
+            break
+
+        q = path[ind]
+        newpath.append(q)
+        dist_to_go -= dist_to_next
         
+
+    return newpath
+
+
+
+def path_length(path):
+    if len(path) == 0:
+        return 0
+
+    path = np.array(path)
+    q = path[0]
+    d = 0
+    for ind in range(1,len(path)):
+        d += dist(q, path[ind])
+        q = path[ind]
+
+    return d

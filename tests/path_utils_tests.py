@@ -78,8 +78,26 @@ class TestPathUtils(unittest.TestCase):
         self.assertEqual(ind, 1)
         self.assertApprox(p, [0,.5])
         self.assertApprox(alpha,.5)
-        
-        
+
+    def test_travel_along(self):
+        path = [[-1,0], [0,0], [0,1], [1,10]]
+
+        newpath = pu.travel_along(path, 2.0, [-.5, .1])
+        self.assertApprox(pu.path_length(newpath), 2.0)
+
+        newpath = pu.travel_along(path, -2.0, [5, 5])
+        self.assertApprox(pu.path_length(newpath), 2.0)
+
+        newpath = pu.travel_along(path, -2.0, [-.5,.1])
+        self.assertApprox(pu.path_length(newpath), .5)
+
+        newpath = pu.travel_along(path, 100000, [-1.1, 0])
+        self.assertApprox(pu.path_length(newpath), pu.path_length(newpath))
+
+
+    def test_path_length(self):
+        path = [[0,1], [0,2], [2,2], [3,3]]
+        self.assertApprox(pu.path_length(path), 3 + np.sqrt(2))
         
 
 if __name__ == '__main__':
