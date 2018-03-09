@@ -71,7 +71,7 @@ def travel_along(path, distance, starting_point=None):
     new_path: subpath which lies completely on original path while following inputs as best as possible
     """
 
-    direction = np.sign(distance)
+    direction = int(np.sign(distance))
     dist_to_go = abs(distance)
 
     q, ind, alpha = closest_point(path, starting_point)
@@ -94,7 +94,7 @@ def travel_along(path, distance, starting_point=None):
         if direction == -1 and ind == 0:
             return newpath
 
-        ind = ind + int(direction)
+        ind = ind + direction
         dist_to_next = dist(q, path[ind])
 
         if dist_to_next > dist_to_go:

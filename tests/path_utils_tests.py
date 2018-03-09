@@ -8,7 +8,6 @@ import IPython
 
 
 
-
 class TestPathUtils(unittest.TestCase):
     def assertApprox(self, a, b, eps = 0.00001):
         d = np.linalg.norm(np.array(a) - np.array(b))
