@@ -415,6 +415,7 @@ namespace simple_linked_robot_model
 
         SimpleLinkedConfiguration config_;
         Eigen::Isometry3d base_transform_;
+        Eigen::Isometry3d inverse_base_transform_;
         std::vector<RobotLink> links_;
         std::vector<RobotJoint> joints_;
         std::vector<KinematicSkeletonElement> kinematic_skeleton_;
@@ -703,6 +704,7 @@ namespace simple_linked_robot_model
             : simple_robot_model_interface::SimpleRobotModelInterface<SimpleLinkedConfiguration, SimpleLinkedConfigAlloc>()
         {
             base_transform_ = base_transform;
+            inverse_base_transform_ = base_transform_.inverse();
             // We take a list of robot links and a list of robot joints, but we have to sanity-check them first
             links_ = links;
             joints_ = joints;
@@ -754,6 +756,11 @@ namespace simple_linked_robot_model
         inline Eigen::Isometry3d GetBaseTransform() const
         {
             return base_transform_;
+        }
+
+        inline Eigen::Isometry3d GetInverseBaseTransform() const
+        {
+            return inverse_base_transform_;
         }
 
         virtual const SimpleLinkedConfiguration& GetPosition() const
