@@ -490,23 +490,27 @@ namespace simple_rrt_planner
          * paths - vector of vector of states corresponding to the planned path(s)
          * statistics - map of string keys/double values of planner statistics (i.e. run time, #states explored, #states in solution
          */
-        template<typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<std::vector<T, Allocator>>, std::map<std::string, double>> PlanMultiPath(std::vector<SimpleRRTPlannerState<T, Allocator>>& nodes,
-                                                                      const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&, const T&)>& nearest_neighbor_fn,
-                                                                      const std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)>& state_added_fn,
-                                                                      const std::function<bool(const T&)>& goal_reached_fn,
-                                                                      const std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)>& goal_reached_callback_fn,
-                                                                      const std::function<T(void)>& sampling_fn,
-                                                                      const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
-                                                                      const std::function<bool(void)>& termination_check_fn)
+        template<typename StateType,
+                 typename SampleType=StateType,
+                 typename StateAllocator=std::allocator<StateType>>
+        static std::pair<std::vector<std::vector<StateType, StateAllocator>>,
+                         std::map<std::string, double>> PlanMultiPath(
+            std::vector<SimpleRRTPlannerState<StateType, StateAllocator>>& tree,
+            const std::function<int64_t(const std::vector<SimpleRRTPlannerState<StateType, StateAllocator>>&, const SampleType&)>& nearest_neighbor_fn,
+            const std::function<void(std::vector<SimpleRRTPlannerState<StateType, StateAllocator>>&, const int64_t)>& state_added_fn,
+            const std::function<bool(const StateType&)>& goal_reached_fn,
+            const std::function<void(std::vector<SimpleRRTPlannerState<StateType, StateAllocator>>&, const int64_t)>& goal_reached_callback_fn,
+            const std::function<SampleType(void)>& sampling_fn,
+            const std::function<std::vector<std::pair<StateType, int64_t>>(const StateType&, const SampleType&)>& forward_propagation_fn,
+            const std::function<bool(void)>& termination_check_fn)
         {
             // Make sure we've been given a start state
-            if (nodes.empty())
+            if (tree.empty())
             {
                 throw std::invalid_argument("Must be called with at least one node in tree");
             }
             // Make sure the tree is properly linked
-            if(CheckTreeLinkage(nodes) == false)
+            if(CheckTreeLinkage(tree) == false)
             {
                 throw std::invalid_argument("Provided tree has invalid linkage");
             }
@@ -518,13 +522,13 @@ namespace simple_rrt_planner
             // Storage for the goal states we reach
             std::vector<int64_t> goal_state_indices;
             // Safety check before doing real work
-            for (size_t idx = 0; idx < nodes.size(); idx++)
+            for (size_t idx = 0; idx < tree.size(); idx++)
             {
-                if (goal_reached_fn(nodes[idx].GetValueImmutable()))
+                if (goal_reached_fn(tree[idx].GetValueImmutable()))
                 {
                     std::cerr << "Starting node " << idx << " meets goal conditions, adding to goal states" << std::endl;
                     goal_state_indices.push_back((int64_t)idx);
-                    goal_reached_callback_fn(nodes, (int64_t)idx);
+                    goal_reached_callback_fn(tree, (int64_t)idx);
                 }
             }
             // Update the start time
@@ -533,23 +537,23 @@ namespace simple_rrt_planner
             while (!termination_check_fn())
             {
                 // Sample a random goal
-                const T random_target = sampling_fn();
+                const StateType random_target = sampling_fn();
                 // Get the nearest neighbor
-                const int64_t nearest_neighbor_index = nearest_neighbor_fn(nodes, random_target);
+                const int64_t nearest_neighbor_index = nearest_neighbor_fn(tree, random_target);
                 if (unlikely(nearest_neighbor_index < 0))
                 {
                     break;
                 }
-                const T& nearest_neighbor = nodes.at(nearest_neighbor_index).GetValueImmutable();
+                const StateType& nearest_neighbor = tree.at(nearest_neighbor_index).GetValueImmutable();
                 // Forward propagate towards the goal
-                std::vector<std::pair<T, int64_t>> propagated = forward_propagation_fn(nearest_neighbor, random_target);
+                std::vector<std::pair<StateType, int64_t>> propagated = forward_propagation_fn(nearest_neighbor, random_target);
                 if (!propagated.empty())
                 {
                     statistics["total_samples"] += 1.0;
                     statistics["successful_samples"] += 1.0;
                     for (size_t idx = 0; idx < propagated.size(); idx++)
                     {
-                        const std::pair<T, int64_t>& current_propagation = propagated[idx];
+                        const std::pair<StateType, int64_t>& current_propagation = propagated[idx];
                         // Determine the parent index of the new state
                         // This process deserves some explanation
                         // The "current relative parent index" is the index of the parent, relative to the list of propagated nodes.
@@ -566,7 +570,7 @@ namespace simple_rrt_planner
                                 throw std::invalid_argument("Linkage with relative parent index >= current relative index is invalid");
                             }
                             const int64_t current_relative_offset = current_relative_parent_index - current_relative_index;
-                            const int64_t current_nodes_size = (int64_t)nodes.size();
+                            const int64_t current_nodes_size = (int64_t)tree.size();
                             node_parent_index = current_nodes_size + current_relative_offset; // Offset is negative!
                         }
                         else
@@ -574,19 +578,19 @@ namespace simple_rrt_planner
                             node_parent_index = nearest_neighbor_index; // Negative relative parent index means our parent index is the nearest neighbor index
                         }
                         // Build the new state
-                        const T& current_propagated = current_propagation.first;
-                        SimpleRRTPlannerState<T, Allocator> new_state(current_propagated, node_parent_index);
+                        const StateType& current_propagated = current_propagation.first;
+                        SimpleRRTPlannerState<StateType, StateAllocator> new_state(current_propagated, node_parent_index);
                         // Add the state to the tree
-                        nodes.push_back(new_state);
-                        const int64_t new_node_index = (int64_t)nodes.size() - 1;
-                        nodes[node_parent_index].AddChildIndex(new_node_index);
+                        tree.push_back(new_state);
+                        const int64_t new_node_index = (int64_t)tree.size() - 1;
+                        tree[node_parent_index].AddChildIndex(new_node_index);
                         // Call the state added callback
-                        state_added_fn(nodes, new_node_index);
+                        state_added_fn(tree, new_node_index);
                         // Check if we've reached the goal
-                        if (goal_reached_fn(nodes[new_node_index].GetValueImmutable()))
+                        if (goal_reached_fn(tree[new_node_index].GetValueImmutable()))
                         {
                             goal_state_indices.push_back(new_node_index);
-                            goal_reached_callback_fn(nodes, new_node_index);
+                            goal_reached_callback_fn(tree, new_node_index);
                         }
                     }
                 }
@@ -598,17 +602,17 @@ namespace simple_rrt_planner
             }
             // Put together the results
             // Make sure the tree is properly linked
-            if(CheckTreeLinkage(nodes) == false)
+            if(CheckTreeLinkage(tree) == false)
             {
                 throw std::runtime_error("Tree linkage was corrupted during planning");
             }
-            std::vector<std::vector<T, Allocator>> planned_paths = ExtractSolutionPaths(nodes, goal_state_indices);
+            std::vector<std::vector<StateType, StateAllocator>> planned_paths = ExtractSolutionPaths(tree, goal_state_indices);
             std::chrono::time_point<std::chrono::steady_clock> cur_time = std::chrono::steady_clock::now();
             std::chrono::duration<double> planning_time(cur_time - start_time);
             statistics["planning_time"] = planning_time.count();
-            statistics["total_states"] = nodes.size();
+            statistics["total_states"] = tree.size();
             statistics["solutions"] = (double)planned_paths.size();
-            return std::pair<std::vector<std::vector<T, Allocator>>, std::map<std::string, double>>(planned_paths, statistics);
+            return std::pair<std::vector<std::vector<StateType, StateAllocator>>, std::map<std::string, double>>(planned_paths, statistics);
         }
 
         /* Checks the planner tree to make sure the parent-child linkages are correct
@@ -756,8 +760,8 @@ namespace simple_rrt_planner
         {
             std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)> dummy_state_added_fn =
                     [] (std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t) { ; };
-            std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)> dummy_goal_bridge_callback_fn =
-                    [] (std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t) { ; };
+            std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, const bool)> dummy_goal_bridge_callback_fn =
+                    [] (std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, const bool) { ; };
             std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
             const std::function<bool(void)> termination_check_fn = [&](void) { return (((std::chrono::time_point<std::chrono::steady_clock>)std::chrono::steady_clock::now() - start_time) > time_limit); };
             bool solution_found = false;
@@ -797,8 +801,8 @@ namespace simple_rrt_planner
         {
             std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)> dummy_state_added_fn =
                     [] (std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t) { ; };
-            std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)> dummy_goal_bridge_callback_fn =
-                    [] (std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t) { ; };
+            std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, const bool)> dummy_goal_bridge_callback_fn =
+                    [] (std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, const bool) { ; };
             return PlanMultiPath(start, goal,
                                  nearest_neighbor_fn,
                                  dummy_state_added_fn,
@@ -838,7 +842,7 @@ namespace simple_rrt_planner
                                                                                                               const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&,const T&)>& nearest_neighbor_fn,
                                                                                                               const std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)>& state_added_fn,
                                                                                                               const std::function<bool(const T&, const T&)>& states_connected_fn,
-                                                                                                              const std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)>& goal_bridge_callback_fn,
+                                                                                                              const std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, const bool)>& goal_bridge_callback_fn,
                                                                                                               const std::function<T(void)>& state_sampling_fn,
                                                                                                               const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
                                                                                                               const double tree_sampling_bias,
@@ -864,19 +868,22 @@ namespace simple_rrt_planner
                                  rng);
         }
 
-        template<typename RNG, typename T, typename Allocator=std::allocator<T>>
-        static std::pair<std::vector<std::vector<T, Allocator>>, std::map<std::string, double>> PlanMultiPath(std::vector<SimpleRRTPlannerState<T, Allocator>>& start_tree,
-                                                                                                              std::vector<SimpleRRTPlannerState<T, Allocator>>& goal_tree,
-                                                                                                              const std::function<int64_t(const std::vector<SimpleRRTPlannerState<T, Allocator>>&,const T&)>& nearest_neighbor_fn,
-                                                                                                              const std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)>& state_added_fn,
-                                                                                                              const std::function<bool(const T&, const T&)>& states_connected_fn,
-                                                                                                              const std::function<void(std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<T, Allocator>>&, const int64_t)>& goal_bridge_callback_fn,
-                                                                                                              const std::function<T(void)>& state_sampling_fn,
-                                                                                                              const std::function<std::vector<std::pair<T, int64_t>>(const T&, const T&)>& forward_propagation_fn,
-                                                                                                              const double tree_sampling_bias,
-                                                                                                              const double p_switch_tree,
-                                                                                                              const std::function<bool(void)>& termination_check_fn,
-                                                                                                              RNG& rng)
+        template<typename RNG, typename StateType,
+                 typename Allocator=std::allocator<StateType>>
+        static std::pair<std::vector<std::vector<StateType, Allocator>>,
+                         std::map<std::string, double>> PlanMultiPath(
+            std::vector<SimpleRRTPlannerState<StateType, Allocator>>& start_tree,
+            std::vector<SimpleRRTPlannerState<StateType, Allocator>>& goal_tree,
+            const std::function<int64_t(const std::vector<SimpleRRTPlannerState<StateType, Allocator>>&,const StateType&)>& nearest_neighbor_fn,
+            const std::function<void(std::vector<SimpleRRTPlannerState<StateType, Allocator>>&, const int64_t)>& state_added_fn,
+            const std::function<bool(const StateType&, const StateType&)>& states_connected_fn,
+            const std::function<void(std::vector<SimpleRRTPlannerState<StateType, Allocator>>&, const int64_t, std::vector<SimpleRRTPlannerState<StateType, Allocator>>&, const int64_t, const bool)>& goal_bridge_callback_fn,
+            const std::function<StateType(void)>& state_sampling_fn,
+            const std::function<std::vector<std::pair<StateType, int64_t>>(const StateType&, const StateType&)>& forward_propagation_fn,
+            const double tree_sampling_bias,
+            const double p_switch_tree,
+            const std::function<bool(void)>& termination_check_fn,
+            RNG& rng)
         {
             if (start_tree.empty())
             {
@@ -915,7 +922,7 @@ namespace simple_rrt_planner
                     {
                         std::cerr << "Starting pair (" << start_tree_idx << ", " << goal_tree_idx << ") meets goal conditions, adding to goal states" << std::endl;
                         goal_bridges.push_back(std::pair<int64_t, int64_t>((int64_t)start_tree_idx, (int64_t)goal_tree_idx));
-                        goal_bridge_callback_fn(start_tree, start_tree_idx, goal_tree, goal_tree_idx);
+                        goal_bridge_callback_fn(start_tree, start_tree_idx, goal_tree, goal_tree_idx, true);
                     }
                 }
             }
@@ -925,8 +932,8 @@ namespace simple_rrt_planner
             while (!termination_check_fn())
             {
                 // Get the current active/target trees
-                std::vector<SimpleRRTPlannerState<T, Allocator>>& active_tree = (start_tree_active) ? start_tree : goal_tree;
-                std::vector<SimpleRRTPlannerState<T, Allocator>>& target_tree = (start_tree_active) ? goal_tree : start_tree;
+                std::vector<SimpleRRTPlannerState<StateType, Allocator>>& active_tree = (start_tree_active) ? start_tree : goal_tree;
+                std::vector<SimpleRRTPlannerState<StateType, Allocator>>& target_tree = (start_tree_active) ? goal_tree : start_tree;
                 // Select our sampling type
                 const bool sample_from_tree = (unit_real_distribution(rng) <= tree_sampling_bias);
                 int64_t target_tree_node_index = -1;
@@ -936,23 +943,23 @@ namespace simple_rrt_planner
                     target_tree_node_index = tree_sampling_distribution(rng);
                 }
                 // Sample a target state
-                const T target_state = (sample_from_tree) ? target_tree.at(target_tree_node_index).GetValueImmutable() : state_sampling_fn();
+                const StateType target_state = (sample_from_tree) ? target_tree.at(target_tree_node_index).GetValueImmutable() : state_sampling_fn();
                 // Get the nearest neighbor
                 const int64_t nearest_neighbor_index = nearest_neighbor_fn(active_tree, target_state);
                 if (unlikely(nearest_neighbor_index < 0))
                 {
                     break;
                 }
-                const T& nearest_neighbor = active_tree.at(nearest_neighbor_index).GetValueImmutable();
+                const StateType& nearest_neighbor = active_tree.at(nearest_neighbor_index).GetValueImmutable();
                 // Forward propagate towards the goal
-                std::vector<std::pair<T, int64_t>> propagated = forward_propagation_fn(nearest_neighbor, target_state);
+                std::vector<std::pair<StateType, int64_t>> propagated = forward_propagation_fn(nearest_neighbor, target_state);
                 if (!propagated.empty())
                 {
                     statistics["total_samples"] += 1.0;
                     statistics["successful_samples"] += 1.0;
                     for (size_t idx = 0; idx < propagated.size(); idx++)
                     {
-                        const std::pair<T, int64_t>& current_propagation = propagated[idx];
+                        const std::pair<StateType, int64_t>& current_propagation = propagated[idx];
                         // Determine the parent index of the new state
                         // This process deserves some explanation
                         // The "current relative parent index" is the index of the parent, relative to the list of propagated nodes.
@@ -977,8 +984,8 @@ namespace simple_rrt_planner
                             node_parent_index = nearest_neighbor_index; // Negative relative parent index means our parent index is the nearest neighbor index
                         }
                         // Build the new state
-                        const T& current_propagated = current_propagation.first;
-                        SimpleRRTPlannerState<T, Allocator> new_state(current_propagated, node_parent_index);
+                        const StateType& current_propagated = current_propagation.first;
+                        SimpleRRTPlannerState<StateType, Allocator> new_state(current_propagated, node_parent_index);
                         // Add the state to the tree
                         active_tree.push_back(new_state);
                         const int64_t new_node_index = (int64_t)active_tree.size() - 1;
@@ -994,12 +1001,12 @@ namespace simple_rrt_planner
                                 if (start_tree_active)
                                 {
                                     goal_bridges.push_back(std::pair<int64_t, int64_t>(new_node_index, target_tree_node_index));
-                                    goal_bridge_callback_fn(active_tree, new_node_index, target_tree, target_tree_node_index);
+                                    goal_bridge_callback_fn(active_tree, new_node_index, target_tree, target_tree_node_index, start_tree_active);
                                 }
                                 else
                                 {
                                     goal_bridges.push_back(std::pair<int64_t, int64_t>(target_tree_node_index, new_node_index));
-                                    goal_bridge_callback_fn(target_tree, target_tree_node_index, active_tree, new_node_index);
+                                    goal_bridge_callback_fn(target_tree, target_tree_node_index, active_tree, new_node_index, start_tree_active);
                                 }
                             }
                         }
@@ -1026,15 +1033,15 @@ namespace simple_rrt_planner
             {
                 throw std::runtime_error("Goal tree linkage was corrupted during planning");
             }
-            std::vector<std::vector<T, Allocator>> planned_paths;
+            std::vector<std::vector<StateType, Allocator>> planned_paths;
             // Extract the solution paths
             for (size_t goal_bridge_idx = 0; goal_bridge_idx < goal_bridges.size(); goal_bridge_idx++)
             {
                 const std::pair<int64_t, int64_t>& goal_bridge = goal_bridges[goal_bridge_idx];
                 // Extract the portion in the start tree
-                std::vector<T, Allocator> start_path = SimpleHybridRRTPlanner::ExtractSolutionPath(start_tree, goal_bridge.first);
+                std::vector<StateType, Allocator> start_path = SimpleHybridRRTPlanner::ExtractSolutionPath(start_tree, goal_bridge.first);
                 // Extract the portion in the goal tree
-                std::vector<T, Allocator> goal_path = SimpleHybridRRTPlanner::ExtractSolutionPath(goal_tree, goal_bridge.second);
+                std::vector<StateType, Allocator> goal_path = SimpleHybridRRTPlanner::ExtractSolutionPath(goal_tree, goal_bridge.second);
                 // Reverse the goal tree part
                 std::reverse(goal_path.begin(), goal_path.end());
                 // Combine
@@ -1046,7 +1053,7 @@ namespace simple_rrt_planner
             statistics["planning_time"] = planning_time.count();
             statistics["total_states"] = (double)(start_tree.size() + goal_tree.size());
             statistics["solutions"] = (double)planned_paths.size();
-            return std::pair<std::vector<std::vector<T, Allocator>>, std::map<std::string, double>>(planned_paths, statistics);
+            return std::pair<std::vector<std::vector<StateType, Allocator>>, std::map<std::string, double>>(planned_paths, statistics);
         }
     };
 
