@@ -2,6 +2,7 @@
 
 import rospy
 import time
+from copy import deepcopy
 from threading import Lock
 from sensor_msgs.msg import Joy
 
@@ -42,7 +43,7 @@ class Listener:
         wait_for(lambda: not (block_until_data and self.data is None))
             
         with self.lock:
-            return self.data
+            return deepcopy(self.data)
 
     
 def wait_for(func):

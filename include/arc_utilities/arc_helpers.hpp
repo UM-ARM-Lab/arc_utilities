@@ -1473,6 +1473,21 @@ namespace arc_helpers
         const std::string timestamp = oss.str();
         return timestamp;
     }
+
+    // Get a time string formated as YYYY-MM-DD__HH-MM-SS-mil
+    // May not be threadsafe due to std::localtime usage
+    inline std::string GetCurrentTimeAsStringWithMilliseconds()
+    {
+        using namespace std::chrono;
+        auto now = system_clock::now();
+        auto in_time_t = system_clock::to_time_t(now);
+        milliseconds ms = duration_cast<milliseconds>(now - system_clock::from_time_t(in_time_t));
+        auto tm = *std::localtime(&in_time_t);
+        std::ostringstream oss;
+        oss << std::put_time(&tm, "%Y-%m-%d__%H-%M-%S") << "-" << ms.count();
+        const std::string timestamp = oss.str();
+        return timestamp;
+    }
 }
 
 #endif // ARC_HELPERS_HPP
