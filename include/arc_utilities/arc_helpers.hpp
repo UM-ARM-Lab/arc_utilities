@@ -9,6 +9,7 @@
 #include <map>
 #include <unordered_map>
 #include <queue>
+#include <thread>
 #include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
 #include <Eigen/Cholesky>
@@ -1487,6 +1488,11 @@ namespace arc_helpers
         oss << std::put_time(&tm, "%Y-%m-%d__%H-%M-%S") << "-" << ms.count();
         const std::string timestamp = oss.str();
         return timestamp;
+    }
+
+    inline void Sleep(const double time)
+    {
+        std::this_thread::sleep_for(std::chrono::duration<double>(time));
     }
 }
 

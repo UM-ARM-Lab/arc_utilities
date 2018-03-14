@@ -1100,6 +1100,74 @@ namespace EigenHelpers
         return vector;
     }
 
+    template<typename T, int LENGTH, typename Allocator>
+    inline Eigen::Matrix<T, Eigen::Dynamic, 1> VectorEigenVectorToEigenVectorX(const std::vector<Eigen::Matrix<T, LENGTH, 1>, Allocator>& vector_eigen_input)
+    {
+        assert(vector_eigen_input.size() > 0);
+
+        Eigen::Matrix<T, Eigen::Dynamic, 1> eigen_result;
+        eigen_result.resize((ssize_t)vector_eigen_input.size() * vector_eigen_input[0].rows());
+
+        for (size_t idx = 0; idx < vector_eigen_input.size(); idx++)
+        {
+            eigen_result.segment((ssize_t)idx * LENGTH, LENGTH) = vector_eigen_input[idx];
+        }
+
+        return eigen_result;
+    }
+
+    template<typename T, int LENGTH>
+    inline std::vector<Eigen::Matrix<T, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<T, LENGTH, 1>>> EigenVectorXToVectorEigenVector(const Eigen::VectorXd& eigen_input)
+    // TODO: Why can't I use the more generic version?
+//    inline std::vector<Eigen::Matrix<T, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<T, LENGTH, 1>>> EigenVectorXToVectorEigenVector(const Eigen::Matrix<T, Eigen::Dynamic, 1>& eigen_input)
+    {
+        assert(eigen_input.rows() % LENGTH == 0);
+        size_t num_vectors = eigen_input.rows() / LENGTH;
+
+        std::vector<Eigen::Matrix<T, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<T, LENGTH, 1>>> vector_eigen_output(num_vectors);
+
+        for (size_t idx = 0; idx < num_vectors; idx++)
+        {
+            vector_eigen_output[idx] = eigen_input.segment<LENGTH>((ssize_t)idx * LENGTH);
+        }
+
+        return vector_eigen_output;
+    }
+
+    template<typename T, int LENGTH>
+    inline std::vector<Eigen::Matrix<T, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<T, LENGTH, 1>>> StdVectorXToVectorEigenVector(const std::vector<T>& std_input)
+    {
+        assert(std_input.size() % LENGTH == 0);
+        const size_t num_vectors = std_input.size() / LENGTH;
+
+        std::vector<Eigen::Matrix<T, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<T, LENGTH, 1>>> vector_eigen_output(num_vectors);
+
+        for (size_t vec_idx = 0; vec_idx < num_vectors; vec_idx++)
+        {
+            for (size_t inner_idx = 0; inner_idx < LENGTH; ++inner_idx)
+            {
+                vector_eigen_output[vec_idx](inner_idx) = std_input[vec_idx * LENGTH + inner_idx];
+            }
+        }
+
+        return vector_eigen_output;
+    }
+
+    template<typename T>
+    inline std::vector<T> EigenVectorXToStdVector(const Eigen::Matrix<T, Eigen::Dynamic, 1>& eig_vec)
+    {
+        std::vector<T> std_vec(eig_vec.data(), eig_vec.data() + eig_vec.size());
+        return std_vec;
+    }
+
+    template<typename T>
+    inline Eigen::Matrix<T, Eigen::Dynamic, 1> StdVectorToEigenVectorX(const std::vector<T>& std_vec)
+    {
+        Eigen::Matrix<T, Eigen::Dynamic, 1> eig_vec(std_vec.size());
+        memcpy(eig_vec.data(), std_vec.data(), std_vec.size() * sizeof(T));
+        return eig_vec;
+    }
+
     // Takes <x, y, z, w> as is the ROS custom!
     inline Eigen::Quaterniond StdVectorDoubleToEigenQuaterniond(const std::vector<double>& vector)
     {
