@@ -13,49 +13,52 @@ class TestPathUtils(unittest.TestCase):
         d = np.linalg.norm(np.array(a) - np.array(b))
         self.assertTrue(d < eps)
 
-    def test_closest_point_to_line_simple(self):
+    def test_closest_point_to_line_segment_simple(self):
         l0 = [-1,1]
         l1 = [1,1]
         line = [l0, l1]
-        p, a = pu.closest_point_to_line(line, [0,0])
+        p, a = pu.closest_point_to_line_segment(line, [0,0])
         self.assertApprox(a, 0.5)
         self.assertApprox(p, [0,1])
 
-        p, a = pu.closest_point_to_line(line, [-1,0])
+        p, a = pu.closest_point_to_line_segment(line, [-1,0])
         self.assertApprox(a, 0.0)
         self.assertApprox(p, [-1,1])
 
-        p, a = pu.closest_point_to_line(line, [-1.1,0])
+        p, a = pu.closest_point_to_line_segment(line, [-1.1,0])
         self.assertApprox(a, 0.0)
         self.assertApprox(p, [-1,1])
 
         for true, computed in zip([-1,1], p):
             self.assertEqual(true, computed)
 
-        p, a = pu.closest_point_to_line(line, [0.9,1])
+        p, a = pu.closest_point_to_line_segment(line, [0.9,1])
         self.assertApprox(a, 0.95)
         self.assertApprox(p, [0.9, 1])
 
+        p, a = pu.closest_point_to_line_segment([[0,0],[0,0]], [10,10])
+        self.assertApprox(p, [0,0])
 
-    def test_closest_point_to_line_large(self):
+
+    def test_closest_point_to_line_segment_large(self):
         l0 = np.array([1,2,3,4,5,6,7])
         l1 = -1*l0
         line = [l0, l1]
 
-        p, a = pu.closest_point_to_line(line, [0,0,0,0,0,0,0])
+        p, a = pu.closest_point_to_line_segment(line, [0,0,0,0,0,0,0])
         self.assertApprox(a, 0.5)
         self.assertApprox(p, [0,0,0,0,0,0,0])
 
-        p, a = pu.closest_point_to_line(line, [-7,-6,-5,0,3,2,1])
+        p, a = pu.closest_point_to_line_segment(line, [-7,-6,-5,0,3,2,1])
         self.assertApprox(a, 0.5)
         self.assertApprox(p, [0,0,0,0,0,0,0])
 
-        p, a = pu.closest_point_to_line(line, [9,9,9,9,9,9,9])
+        p, a = pu.closest_point_to_line_segment(line, [9,9,9,9,9,9,9])
         self.assertApprox(a, 0.0)
         self.assertApprox(p, [1,2,3,4,5,6,7])
 
 
-    def test_closest_point_to_line(self):
+    def test_closest_point_to_path(self):
         path = [[-1,0], [0,0], [0,1], [1,10]]
 
         p, ind, alpha = pu.closest_point(path, [0,0])
@@ -92,6 +95,11 @@ class TestPathUtils(unittest.TestCase):
 
         newpath = pu.travel_along(path, 100000, [-1.1, 0])
         self.assertApprox(pu.path_length(newpath), pu.path_length(newpath))
+
+        newpath = pu.travel_along(path, 100000)
+        self.assertTrue(np.all(np.equal(path, newpath)))
+
+
 
 
     def test_path_length(self):

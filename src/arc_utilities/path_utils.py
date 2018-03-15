@@ -7,6 +7,7 @@ Unless otherwise noted, paths are a list of waypoints. Often it is useful to sto
 
 import IPython
 import numpy as np
+import sys
 
 def clamp(num, min_val, max_val):
     return min(max(min_val, num), max_val)
@@ -14,13 +15,16 @@ def clamp(num, min_val, max_val):
 def dist(p1, p2):
     return np.linalg.norm(np.array(p1)-np.array(p2))
 
-def closest_point_to_line(line, point):
+def closest_point_to_line_segment(line, point):
     """
     Returns:
     point, alpha
-    alpha: 0 to 1
+    alpha: (0 to 1) fraction along line segment to closest point
     """
     v_line = np.array(line[1]) - np.array(line[0])
+    if np.linalg.norm(v_line) < 10*sys.float_info.epsilon:
+        return line[0], 0
+    
     n_v_line = v_line / np.linalg.norm(v_line)
     v_l0_point = np.array(point) - np.array(line[0])
 
@@ -44,7 +48,7 @@ def closest_point(path, query_point):
     point_close = path[0]
     ind_close = 0
     for ind in range(len(path)-1):
-        p, alpha = closest_point_to_line([path[ind], path[ind+1]], query_point)
+        p, alpha = closest_point_to_line_segment([path[ind], path[ind+1]], query_point)
         d = dist(p, query_point)
         if d < d_close:
             d_close = d
@@ -69,6 +73,8 @@ def travel_along(path, distance, starting_point=None):
     Returns: 
     new_path: subpath which lies completely on original path while following inputs as best as possible
     """
+    if starting_point is None:
+        starting_point = path[0]
 
     direction = int(np.sign(distance))
     dist_to_go = abs(distance)
