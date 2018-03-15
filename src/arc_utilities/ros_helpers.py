@@ -197,13 +197,16 @@ class TF2Wrapper:
         If new_type is not None, the type specified must have a valid conversion from the input type, else the function
          will raise an exception.
         Example usage:
+            from arc_utilities import ros_helpers
             import tf2_geometry_msgs
+            ...
+            self.tf2 = ros_helpers.TF2Wrapper()
             ...
             p_in_native_frame = PointStamped()
             p_in_native_frame.header.stamp = rospy.Time.now() # This will likely cause an extrapolation warning/exception without a timeout set
             p_in_native_frame.header.frame_id = frame_point_is_measured_in
             p_in_native_frame.point = ...
-            p_in_world = self.planner.transform_to_frame(object_stamped=p_in_native_frame, target_frame=world_frame_name)
+            p_in_world = self.tf2.transform_to_frame(object_stamped=p_in_native_frame, target_frame=world_frame_name)
 
         :param object_stamped: The timestamped object the transform.
         :param target_frame: Name of the frame to transform the input into.
