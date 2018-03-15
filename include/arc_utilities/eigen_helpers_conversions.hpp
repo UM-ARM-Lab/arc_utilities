@@ -214,7 +214,7 @@ namespace EigenHelpersConversions
         Eigen::Matrix3Xd eigen_matrix = Eigen::MatrixXd(3, vector_geom.size());
         for (size_t idx = 0; idx < vector_geom.size(); idx++)
         {
-            eigen_matrix.block<3,1>(0, idx) = GeometryPointToEigenVector3d(vector_geom[idx]);
+            eigen_matrix.col(idx) = GeometryPointToEigenVector3d(vector_geom[idx]);
         }
         return eigen_matrix;
     }
@@ -224,17 +224,7 @@ namespace EigenHelpersConversions
         std::vector<geometry_msgs::Point> vector_geom(eigen_matrix.cols());
         for (size_t idx = 0; idx < vector_geom.size(); idx++)
         {
-            vector_geom[idx] = EigenVector3dToGeometryPoint(eigen_matrix.block<3,1>(0,idx));
-        }
-        return vector_geom;
-    }
-
-    inline std::vector<geometry_msgs::Point> VectorEigenVector3dToVectorGeometryPoint(const EigenHelpers::VectorVector3d& vector_eigen)
-    {
-        std::vector<geometry_msgs::Point> vector_geom(vector_eigen.size());
-        for (size_t idx = 0; idx < vector_eigen.size(); idx++)
-        {
-            vector_geom[idx] = EigenVector3dToGeometryPoint(vector_eigen[idx]);
+            vector_geom[idx] = EigenVector3dToGeometryPoint(eigen_matrix.col(idx));
         }
         return vector_geom;
     }
@@ -247,6 +237,16 @@ namespace EigenHelpersConversions
             eigen_matrix.col(idx) = vector_eigen[idx];
         }
         return eigen_matrix;
+    }
+
+    inline std::vector<geometry_msgs::Point> VectorEigenVector3dToVectorGeometryPoint(const EigenHelpers::VectorVector3d& vector_eigen)
+    {
+        std::vector<geometry_msgs::Point> vector_geom(vector_eigen.size());
+        for (size_t idx = 0; idx < vector_eigen.size(); idx++)
+        {
+            vector_geom[idx] = EigenVector3dToGeometryPoint(vector_eigen[idx]);
+        }
+        return vector_geom;
     }
 
     inline EigenHelpers::VectorVector3d VectorGeometryPointToVectorEigenVector3d(const std::vector<geometry_msgs::Point>& vector_geom)
@@ -267,6 +267,16 @@ namespace EigenHelpersConversions
             vector_eigen[idx] = GeometryVector3ToEigenVector3d(vector_geom[idx]);
         }
         return vector_eigen;
+    }
+
+    inline Eigen::Matrix3Xd VectorGeometryVector3ToEigenMatrix3Xd(const std::vector<geometry_msgs::Vector3>& vector_geom)
+    {
+        Eigen::Matrix3Xd eigen_matrix = Eigen::MatrixXd(3, vector_geom.size());
+        for (size_t idx = 0; idx < vector_geom.size(); idx++)
+        {
+            eigen_matrix.col(idx) = GeometryVector3ToEigenVector3d(vector_geom[idx]);
+        }
+        return eigen_matrix;
     }
 
     inline EigenHelpers::VectorIsometry3d VectorGeometryPoseToVectorIsometry3d(const std::vector<geometry_msgs::Pose>& vector_geom)
@@ -346,38 +356,6 @@ namespace EigenHelpersConversions
         const Eigen::Vector3d eigen_torque(wrench.torque.x, wrench.torque.y, wrench.torque.z);
         const std::pair<Eigen::Vector3d, Eigen::Vector3d> eigen_wrench = std::make_pair(eigen_force, eigen_torque);
         return eigen_wrench;
-    }
-
-    template<typename data_type, int LENGTH>
-    inline Eigen::Matrix<data_type, Eigen::Dynamic, 1> VectorEigenVectorToEigenVectorX(const std::vector<Eigen::Matrix<data_type, LENGTH, 1>>& vector_eigen_input)
-    {
-        assert(vector_eigen_input.size() > 0);
-
-        Eigen::Matrix<data_type, Eigen::Dynamic, 1> eigen_result;
-        eigen_result.resize((ssize_t)vector_eigen_input.size() * vector_eigen_input[0].rows());
-
-        for (size_t idx = 0; idx < vector_eigen_input.size(); idx++)
-        {
-            eigen_result.segment((ssize_t)idx * LENGTH, LENGTH) = vector_eigen_input[idx];
-        }
-
-        return eigen_result;
-    }
-
-    template<typename data_type, int LENGTH>
-    inline std::vector<Eigen::Matrix<data_type, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<data_type, LENGTH, 1>>> EigenVectorXToVectorEigenVector(const Eigen::Matrix<data_type, Eigen::Dynamic, 1>& eigen_input)
-    {
-        assert(eigen_input.rows() % LENGTH == 0);
-        size_t num_vectors = eigen_input.rows() / LENGTH;
-
-        std::vector<Eigen::Matrix<data_type, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<data_type, LENGTH, 1>>> vector_eigen_output(num_vectors);
-
-        for (size_t idx = 0; idx < num_vectors; idx++)
-        {
-            vector_eigen_output[idx] = eigen_input.segment<LENGTH>((ssize_t)idx * LENGTH);
-        }
-
-        return vector_eigen_output;
     }
 }
 

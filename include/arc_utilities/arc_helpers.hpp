@@ -1,15 +1,18 @@
 #include <stdlib.h>
 #include <iostream>
+#include <iomanip>
+#include <chrono>
 #include <functional>
-#include <Eigen/Eigenvalues>
-#include <Eigen/Geometry>
-#include <Eigen/Cholesky>
 #include <type_traits>
 #include <random>
 #include <array>
 #include <map>
 #include <unordered_map>
 #include <queue>
+#include <thread>
+#include <Eigen/Eigenvalues>
+#include <Eigen/Geometry>
+#include <Eigen/Cholesky>
 #include <arc_utilities/eigen_helpers.hpp>
 #include <omp.h>
 
@@ -1458,6 +1461,38 @@ namespace arc_helpers
             map[cur_key] = cur_value;
         }
         return map;
+    }
+
+    // Get a time string formated as YYYY-MM-DD__HH-MM-SS
+    // May not be threadsafe due to std::localtime usage
+    inline std::string GetCurrentTimeAsString()
+    {
+        const auto t = std::time(nullptr);
+        auto tm = *std::localtime(&t);
+        std::ostringstream oss;
+        oss << std::put_time(&tm, "%Y-%m-%d__%H-%M-%S");
+        const std::string timestamp = oss.str();
+        return timestamp;
+    }
+
+    // Get a time string formated as YYYY-MM-DD__HH-MM-SS-mil
+    // May not be threadsafe due to std::localtime usage
+    inline std::string GetCurrentTimeAsStringWithMilliseconds()
+    {
+        using namespace std::chrono;
+        auto now = system_clock::now();
+        auto in_time_t = system_clock::to_time_t(now);
+        milliseconds ms = duration_cast<milliseconds>(now - system_clock::from_time_t(in_time_t));
+        auto tm = *std::localtime(&in_time_t);
+        std::ostringstream oss;
+        oss << std::put_time(&tm, "%Y-%m-%d__%H-%M-%S") << "-" << ms.count();
+        const std::string timestamp = oss.str();
+        return timestamp;
+    }
+
+    inline void Sleep(const double time)
+    {
+        std::this_thread::sleep_for(std::chrono::duration<double>(time));
     }
 }
 

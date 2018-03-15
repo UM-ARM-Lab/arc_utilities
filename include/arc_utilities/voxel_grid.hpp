@@ -810,6 +810,18 @@ namespace VoxelGrid
             return inverse_origin_transform_;
         }
 
+        inline void SetOriginTransform(const Eigen::Isometry3d& new_origin)
+        {
+            origin_transform_ = new_origin;
+            inverse_origin_transform_ = origin_transform_.inverse();
+        }
+
+        inline void SetInverseOriginTransform(const Eigen::Isometry3d& new_inverse_origin)
+        {
+            inverse_origin_transform_ = new_inverse_origin;
+            origin_transform_ = inverse_origin_transform_.inverse();
+        }
+
         inline std::vector<int64_t> LocationToGridIndex(const double x, const double y, const double z) const
         {
             const Eigen::Vector4d point(x, y, z, 1.0);

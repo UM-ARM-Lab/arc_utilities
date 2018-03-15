@@ -907,6 +907,96 @@ namespace EigenHelpers
         return distances;
     }
 
+    /**
+     * @brief Computes the squared distance between each point in a given set
+     *
+     * @param set The set of points to compute distances on, arranged with each point as a column
+     *
+     * @return The distances between each pair of nodes
+     */
+    template<typename ScalarType, int VectorLength, int NumVectors>
+    inline Eigen::Matrix<double, NumVectors, NumVectors> CalculateSquaredDistanceMatrix(const Eigen::Matrix<ScalarType, VectorLength, NumVectors>& set)
+    {
+        assert (set.cols() > 0);
+        const ssize_t num_vectors = set.cols(); // TODO: if NumVectors != Eigen::Dynamic, this is known at compile time
+
+        Eigen::MatrixXd squared_dist(num_vectors, num_vectors);
+        #ifdef ENABLE_PARALLEL_DISTANCE_MATRIX
+            #pragma omp parallel for
+        #endif
+        for (ssize_t i = 0; i < num_vectors; i++)
+        {
+            for (ssize_t j = i; j < num_vectors; j++)
+            {
+                const double sq_dist = (set.col(i) - set.col(j)).squaredNorm();
+                squared_dist(i, j) = sq_dist;
+                squared_dist(j, i) = sq_dist;
+            }
+        }
+
+        return squared_dist;
+    }
+
+    /**
+     * @brief Computes the distance between each point in a given set
+     *
+     * @param set The set of points to compute distances on, arranged with each point as a column
+     *
+     * @return The distances between each pair of nodes
+     */
+    template<typename ScalarType, int VectorLength, int NumVectors>
+    inline Eigen::Matrix<double, NumVectors, NumVectors> CalculateDistanceMatrix(const Eigen::Matrix<ScalarType, VectorLength, NumVectors>& set)
+    {
+        return CalculateSquaredDistanceMatrix(set).cwiseSqrt();
+    }
+
+    /**
+     * @brief Computes the squared distance between a given point, and every point in a set
+     *
+     * @param set The set of points to compute distances on, arranged with each point as a column
+     * @param point The point to measure the distance to
+     *
+     * @return The distances between each pair of nodes
+     */
+    template<typename ScalarType, int VectorLength, int NumVectors>
+    inline Eigen::Matrix<double, NumVectors, 1> CalculateSquaredDistanceToSet(const Eigen::Matrix<ScalarType, VectorLength, NumVectors>& set, const Eigen::Matrix<ScalarType, VectorLength, 1>& point)
+    {
+        return (set.colwise() - point).colwise().squaredNorm();
+    }
+
+    /**
+     * @brief Computes the distance between a given point, and every point in a set
+     *
+     * @param set The set of points to compute distances on, arranged with each point as a column
+     * @param point The point to measure the distance to
+     *
+     * @return The distances between each pair of nodes
+     */
+    template<typename ScalarType, int VectorLength, int NumVectors>
+    inline Eigen::Matrix<double, NumVectors, 1> CalculateDistanceToSet(const Eigen::Matrix<ScalarType, VectorLength, NumVectors>& set, const Eigen::Matrix<ScalarType, VectorLength, 1>& point)
+    {
+        return CalculateSquaredDistanceToSet(set, point).cwiseSqrt();
+    }
+
+    /**
+     * @brief Finds the closest point in the set to a given point
+     *
+     * @param set The set of points to compute distances on, arranged with each point as a column
+     * @param point The point to measure the distance to
+     *
+     * @return The index of the point in the set
+     */
+    template<typename ScalarType, int VectorLength, int NumVectors>
+    inline ssize_t ClosestPointInSet(const Eigen::Matrix<ScalarType, VectorLength, NumVectors>& set, const Eigen::Matrix<ScalarType, VectorLength, 1>& point)
+    {
+        assert (set.cols() > 0);
+        ssize_t min_ind = 0;
+        const Eigen::VectorXd squared_dist = CalculateSquaredDistanceToSet(set, point);
+        squared_dist.minCoeff(&min_ind);
+        return min_ind;
+    }
+
+
     ////////////////////////////////////////////////////////////////////////////
     // Conversion functions
     ////////////////////////////////////////////////////////////////////////////
@@ -1008,6 +1098,74 @@ namespace EigenHelpers
             vector[idx] = val;
         }
         return vector;
+    }
+
+    template<typename T, int LENGTH, typename Allocator>
+    inline Eigen::Matrix<T, Eigen::Dynamic, 1> VectorEigenVectorToEigenVectorX(const std::vector<Eigen::Matrix<T, LENGTH, 1>, Allocator>& vector_eigen_input)
+    {
+        assert(vector_eigen_input.size() > 0);
+
+        Eigen::Matrix<T, Eigen::Dynamic, 1> eigen_result;
+        eigen_result.resize((ssize_t)vector_eigen_input.size() * vector_eigen_input[0].rows());
+
+        for (size_t idx = 0; idx < vector_eigen_input.size(); idx++)
+        {
+            eigen_result.segment((ssize_t)idx * LENGTH, LENGTH) = vector_eigen_input[idx];
+        }
+
+        return eigen_result;
+    }
+
+    template<typename T, int LENGTH>
+    inline std::vector<Eigen::Matrix<T, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<T, LENGTH, 1>>> EigenVectorXToVectorEigenVector(const Eigen::VectorXd& eigen_input)
+    // TODO: Why can't I use the more generic version?
+//    inline std::vector<Eigen::Matrix<T, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<T, LENGTH, 1>>> EigenVectorXToVectorEigenVector(const Eigen::Matrix<T, Eigen::Dynamic, 1>& eigen_input)
+    {
+        assert(eigen_input.rows() % LENGTH == 0);
+        size_t num_vectors = eigen_input.rows() / LENGTH;
+
+        std::vector<Eigen::Matrix<T, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<T, LENGTH, 1>>> vector_eigen_output(num_vectors);
+
+        for (size_t idx = 0; idx < num_vectors; idx++)
+        {
+            vector_eigen_output[idx] = eigen_input.segment<LENGTH>((ssize_t)idx * LENGTH);
+        }
+
+        return vector_eigen_output;
+    }
+
+    template<typename T, int LENGTH>
+    inline std::vector<Eigen::Matrix<T, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<T, LENGTH, 1>>> StdVectorXToVectorEigenVector(const std::vector<T>& std_input)
+    {
+        assert(std_input.size() % LENGTH == 0);
+        const size_t num_vectors = std_input.size() / LENGTH;
+
+        std::vector<Eigen::Matrix<T, LENGTH, 1>, Eigen::aligned_allocator<Eigen::Matrix<T, LENGTH, 1>>> vector_eigen_output(num_vectors);
+
+        for (size_t vec_idx = 0; vec_idx < num_vectors; vec_idx++)
+        {
+            for (size_t inner_idx = 0; inner_idx < LENGTH; ++inner_idx)
+            {
+                vector_eigen_output[vec_idx](inner_idx) = std_input[vec_idx * LENGTH + inner_idx];
+            }
+        }
+
+        return vector_eigen_output;
+    }
+
+    template<typename T>
+    inline std::vector<T> EigenVectorXToStdVector(const Eigen::Matrix<T, Eigen::Dynamic, 1>& eig_vec)
+    {
+        std::vector<T> std_vec(eig_vec.data(), eig_vec.data() + eig_vec.size());
+        return std_vec;
+    }
+
+    template<typename T>
+    inline Eigen::Matrix<T, Eigen::Dynamic, 1> StdVectorToEigenVectorX(const std::vector<T>& std_vec)
+    {
+        Eigen::Matrix<T, Eigen::Dynamic, 1> eig_vec(std_vec.size());
+        memcpy(eig_vec.data(), std_vec.data(), std_vec.size() * sizeof(T));
+        return eig_vec;
     }
 
     // Takes <x, y, z, w> as is the ROS custom!
