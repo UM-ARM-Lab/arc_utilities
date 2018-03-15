@@ -119,9 +119,8 @@ class TF2Wrapper:
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
         self.tf_static_broadcasters = []
 
-    def get_tf_transform(self, parent, child, verbose=True,
-                         spin_delay=rospy.Duration(secs=0, nsecs=500 * 1000 * 1000),
-                         time=rospy.Time()):
+    def get_transform(self, parent, child, verbose=True,
+                      spin_delay=rospy.Duration(secs=0, nsecs=500 * 1000 * 1000), time=rospy.Time()):
         """
         Waits for a transform to become available. Blocks until a transform is available or an exception is raised.
 
@@ -138,15 +137,16 @@ class TF2Wrapper:
         p_measured_in_parent = returned_transform * p_measured_in_child
         p_measured_in_target = returned_transform * p_measured_in_source
         """
+
         try:
             while not self.tf_buffer.can_transform(target_frame=parent, source_frame=child,
                                                    time=time, timeout=spin_delay):
                 if rospy.is_shutdown():
                     raise KeyboardInterrupt("ROS has shutdown")
                 if verbose:
-                    rospy.loginfo("Waiting for TF frames ", parent, " and ", child)
+                    rospy.loginfo("Waiting for TF frames %s and %s", parent, child)
                 else:
-                    rospy.logdebug("Waiting for TF frames ", parent, " and ", child)
+                    rospy.logdebug("Waiting for TF frames %s and %s", parent, child)
 
             transform = self.tf_buffer.lookup_transform(target_frame=parent, source_frame=child, time=time)
 
@@ -156,7 +156,7 @@ class TF2Wrapper:
 
         return transformation_helper.BuildMatrixRos(transform.transform.translation, transform.transform.rotation)
 
-    def send_tf_transform(self, transform, parent, child, is_static=False, time=rospy.Time.now()):
+    def send_transform(self, transform, parent, child, is_static=False, time=None):
         """
         :param parent: frame name for the parent (see below)
         :param child: frame name for the child (see below)
@@ -168,6 +168,9 @@ class TF2Wrapper:
         p_measured_in_parent = transform * p_measured_in_child
         p_measured_in_target = transform * p_measured_in_source
         """
+        if time is None:
+            time = rospy.Time.now()
+
         [translation, quaternion] = transformation_helper.ExtractFromMatrix(transform)
         t = geometry_msgs.msg.TransformStamped()
         t.header.stamp = time
