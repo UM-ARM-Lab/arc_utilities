@@ -127,10 +127,11 @@ class TF2Wrapper:
 
         :param parent: frame name for the parent (see below)
         :param child: frame name for the child (see below)
-        :param verbose: If verbose is True, then output messages are sent as the function waits for a transform
+        :param verbose: If verbose is True, then output messages are sent on rosinfo as the function waits for
+                        a transform, otherwise on rosdebug
         :param spin_delay: How long to wait between output messages
         :param time: The timepoint to request a transform at. Defaults to "latest available".
-        :return: A matrix representation of the transform (numpy)
+        :return: A matrix representation of the transform (numpy). Returns None if a tf2 exception is raised.
 
         The notation here follows the following convention:
 
@@ -138,15 +139,20 @@ class TF2Wrapper:
         p_measured_in_target = returned_transform * p_measured_in_source
         """
         try:
-            while not self.tf_buffer.can_transform(child, parent, time=time, timeout=spin_delay):
+            while not self.tf_buffer.can_transform(target_frame=parent, source_frame=child,
+                                                   time=time, timeout=spin_delay):
                 if rospy.is_shutdown():
                     raise KeyboardInterrupt("ROS has shutdown")
                 if verbose:
                     rospy.loginfo("Waiting for TF frames ", parent, " and ", child)
-            transform = self.tf_buffer.lookup_transform(parent, child, time=time)
+                else:
+                    rospy.logdebug("Waiting for TF frames ", parent, " and ", child)
+
+            transform = self.tf_buffer.lookup_transform(target_frame=parent, source_frame=child, time=time)
+
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logerr("No transform available: %s to %s", parent, child)
-            return
+            return None
 
         return transformation_helper.BuildMatrixRos(transform.transform.translation, transform.transform.rotation)
 
@@ -195,7 +201,7 @@ class TF2Wrapper:
             p_in_native_frame.header.frame_id = frame_point_is_measured_in
             p_in_native_frame.point = ...
             p_in_world = self.planner.transform_to_frame(object_stamped=p_in_native_frame, target_frame=world_frame_name)
-            
+
         :param object_stamped: The timestamped object the transform.
         :param target_frame: Name of the frame to transform the input into.
         :param timeout: (Optional) Time to wait for the target frame to become available.
