@@ -2,6 +2,7 @@
 
 """
 Useful functions for dealing with paths
+Unless otherwise noted, paths are a list of waypoints. Often it is useful to store these in a numpy array
 """
 
 import IPython
@@ -27,7 +28,6 @@ def closest_point_to_line(line, point):
 
     p_closest = np.array(line[0]) + alpha*v_line
     return p_closest, alpha
-
 
 def closest_point(path, query_point):
     """
@@ -57,7 +57,6 @@ def closest_point(path, query_point):
         
     return point_close, ind_close, alpha_close
 
-
 def travel_along(path, distance, starting_point=None):
     """
     Travels along the path from the starting point for distance
@@ -79,13 +78,9 @@ def travel_along(path, distance, starting_point=None):
 
     path = np.array(path)
 
-
     if alpha != 0:
         ind += 1
         path = np.concatenate((path[0:ind], [q], path[ind:]))
-
-    
-
 
     while dist_to_go > 0:
         if direction == 1 and ind == len(path) - 1:
@@ -106,11 +101,8 @@ def travel_along(path, distance, starting_point=None):
         q = path[ind]
         newpath.append(q)
         dist_to_go -= dist_to_next
-        
 
     return newpath
-
-
 
 def path_length(path):
     if len(path) == 0:
