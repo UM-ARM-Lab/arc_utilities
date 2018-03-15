@@ -119,42 +119,43 @@ class TF2Wrapper:
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
         self.tf_static_broadcasters = []
 
-    def get_tf_transform(self, parent, child, verbose=False):
+    def get_tf_transform(self, parent, child, verbose=True,
+                         spin_delay=rospy.Duration(secs=0, nsecs=500 * 1000 * 1000),
+                         time=rospy.Time()):
         """
+        Waits for a transform to become available. Blocks until a transform is available or an exception is raised.
+
         :param parent: frame name for the parent (see below)
         :param child: frame name for the child (see below)
+        :param verbose: If verbose is True, then output messages are sent as the function waits for a transform
+        :param spin_delay: How long to wait between output messages
+        :param time: The timepoint to request a transform at. Defaults to "latest available".
+        :return: A matrix representation of the transform (numpy)
 
         The notation here follows the following convention:
 
         p_measured_in_parent = returned_transform * p_measured_in_child
         p_measured_in_target = returned_transform * p_measured_in_source
-
-        :param verbose:
-        :return: A matrix representation of the transform (numpy)
         """
         try:
-            # Wait for 0.5 seconds every loop
-            timeout = rospy.Duration(secs=0, nsecs=500 * 1000 * 1000)
-
-            # Get the latest available transform
-            latest_available = rospy.Time()
-
-            while not self.tf_buffer.can_transform(child, parent, time=latest_available, timeout=timeout):
+            while not self.tf_buffer.can_transform(child, parent, time=time, timeout=spin_delay):
                 if rospy.is_shutdown():
                     raise KeyboardInterrupt("ROS has shutdown")
-                print "Waiting for TF frames ", parent, " and ", child
-            transform = self.tf_buffer.lookup_transform(parent, child, time=latest_available)
+                if verbose:
+                    rospy.loginfo("Waiting for TF frames ", parent, " and ", child)
+            transform = self.tf_buffer.lookup_transform(parent, child, time=time)
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logerr("No transform available: %s to %s", parent, child)
             return
 
         return transformation_helper.BuildMatrixRos(transform.transform.translation, transform.transform.rotation)
 
-    def send_tf_transform(self, transform, parent, child, is_static=False):
+    def send_tf_transform(self, transform, parent, child, is_static=False, time=rospy.Time.now()):
         """
         :param parent: frame name for the parent (see below)
         :param child: frame name for the child (see below)
         :param transform: A matrix representation of the transform (presumably numpy)
+        :param time: The timestamp for the transform, defaults to now()
 
         The notation here follows the following convention:
 
@@ -163,7 +164,7 @@ class TF2Wrapper:
         """
         [translation, quaternion] = transformation_helper.ExtractFromMatrix(transform)
         t = geometry_msgs.msg.TransformStamped()
-        t.header.stamp = rospy.Time.now()
+        t.header.stamp = time
         t.header.frame_id = parent
         t.child_frame_id = child
         t.transform.translation.x = translation[0]
@@ -180,7 +181,7 @@ class TF2Wrapper:
         else:
             self.tf_broadcaster.sendTransform(t)
 
-    def transform_to_frame(self, object_stamped, target_frame, timeout=rospy.Duration(0.0), new_type=None):
+    def transform_to_frame(self, object_stamped, target_frame, timeout=rospy.Duration(0), new_type=None):
         """
         Transforms many "stamped" data types between frames. The specific package for the type of stamped object needs
          to be imported prior to use. Examples are tf2_geometry_msgs and tf2_py.
@@ -194,6 +195,7 @@ class TF2Wrapper:
             p_in_native_frame.header.frame_id = frame_point_is_measured_in
             p_in_native_frame.point = ...
             p_in_world = self.planner.transform_to_frame(object_stamped=p_in_native_frame, target_frame=world_frame_name)
+            
         :param object_stamped: The timestamped object the transform.
         :param target_frame: Name of the frame to transform the input into.
         :param timeout: (Optional) Time to wait for the target frame to become available.
