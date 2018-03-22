@@ -1,4 +1,7 @@
 #include "arc_utilities/timing.hpp"
+#include <iostream>
+#include <cassert>
+#include <algorithm>
 
 using namespace arc_utilities;
 
@@ -74,8 +77,38 @@ double Profiler::record(std::string timer_name)
     return time_elapsed;
 }
 
-// std::vector<double> Profiler::getData(std::string name)
-// {
-//     Profiler* m = getInstance();
-//     return m->data[name];
-// }
+std::vector<double> Profiler::getData(std::string name)
+{
+    Profiler* m = getInstance();
+    return m->data[name];
+}
+
+
+void Profiler::printSummary(std::string name)
+{
+    Profiler* m = getInstance();
+    std::cout << "====================================\n";
+    std::cout << "Summary for " << name << ":\n";
+    if (m->data.find(name) == m->data.end())
+    {
+        std::cout << name << " never called\n\n";
+        return;
+    }
+
+    std::vector<double> data = m->getData(name);
+
+    size_t n = data.size();
+    double sum = 0;
+    for(auto& num : data)
+    {
+        sum += num;
+    }
+
+    std::cout << "called " << n << " times\n";
+    std::cout << "total time : " << sum << "\n";
+    std::cout << "min time   : "   << *std::min_element(data.begin(), data.end()) << "\n";
+    std::cout << "max time   : "   << *std::min_element(data.begin(), data.end()) << "\n";
+    std::cout << "average    : "   << sum/(double)n << "\n";
+        
+    std::cout << "\n";
+}

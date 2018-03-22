@@ -5,8 +5,8 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <cassert>
-#include <iostream>
+
+
 
 namespace arc_utilities
 {
@@ -52,6 +52,9 @@ namespace arc_utilities
         static double record(std::string timer_name);
 
         static std::vector<double> getData(std::string name);
+
+        static void printSummary(std::string name);
+                
         
     protected:
         std::map<std::string, std::vector<double> > data;
@@ -62,6 +65,39 @@ namespace arc_utilities
         static Profiler* m_instance;
         
     };
+
+
+
+
+
+    /**
+     *   Profiling Macros
+     */
+
+#ifdef ENABLE_PERFORMANCE_MONITORING
+#define PROF_INITIALIZE(prealloc_num_names, prealloc_num_events)        \
+    ::arc_utilities::Profiler::initialize(prealloc_num_names, prealloc_num_events);
+
+#define PROF_START(name) \
+    ::arc_utilities::Profiler::startTimer(name)
+
+#define PROF_RECORD(name)                        \
+    ::arc_utilities::Profiler::record(name)
+
+#define PROF_PRINT_SUMMARY(name)
+    ::arc_utilities::Profiler::printSummary(name)
+
+    
+#else
+#define PROF_INITIALIZE(prealloc_num_names, prealloc_num_events) (void) 0
+#define PROF_START(name) (void) 0
+#define PROF_RECORD(name) (void) 0
+
+
+#endif
+
+    
+    
 }
 
 #endif // ARC_UTILITIES_TIMING_HPP
