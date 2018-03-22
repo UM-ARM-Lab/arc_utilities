@@ -137,8 +137,9 @@ void Profiler::printGroupSummary(const std::vector<std::string> &names)
     // std::string t1 = *max_element(names.begin(), names.end());
     std::size_t label_len = max_element(names.begin(), names.end(),
                                         [] (const std::string &a, const std::string &b)
-                                        {return a.length() > b.length();}) -> length() + 2;
+                                        {return a.length() < b.length();}) -> length() + 2;
 
+    std::cout << "label_len: " << label_len << "\n";
     label_len = std::max(label_len, (size_t)8);
     const char* label_format = ("%-" + std::to_string(label_len) + "s").c_str();
     

@@ -85,12 +85,27 @@ TEST(TimerTest, Macros)
     PROFILE_RECORD("testmacro1");
 
     // PROFILE_PRINT_SUMMARY_FOR_GROUP("testmacro1");
-    std::vector<std::string> names = {"testmacro1", "testmacro2"};
-    PROFILE_PRINT_SUMMARY_FOR_GROUP(names);
 
     double t1_elapsed = Profiler::getData("testmacro1")[0];
     double t2_elapsed = Profiler::getData("testmacro2")[0];
     EXPECT_TRUE(t1_elapsed > t2_elapsed);
+}
+
+TEST(TimerTest, Printing)
+{
+    PROFILE_START("name_01");
+    PROFILE_START("name_02");
+    PROFILE_START("really really really long name");
+    PROFILE_RECORD("testmacro2");
+    PROFILE_RECORD("testmacro1");
+    for(int i=0; i<100; i++)
+    {
+        PROFILE_RECORD("really really really long name");
+    }
+    std::vector<std::string> names = {"name_01", "name_02", "unused name",
+                                      "really really really long name"};
+
+    PROFILE_PRINT_SUMMARY_FOR_GROUP(names);
 
 }
 
