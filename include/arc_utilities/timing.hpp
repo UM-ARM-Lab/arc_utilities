@@ -48,6 +48,8 @@ namespace arc_utilities
          */
         static void reset_and_preallocate(size_t num_names, size_t num_events);
 
+        static void reset(std::string name);
+
         static void addData(std::string name, double datum);
 
         static void startTimer(std::string timer_name);
@@ -56,7 +58,9 @@ namespace arc_utilities
 
         static std::vector<double> getData(std::string name);
 
-        static void printSummary(std::string name);
+        static void printSingleSummary(std::string name);
+        
+        static void printGroupSummary(const std::vector<std::string> &names);
                 
         
     protected:
@@ -78,8 +82,11 @@ namespace arc_utilities
      */
 
 #ifdef ENABLE_PROFILING
-#define PROFILE_RESET(prealloc_num_names, prealloc_num_events)        \
+#define PROFILE_RESET_ALL(prealloc_num_names, prealloc_num_events)        \
     ::arc_utilities::Profiler::reset_and_preallocate(prealloc_num_names, prealloc_num_events);
+
+#define PROFILE_RESET(name) \
+    ::arc_utilities::Profiler::reset(name);
 
 #define PROFILE_START(name) \
     ::arc_utilities::Profiler::startTimer(name);
@@ -87,9 +94,11 @@ namespace arc_utilities
 #define PROFILE_RECORD(name) \
     ::arc_utilities::Profiler::record(name);
 
-#define PROFILE_PRINT_SUMMARY(name) \
-    ::arc_utilities::Profiler::printSummary(name);
+#define PROFILE_PRINT_SUMMARY_FOR_SINGLE(name) \
+    ::arc_utilities::Profiler::printSingleSummary(name);
 
+#define PROFILE_PRINT_SUMMARY_FOR_GROUP(names) \
+    ::arc_utilities::Profiler::printGroupSummary(names);
     
 #else
 #define PROFILE_RESET(prealloc_num_names, prealloc_num_events) (void) 0

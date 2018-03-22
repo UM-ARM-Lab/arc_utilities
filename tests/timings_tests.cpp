@@ -2,6 +2,7 @@
 #define ENABLE_PROFILING
 #include "arc_utilities/timing.hpp"
 #include <gtest/gtest.h>
+#include <thread>
 
 
 // using ::testing::EmptyTestEventListener;
@@ -32,7 +33,16 @@ TEST(TimerTest, Functioning)
         ASSERT_EQ(i, times.size());
         EXPECT_TRUE(times[i-1] > times[i-2]);
     }
-    
+
+}
+
+TEST(TimerTest, TimerAccuracy)
+{
+    Profiler::startTimer("sleepy");
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    double t_elapsed = Profiler::record("sleepy");
+    EXPECT_TRUE(t_elapsed < 0.051);
+    EXPECT_TRUE(t_elapsed > 0.0500);
 }
 
 TEST(TimerTest, MultiTimer)
@@ -68,13 +78,15 @@ TEST(TimerTest, RestartingTimer)
 
 TEST(TimerTest, Macros)
 {
-    PROFILE_RESET(100,100);
+    PROFILE_RESET_ALL(100,100);
     PROFILE_START("testmacro1");
     PROFILE_START("testmacro2");
     PROFILE_RECORD("testmacro2");
     PROFILE_RECORD("testmacro1");
 
-    // PROFILE_PRINT_SUMMARY("testmacro1");
+    // PROFILE_PRINT_SUMMARY_FOR_GROUP("testmacro1");
+    std::vector<std::string> names = {"testmacro1", "testmacro2"};
+    PROFILE_PRINT_SUMMARY_FOR_GROUP(names);
 
     double t1_elapsed = Profiler::getData("testmacro1")[0];
     double t2_elapsed = Profiler::getData("testmacro2")[0];

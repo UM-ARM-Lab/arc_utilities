@@ -36,6 +36,17 @@ void Profiler::reset_and_preallocate(size_t num_names, size_t num_events)
     }
 }
 
+void Profiler::reset(std::string name)
+{
+    Profiler* m = getInstance();
+    if(m->data.find(name) != m->data.end())
+    {
+        m->data[name].resize(0);
+        startTimer(name);
+    }
+        
+}
+
 void Profiler::addData(std::string name, double datum)
 {
     Profiler* m = getInstance();
@@ -84,7 +95,7 @@ std::vector<double> Profiler::getData(std::string name)
 }
 
 
-void Profiler::printSummary(std::string name)
+void Profiler::printSingleSummary(std::string name)
 {
     Profiler* m = getInstance();
     std::string box = std::string(2+name.length(), '=');
@@ -106,11 +117,55 @@ void Profiler::printSummary(std::string name)
         sum += num;
     }
 
-    std::cout << "total time : " << sum << "\n";
+    std::cout << "total time : " << sum << " s\n";
     std::cout << "called " << n << " times\n";
-    std::cout << "min time   : "   << *std::min_element(data.begin(), data.end()) << "\n";
-    std::cout << "max time   : "   << *std::min_element(data.begin(), data.end()) << "\n";
-    std::cout << "average    : "   << sum/(double)n << "\n";
+    std::cout << "min time   : "   << *std::min_element(data.begin(), data.end()) << "s\n";
+    std::cout << "max time   : "   << *std::max_element(data.begin(), data.end()) << "s\n";
+    std::cout << "average    : "   << sum/(double)n << "s\n";
         
     std::cout << "\n";
+}
+
+void Profiler::printGroupSummary(const std::vector<std::string> &names)
+{
+
+    Profiler* m = getInstance();
+    std::cout << " .=======================. \n";
+    std::cout << "||    Profile Summary    ||\n";
+    std::cout << " '=======================' \n";
+
+    // std::string t1 = *max_element(names.begin(), names.end());
+    std::size_t label_len = max_element(names.begin(), names.end(),
+                                        [] (const std::string &a, const std::string &b)
+                                        {return a.length() > b.length();}) -> length() + 2;
+
+    label_len = std::max(label_len, (size_t)8);
+    const char* label_format = ("%-" + std::to_string(label_len) + "s").c_str();
+    
+    printf(label_format, "Label");
+    printf("%16s", "tot time (s)");
+    printf("%16s", "num_calls");
+    printf("%16s", "avg time (s)");
+    printf("\n");
+
+    for(auto& name: names)
+    {
+        printf(label_format, name.c_str());
+        double tot_time = 0.0;
+        double avg_time = 0.0;
+        size_t num_calls = 0;
+        if(m->data.find(name) != m->data.end())
+        {
+            std::vector<double> &data = m->data[name];
+            tot_time = 0;
+            for(auto& val : data)
+            {
+                tot_time += val;
+            }
+            num_calls = data.size();
+            avg_time = tot_time/(double)num_calls;
+        }
+
+        printf(" %15f %15ld %15f\n", tot_time, num_calls, avg_time);
+    }
 }
