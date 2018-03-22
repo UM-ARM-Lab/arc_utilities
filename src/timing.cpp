@@ -25,7 +25,7 @@ Profiler* Profiler::getInstance()
     return m_instance;
 }
 
-void Profiler::initialize(size_t num_names, size_t num_events)
+void Profiler::reset_and_preallocate(size_t num_names, size_t num_events)
 {
     Profiler* monitor = getInstance();
     monitor->data.clear();
@@ -87,8 +87,10 @@ std::vector<double> Profiler::getData(std::string name)
 void Profiler::printSummary(std::string name)
 {
     Profiler* m = getInstance();
-    std::cout << "====================================\n";
-    std::cout << "Summary for " << name << ":\n";
+    std::string box = std::string(2+name.length(), '=');
+    std::cout << " ." << box << ". " << "\n";
+    std::cout << "|| " << name << " || Summary :\n";
+    std::cout << " '" << box << "' " << "\n";
     if (m->data.find(name) == m->data.end())
     {
         std::cout << name << " never called\n\n";
@@ -104,8 +106,8 @@ void Profiler::printSummary(std::string name)
         sum += num;
     }
 
-    std::cout << "called " << n << " times\n";
     std::cout << "total time : " << sum << "\n";
+    std::cout << "called " << n << " times\n";
     std::cout << "min time   : "   << *std::min_element(data.begin(), data.end()) << "\n";
     std::cout << "max time   : "   << *std::min_element(data.begin(), data.end()) << "\n";
     std::cout << "average    : "   << sum/(double)n << "\n";

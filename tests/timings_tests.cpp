@@ -1,3 +1,5 @@
+
+#define ENABLE_PROFILING
 #include "arc_utilities/timing.hpp"
 #include <gtest/gtest.h>
 
@@ -15,9 +17,10 @@
 using namespace arc_utilities;
 
 
+
 TEST(TimerTest, Functioning)
 {
-    Profiler::initialize(10,10);
+    Profiler::reset_and_preallocate(10,10);
     Profiler::startTimer("timer1");
     double t_elapsed = Profiler::record("timer1");
     EXPECT_TRUE(t_elapsed > 0);
@@ -34,7 +37,7 @@ TEST(TimerTest, Functioning)
 
 TEST(TimerTest, MultiTimer)
 {
-    Profiler::initialize(10,10);
+    Profiler::reset_and_preallocate(10,10);
     Profiler::startTimer("timer1");
     Profiler::startTimer("timer2");
     double t2_elapsed = Profiler::record("timer2");
@@ -46,7 +49,7 @@ TEST(TimerTest, MultiTimer)
 
 TEST(TimerTest, RestartingTimer)
 {
-    Profiler::initialize(10,10);
+    Profiler::reset_and_preallocate(10,10);
     Profiler::startTimer("timer1");
     Profiler::startTimer("timer2");
     double t2_elapsed = Profiler::record("timer2");
@@ -63,6 +66,21 @@ TEST(TimerTest, RestartingTimer)
 
 }
 
+TEST(TimerTest, Macros)
+{
+    PROFILE_RESET(100,100);
+    PROFILE_START("testmacro1");
+    PROFILE_START("testmacro2");
+    PROFILE_RECORD("testmacro2");
+    PROFILE_RECORD("testmacro1");
+
+    // PROFILE_PRINT_SUMMARY("testmacro1");
+
+    double t1_elapsed = Profiler::getData("testmacro1")[0];
+    double t2_elapsed = Profiler::getData("testmacro2")[0];
+    EXPECT_TRUE(t1_elapsed > t2_elapsed);
+
+}
 
 
 GTEST_API_ int main(int argc, char **argv) {

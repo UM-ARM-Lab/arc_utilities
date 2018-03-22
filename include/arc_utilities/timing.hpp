@@ -43,7 +43,10 @@ namespace arc_utilities
     public:
         static Profiler* getInstance();
 
-        static void initialize(size_t num_names, size_t num_events);
+        /*
+         *  Clears existing data and preallocates memory for data storage
+         */
+        static void reset_and_preallocate(size_t num_names, size_t num_events);
 
         static void addData(std::string name, double datum);
 
@@ -74,24 +77,25 @@ namespace arc_utilities
      *   Profiling Macros
      */
 
-#ifdef ENABLE_PERFORMANCE_MONITORING
-#define PROF_INITIALIZE(prealloc_num_names, prealloc_num_events)        \
-    ::arc_utilities::Profiler::initialize(prealloc_num_names, prealloc_num_events);
+#ifdef ENABLE_PROFILING
+#define PROFILE_RESET(prealloc_num_names, prealloc_num_events)        \
+    ::arc_utilities::Profiler::reset_and_preallocate(prealloc_num_names, prealloc_num_events);
 
-#define PROF_START(name) \
-    ::arc_utilities::Profiler::startTimer(name)
+#define PROFILE_START(name) \
+    ::arc_utilities::Profiler::startTimer(name);
 
-#define PROF_RECORD(name)                        \
-    ::arc_utilities::Profiler::record(name)
+#define PROFILE_RECORD(name) \
+    ::arc_utilities::Profiler::record(name);
 
-#define PROF_PRINT_SUMMARY(name)
-    ::arc_utilities::Profiler::printSummary(name)
+#define PROFILE_PRINT_SUMMARY(name) \
+    ::arc_utilities::Profiler::printSummary(name);
 
     
 #else
-#define PROF_INITIALIZE(prealloc_num_names, prealloc_num_events) (void) 0
-#define PROF_START(name) (void) 0
-#define PROF_RECORD(name) (void) 0
+#define PROFILE_RESET(prealloc_num_names, prealloc_num_events) (void) 0
+#define PROFILE_START(name) (void) 0
+#define PROFILE_RECORD(name) (void) 0
+#define PROFILE_PRINT_SUMMARY(name) (void) 0
 
 
 #endif
