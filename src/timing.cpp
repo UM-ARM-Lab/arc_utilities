@@ -1,7 +1,81 @@
 #include "arc_utilities/timing.hpp"
 
-double arc_utilities::GlobalStopwatch(const StopwatchControl control)
+using namespace arc_utilities;
+
+double GlobalStopwatch(const StopwatchControl control)
 {
-    static arc_utilities::Stopwatch global_stopwatch;
+    static Stopwatch global_stopwatch;
     return global_stopwatch(control);
 }
+
+
+
+
+Profiler* Profiler::m_instance = NULL;
+
+Profiler* Profiler::getInstance()
+{
+    if (m_instance == NULL)
+    {
+        m_instance = new Profiler();
+    }
+    return m_instance;
+}
+
+void Profiler::initialize(size_t num_names, size_t num_events)
+{
+    Profiler* monitor = getInstance();
+    monitor->data.clear();
+    monitor->prealloc_buffer.resize(num_names);
+    for (size_t i=0; i<num_names; i++)
+    {
+        monitor->prealloc_buffer[i].reserve(num_events);
+    }
+}
+
+void Profiler::addData(std::string name, double datum)
+{
+    Profiler* m = getInstance();
+    if (m->data.find(name) == m->data.end())
+    {
+        m->data[name] = std::vector<double>();
+        if (m->prealloc_buffer.size() > 0)
+        {
+            m->data[name].swap(m->prealloc_buffer.back());
+            m->prealloc_buffer.pop_back();
+        }
+    }
+    m->data[name].push_back(datum);
+}
+
+
+void Profiler::startTimer(std::string timer_name)
+{
+    Profiler* m = getInstance();
+    if (m->timers.find(timer_name) == m->timers.end())
+    {
+        m->timers[timer_name] = Stopwatch();
+    }
+    m->timers[timer_name](RESET);
+}
+
+
+double Profiler::record(std::string timer_name)
+{
+    Profiler* m = getInstance();
+    if (m->timers.find(timer_name) == m->timers.end())
+    {
+        std::cout << "Attempting to record timer \""<< timer_name <<
+            "\" before timer started\n";
+        assert(false);
+    }
+    double time_elapsed = m->timers[timer_name]();
+    m->addData(timer_name, time_elapsed);
+    return time_elapsed;
+}
+
+// std::vector<double> Profiler::getData(std::string name)
+// {
+//     Profiler* m = getInstance();
+//     return m->data[name];
+// }

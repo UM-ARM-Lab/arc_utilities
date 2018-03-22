@@ -2,6 +2,11 @@
 #define ARC_UTILITIES_TIMING_HPP
 
 #include <chrono>
+#include <string>
+#include <map>
+#include <vector>
+#include <cassert>
+#include <iostream>
 
 namespace arc_utilities
 {
@@ -30,6 +35,33 @@ namespace arc_utilities
     };
 
     double GlobalStopwatch(const StopwatchControl control = READ);
+
+
+
+    class Profiler
+    {
+    public:
+        static Profiler* getInstance();
+
+        static void initialize(size_t num_names, size_t num_events);
+
+        static void addData(std::string name, double datum);
+
+        static void startTimer(std::string timer_name);
+
+        static double record(std::string timer_name);
+
+        static std::vector<double> getData(std::string name);
+        
+    protected:
+        std::map<std::string, std::vector<double> > data;
+        std::map<std::string, Stopwatch> timers;
+        std::vector<std::vector<double>> prealloc_buffer;
+        
+    private:
+        static Profiler* m_instance;
+        
+    };
 }
 
 #endif // ARC_UTILITIES_TIMING_HPP
