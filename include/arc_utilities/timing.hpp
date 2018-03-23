@@ -82,7 +82,7 @@ namespace arc_utilities
      */
 
 #ifdef ENABLE_PROFILING
-#define PROFILE_RESET_ALL(prealloc_num_names, prealloc_num_events)        \
+#define PROFILE_REINITIALIZE(prealloc_num_names, prealloc_num_events)        \
     ::arc_utilities::Profiler::reset_and_preallocate(prealloc_num_names, prealloc_num_events);
 
 #define PROFILE_RESET(name) \
@@ -101,10 +101,13 @@ namespace arc_utilities
     ::arc_utilities::Profiler::printGroupSummary(names);
     
 #else
-#define PROFILE_RESET(prealloc_num_names, prealloc_num_events) (void) 0
+#define PROFILE_REINITIALIZE(prealloc_num_names, prealloc_num_events) (void) 0
+#define PROFILE_RESET(name) (void) 0
 #define PROFILE_START(name) (void) 0
 #define PROFILE_RECORD(name) (void) 0
-#define PROFILE_PRINT_SUMMARY(name) (void) 0
+#define PROFILE_PRINT_SUMMARY_FOR_SINGLE(name) (void) 0
+#define PROFILE_PRINT_SUMMARY_FOR_GROUP(names) (void) 0
+
 
 
 #endif

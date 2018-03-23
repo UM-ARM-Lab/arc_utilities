@@ -78,7 +78,7 @@ TEST(TimerTest, RestartingTimer)
 
 TEST(TimerTest, Macros)
 {
-    PROFILE_RESET_ALL(100,100);
+    PROFILE_REINITIALIZE(100,100);
     PROFILE_START("testmacro1");
     PROFILE_START("testmacro2");
     PROFILE_RECORD("testmacro2");
