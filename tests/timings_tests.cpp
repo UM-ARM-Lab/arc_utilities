@@ -93,8 +93,10 @@ TEST(TimerTest, Printing)
     {
         PROFILE_RECORD("really really really long name");
     }
-    std::vector<std::string> names = {"name_01", "name_02", "unused name",
-                                      "really really really long name"};
+    std::vector<std::string> names = {"name_01", "unused name",
+                                      "~~~~~~~~~~~~~~",
+                                      "really really really long name",
+                                      "name_02"};
 
     PROFILE_PRINT_SUMMARY_FOR_GROUP(names);
 }

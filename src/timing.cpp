@@ -140,17 +140,27 @@ void Profiler::printGroupSummary(const std::vector<std::string> &names)
                                         {return a.length() < b.length();}) -> length() + 2;
 
     label_len = std::max(label_len, (size_t)8);
-    const char* label_format = ("%-" + std::to_string(label_len) + "s").c_str();
+
+    const std::string label_format = ("%-" + std::to_string(label_len) + "s");
     
-    printf(label_format, "Label");
+    printf(label_format.c_str(), "Label");
     printf("%16s", "tot time (s)");
     printf("%16s", "num_calls");
     printf("%16s", "avg time (s)");
     printf("\n");
 
-    for(auto& name: names)
+    std::string seperator = std::string(label_len-2, '~') + "      " + std::string(12, '.')
+        + "       " + std::string(9, '~') + "    " + std::string(12, '.');
+
+    for(const auto& name: names)
     {
-        printf(label_format, name.c_str());
+        if(name.find("~~~~~")==0)
+        {
+
+            printf("%s\n", seperator.c_str());
+            continue;
+        }
+        printf(label_format.c_str(), name.c_str());
         double tot_time = 0.0;
         double avg_time = 0.0;
         size_t num_calls = 0;
