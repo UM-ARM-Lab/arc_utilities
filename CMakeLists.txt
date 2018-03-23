@@ -126,6 +126,12 @@ add_executable(test_closest_point src/test_closest_point.cpp)
 add_dependencies(test_closest_point ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(test_closest_point ${PROJECT_NAME} ${catkin_LIBRARIES})
 
+# Simple test for SO(3) distance functions (to be expanded to all distance functions later
+# Simple test node for DistanceToLine function
+add_executable(test_distance_functions src/test_distance_functions.cpp)
+add_dependencies(test_distance_functions ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+target_link_libraries(test_distance_functions ${PROJECT_NAME} ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
