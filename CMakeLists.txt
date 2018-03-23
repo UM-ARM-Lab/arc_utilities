@@ -129,9 +129,9 @@ add_dependencies(test_closest_point ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) 
 target_link_libraries(test_closest_point ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 
-#############
-## Tests   ##
-#############
+###########
+## Tests ##
+###########
 
 # To build tests, install google's testing framework
 # https://github.com/google/googletest/
