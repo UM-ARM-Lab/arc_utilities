@@ -88,6 +88,8 @@ namespace EigenHelpers
     typedef std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>> VectorIsometry3d;
     typedef std::vector<Eigen::Affine3f, Eigen::aligned_allocator<Eigen::Affine3f>> VectorAffine3f;
     typedef std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> VectorAffine3d;
+    typedef std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> VectorMatrix4f;
+    typedef std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> VectorMatrix4d;
     typedef std::map<std::string, Eigen::Vector3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3f>>> MapStringVector3f;
     typedef std::map<std::string, Eigen::Vector3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3d>>> MapStringVector3d;
     typedef std::map<std::string, Eigen::Vector4f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4f>>> MapStringVector4f;
@@ -1726,17 +1728,36 @@ namespace EigenHelpers
         // Yes, this is ugly. This is to suppress a warning on type conversion related to Eigen operations
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wconversion"
-        Eigen::MatrixXd left_side = A.transpose() * w.asDiagonal() * A;
+        Eigen::MatrixXd lhs = A.transpose() * w.asDiagonal() * A;
         #pragma GCC diagnostic pop
-        const double minimum_singular_value = left_side.jacobiSvd().singularValues().minCoeff();
+        const double minimum_singular_value = lhs.jacobiSvd().singularValues().minCoeff();
 
         if (minimum_singular_value < damping_threshold)
         {
-            left_side += damping_value * Eigen::MatrixXd::Identity(left_side.rows(), left_side.cols());
+            lhs += damping_value * Eigen::MatrixXd::Identity(lhs.rows(), lhs.cols());
         }
 
         // With the damping we can assume that the left side is positive definite, so use LLT to solve this
-        return left_side.llt().solve(A.transpose() * w.cwiseProduct(b));
+        return lhs.llt().solve(A.transpose() * w.cwiseProduct(b));
+    }
+
+    inline Eigen::VectorXd UnderdeterminedSolver(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const double damping_threshold, const double damping_value)
+    {
+        assert(A.cols() > A.rows());
+        // Yes, this is ugly. This is to suppress a warning on type conversion related to Eigen operations
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wconversion"
+        Eigen::MatrixXd damped = A * A.transpose();
+        #pragma GCC diagnostic pop
+        const double minimum_singular_value = damped.jacobiSvd().singularValues().minCoeff();
+
+        if (minimum_singular_value < damping_threshold)
+        {
+            damped += damping_value * Eigen::MatrixXd::Identity(damped.rows(), damped.cols());
+        }
+
+        // With the damping we can assume that what we are inverting is positive definite, so use LLT to solve this
+        return A.transpose() * damped.llt().solve(b);
     }
 }
 
