@@ -1427,7 +1427,7 @@ namespace EigenHelpers
     inline std::pair<double, double> DistanceToLine(
             const Eigen::Vector3d& point_on_line,
             const Eigen::Vector3d& unit_vector,
-            const Eigen::Vector3d x)
+            const Eigen::Vector3d& x)
     {
         // Ensure that our input data is valid
         const auto real_unit_vector = unit_vector.normalized();
