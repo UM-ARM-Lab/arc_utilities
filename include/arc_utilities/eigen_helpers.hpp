@@ -644,6 +644,25 @@ namespace EigenHelpers
         return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
     }
 
+    inline Eigen::VectorXd Interpolate(const Eigen::VectorXd& v1, const Eigen::VectorXd& v2, const double ratio)
+    {
+        // Safety check ratio
+        double real_ratio = ratio;
+        if (real_ratio < 0.0)
+        {
+            real_ratio = 0.0;
+            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
+        }
+        else if (real_ratio > 1.0)
+        {
+            real_ratio = 1.0;
+            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
+        }
+        // Interpolate
+        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
+        return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
+    }
+
     inline Eigen::Isometry3d Interpolate(const Eigen::Isometry3d& t1, const Eigen::Isometry3d& t2, const double ratio)
     {
         // Safety check ratio
