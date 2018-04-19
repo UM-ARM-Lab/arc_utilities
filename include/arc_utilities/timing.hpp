@@ -43,7 +43,7 @@
  *   '======================'
  */
 
-/* to use profiling, "#defined ENABLE_PROFILING" needs to appear before "#import timing.hpp"*/
+/* to use profiling, "#define ENABLE_PROFILING" needs to appear before "#import timing.hpp"*/
 #ifdef ENABLE_PROFILING
 
 /* Clears all stored data and preallocates space for later recordings*/
@@ -69,6 +69,9 @@
 /* Print a condensed summary for each of name in names */
 #define PROFILE_PRINT_SUMMARY_FOR_GROUP(names) \
     ::arc_utilities::Profiler::printGroupSummary(names);
+
+#define PROFILE_WRITE_SUMMARY_FOR_GROUP(filename, names)                 \
+    ::arc_utilities::Profiler::writeGroupSummary(filename, names);
     
 #else
 /*Void macros make it easy to turn off profiling*/
@@ -145,6 +148,9 @@ namespace arc_utilities
         static void printSingleSummary(std::string name);
         
         static void printGroupSummary(const std::vector<std::string> &names);
+
+        static void writeGroupSummary(const std::string &filename,
+                                      const std::vector<std::string> &names);
                 
         
     protected:

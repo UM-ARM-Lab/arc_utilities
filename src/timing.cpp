@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cassert>
 #include <algorithm>
+#include <cstdio>
 
 using namespace arc_utilities;
 
@@ -175,7 +176,65 @@ void Profiler::printGroupSummary(const std::vector<std::string> &names)
             num_calls = data.size();
             avg_time = tot_time/(double)num_calls;
         }
-
         printf(" %15f %15ld %15f\n", tot_time, num_calls, avg_time);
     }
+}
+
+void Profiler::writeGroupSummary(const std::string &filename,
+                                 const std::vector<std::string> &names)
+{
+    FILE * outfile;
+    outfile = std::fopen(filename.c_str(), "a");
+    
+    Profiler* m = getInstance();
+    // std::cout << " .=======================. \n";
+    // std::cout << "||    Profile Summary    ||\n";
+    // std::cout << " '=======================' \n";
+
+
+    std::size_t label_len = max_element(names.begin(), names.end(),
+                                        [] (const std::string &a, const std::string &b)
+                                        {return a.length() < b.length();}) -> length() + 2;
+
+    label_len = std::max(label_len, (size_t)8);
+
+    const std::string label_format = ("%-" + std::to_string(label_len) + "s");
+    
+    fprintf(outfile, label_format.c_str(), "Label");
+    fprintf(outfile, "%16s", "tot time (s)");
+    fprintf(outfile, "%16s", "num_calls");
+    fprintf(outfile, "%16s", "avg time (s)");
+    fprintf(outfile, "\n");
+
+    std::string seperator = std::string(label_len-2, '~') + "      " + std::string(12, '.')
+        + "       " + std::string(9, '~') + "    " + std::string(12, '.');
+
+    for(const auto& name: names)
+    {
+        if(name.find("~~~~~")==0)
+        {
+
+            fprintf(outfile, "%s\n", seperator.c_str());
+            continue;
+        }
+        fprintf(outfile, label_format.c_str(), name.c_str());
+        double tot_time = 0.0;
+        double avg_time = 0.0;
+        size_t num_calls = 0;
+        if(m->data.find(name) != m->data.end())
+        {
+            std::vector<double> &data = m->data[name];
+            tot_time = 0;
+            for(auto& val : data)
+            {
+                tot_time += val;
+            }
+            num_calls = data.size();
+            avg_time = tot_time/(double)num_calls;
+        }
+        fprintf(outfile, " %15f %15ld %15f\n", tot_time, num_calls, avg_time);
+        
+    }
+    std::fclose(outfile);
+
 }
