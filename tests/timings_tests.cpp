@@ -102,6 +102,20 @@ TEST(TimerTest, Printing)
 }
 
 
+TEST(TimerTest, Writing)
+{
+    PROFILE_REINITIALIZE(100, 100);
+    PROFILE_START("one");
+    PROFILE_START("two");
+    PROFILE_START("three");
+    PROFILE_RECORD("one");
+    PROFILE_RECORD("two");
+    PROFILE_RECORD("three");
+
+    PROFILE_WRITE_SUMMARY_FOR_ALL("testing_output.txt");
+    
+}
+
 GTEST_API_ int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

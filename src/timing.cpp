@@ -180,6 +180,25 @@ void Profiler::printGroupSummary(const std::vector<std::string> &names)
     }
 }
 
+
+void Profiler::writeAllSummary(const std::string &filename)
+{
+    std::vector<std::string> all_names;
+    Profiler* m = getInstance();
+
+    all_names.reserve(m->data.size());
+
+    for(auto const& imap: m->data)
+    {
+        all_names.push_back(imap.first);
+    }
+
+    std::sort(all_names.begin(), all_names.end());
+    
+    writeGroupSummary(filename, all_names);
+}
+
+
 void Profiler::writeGroupSummary(const std::string &filename,
                                  const std::vector<std::string> &names)
 {

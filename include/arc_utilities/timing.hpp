@@ -72,6 +72,9 @@
 
 #define PROFILE_WRITE_SUMMARY_FOR_GROUP(filename, names)                 \
     ::arc_utilities::Profiler::writeGroupSummary(filename, names);
+
+#define PROFILE_WRITE_SUMMARY_FOR_ALL(filename)                \
+    ::arc_utilities::Profiler::writeAllSummary(filename);
     
 #else
 /*Void macros make it easy to turn off profiling*/
@@ -149,6 +152,8 @@ namespace arc_utilities
         
         static void printGroupSummary(const std::vector<std::string> &names);
 
+        static void writeAllSummary(const std::string &filename);
+        
         static void writeGroupSummary(const std::string &filename,
                                       const std::vector<std::string> &names);
                 
