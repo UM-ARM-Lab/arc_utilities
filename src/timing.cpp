@@ -184,7 +184,7 @@ void Profiler::writeGroupSummary(const std::string &filename,
                                  const std::vector<std::string> &names)
 {
     FILE * outfile;
-    outfile = std::fopen(filename.c_str(), "a");
+    outfile = std::fopen(filename.c_str(), "a+");
     
     Profiler* m = getInstance();
     // std::cout << " .=======================. \n";
