@@ -99,9 +99,21 @@ namespace EigenHelpers
     typedef std::map<std::string, Eigen::Isometry3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Isometry3f>>> MapStringIsometry3f;
     typedef std::map<std::string, Eigen::Isometry3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Isometry3d>>> MapStringIsometry3d;
 
-    inline bool Equal(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
+    inline bool Equal3d(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
     {
         if ((v1.x() == v2.x()) && (v1.y() == v2.y()) && (v1.z() == v2.z()))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    inline bool Equal4d(const Eigen::Vector4d& v1, const Eigen::Vector4d& v2)
+    {
+        if ((v1(0) == v2(0)) && (v1(1) == v2(1)) && (v1(2) == v2(2)) && (v1(3) == v2(3)))
         {
             return true;
         }
