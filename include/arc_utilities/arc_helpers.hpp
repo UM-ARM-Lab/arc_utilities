@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #ifndef ARC_HELPERS_HPP
 #define ARC_HELPERS_HPP
@@ -280,13 +281,15 @@ namespace arc_helpers
         float b;
         float a;
 
-        RGBAColor(const float r, const float g, const float b, const float a) : r(TrimColorValue(r)), g(TrimColorValue(g)), b(TrimColorValue(b)), a(TrimColorValue(a)) {}
+        RGBAColor(const float in_r, const float in_g, const float in_b, const float in_a) : r(TrimColorValue(in_r)), g(TrimColorValue(in_g)), b(TrimColorValue(in_b)), a(TrimColorValue(in_a)) {}
 
-        RGBAColor(const float r, const float g, const float b) : r(TrimColorValue(r)), g(TrimColorValue(g)), b(TrimColorValue(b)), a(1.0f) {}
+        RGBAColor(const float in_r, const float in_g, const float in_b) : r(TrimColorValue(in_r)), g(TrimColorValue(in_g)), b(TrimColorValue(in_b)), a(1.0f) {}
 
-        RGBAColor(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a) : r(ColorChannelFromHex(r)), g(ColorChannelFromHex(g)), b(ColorChannelFromHex(b)), a(ColorChannelFromHex(a)) {}
+        RGBAColor(const uint8_t in_r, const uint8_t in_g, const uint8_t in_b, const uint8_t in_a) : r(ColorChannelFromHex(in_r)), g(ColorChannelFromHex(in_g)), b(ColorChannelFromHex(in_b)), a(ColorChannelFromHex(in_a)) {}
 
-        RGBAColor(const uint8_t r, const uint8_t g, const uint8_t b, const float a) : r(ColorChannelFromHex(r)), g(ColorChannelFromHex(g)), b(ColorChannelFromHex(b)), a(TrimColorValue(a)) {}
+        RGBAColor(const uint8_t in_r, const uint8_t in_g, const uint8_t in_b, const float in_a) : r(ColorChannelFromHex(in_r)), g(ColorChannelFromHex(in_g)), b(ColorChannelFromHex(in_b)), a(TrimColorValue(in_a)) {}
+
+        RGBAColor(const uint8_t in_r, const uint8_t in_g, const uint8_t in_b) : r(ColorChannelFromHex(in_r)), g(ColorChannelFromHex(in_g)), b(ColorChannelFromHex(in_b)), a(1.0f) {}
 
         RGBAColor() : r(0.0f), g(0.0f), b(0.0f), a(0.0f) {}
 
@@ -771,7 +774,7 @@ namespace arc_helpers
 
     public:
 
-        AstarPQueueElement(const int64_t node_id_, const int64_t backpointer, const double cost_to_come, const double value) : node_id_(node_id_), backpointer_(backpointer), cost_to_come_(cost_to_come), value_(value) {}
+        AstarPQueueElement(const int64_t node_id, const int64_t backpointer, const double cost_to_come, const double value) : node_id_(node_id), backpointer_(backpointer), cost_to_come_(cost_to_come), value_(value) {}
 
         inline int64_t NodeID() const { return node_id_; }
 
@@ -876,11 +879,11 @@ namespace arc_helpers
                 queue_members_map.erase(top_node.NodeID());
             }
             // Check if the node has already been discovered
-            const auto explored_itr = explored.find(top_node.NodeID());
+            const auto node_explored_find_itr = explored.find(top_node.NodeID());
             // We have not been here before, or it is cheaper now
-            const bool in_explored = (explored_itr != explored.end());
-            const bool explored_is_better = (in_explored) ? (top_node.CostToCome() >= explored_itr->second.second) : false;
-            if (!explored_is_better)
+            const bool node_in_explored = (node_explored_find_itr != explored.end());
+            const bool node_explored_is_better = (node_in_explored) ? (top_node.CostToCome() >= node_explored_find_itr->second.second) : false;
+            if (!node_explored_is_better)
             {
                 // Add to the explored list
                 explored[top_node.NodeID()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
@@ -902,10 +905,10 @@ namespace arc_helpers
                         const double parent_to_child_cost = distance_fn(top_node.NodeID(), child_node_id);
                         const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
                         // Check if the child state has already been explored
-                        const auto explored_itr = explored.find(child_node_id);
+                        const auto child_explored_find_itr = explored.find(child_node_id);
                         // It is not in the explored list, or is there with a higher cost-to-come
-                        const bool in_explored = (explored_itr != explored.end());
-                        const bool explored_is_better = (in_explored) ? (child_cost_to_come >= explored_itr->second.second) : false;
+                        const bool child_in_explored = (child_explored_find_itr != explored.end());
+                        const bool explored_child_is_better = (child_in_explored) ? (child_cost_to_come >= child_explored_find_itr->second.second) : false;
                         // Check if the child state is already in the queue
                         bool queue_is_better = false;
                         if (limit_pqueue_duplicates)
@@ -915,7 +918,7 @@ namespace arc_helpers
                             queue_is_better = (in_queue) ? (child_cost_to_come >= queue_members_map_itr->second) : false;
                         }
                         // Only add the new state if we need to
-                        if (!explored_is_better && !queue_is_better)
+                        if (!explored_child_is_better && !queue_is_better)
                         {
                             // Compute the heuristic for the child
                             const double child_heuristic = heuristic_function(child_node_id);

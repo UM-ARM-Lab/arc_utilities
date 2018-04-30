@@ -51,16 +51,16 @@ namespace simple_prm_planner
             std::function<double(const arc_dijkstras::GraphNode<T, Allocator>&, const T&)> graph_distance_fn = nullptr;
             if (nn_distance_direction == ROADMAP_TO_NEW_STATE)
             {
-                graph_distance_fn = [&] (const arc_dijkstras::GraphNode<T, Allocator>& node, const T& state)
+                graph_distance_fn = [&] (const arc_dijkstras::GraphNode<T, Allocator>& node, const T& query_state)
                 {
-                    return distance_fn(node.GetValueImmutable(), state);
+                    return distance_fn(node.GetValueImmutable(), query_state);
                 };
             }
             else
             {
-                graph_distance_fn = [&] (const arc_dijkstras::GraphNode<T, Allocator>& node, const T& state)
+                graph_distance_fn = [&] (const arc_dijkstras::GraphNode<T, Allocator>& node, const T& query_state)
                 {
-                    return distance_fn(state, node.GetValueImmutable());
+                    return distance_fn(query_state, node.GetValueImmutable());
                 };
             }
             // Call KNN with the distance function

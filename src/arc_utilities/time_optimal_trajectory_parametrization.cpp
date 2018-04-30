@@ -300,13 +300,13 @@ namespace time_optimal_trajectory_parametrization
         }
     }
 
-    Trajectory::Trajectory(const Path &path, const Eigen::VectorXd &maxVelocity, const Eigen::VectorXd &maxAcceleration, double timeStep) :
-        path(path),
-        maxVelocity(maxVelocity),
-        maxAcceleration(maxAcceleration),
+    Trajectory::Trajectory(const Path &in_path, const Eigen::VectorXd &in_maxVelocity, const Eigen::VectorXd &in_maxAcceleration, double in_timeStep) :
+        path(in_path),
+        maxVelocity(in_maxVelocity),
+        maxAcceleration(in_maxAcceleration),
         n((unsigned int)maxVelocity.size()),
         valid(true),
-        timeStep(timeStep),
+        timeStep(in_timeStep),
         cachedTime(std::numeric_limits<double>::max())
     {
         trajectory.push_back(TrajectoryStep(0.0, 0.0));
@@ -346,10 +346,10 @@ namespace time_optimal_trajectory_parametrization
         std::ofstream file1("maxVelocity.txt");
         const double stepSize = path.getLength() / 100000.0;
         for(double s = 0.0; s < path.getLength(); s += stepSize) {
-            double maxVelocity = getAccelerationMaxPathVelocity(s);
-            if(maxVelocity == std::numeric_limits<double>::infinity())
-                maxVelocity = 10.0;
-            file1 << s << "  " << maxVelocity << "  " << getVelocityMaxPathVelocity(s) << std::endl;
+            double traj_maxVelocity = getAccelerationMaxPathVelocity(s);
+            if(traj_maxVelocity == std::numeric_limits<double>::infinity())
+                traj_maxVelocity = 10.0;
+            file1 << s << "  " << traj_maxVelocity << "  " << getVelocityMaxPathVelocity(s) << std::endl;
         }
         file1.close();
 
@@ -487,10 +487,10 @@ namespace time_optimal_trajectory_parametrization
     }
 
     // returns true if end of path is reached
-    bool Trajectory::integrateForward(std::list<TrajectoryStep> &trajectory, double acceleration) {
+    bool Trajectory::integrateForward(std::list<TrajectoryStep> &current_trajectory, double acceleration) {
 
-        double pathPos = trajectory.back().pathPos;
-        double pathVel = trajectory.back().pathVel;
+        double pathPos = current_trajectory.back().pathPos;
+        double pathVel = current_trajectory.back().pathVel;
 
         std::list<std::pair<double, bool> > switchingPoints = path.getSwitchingPoints();
         std::list<std::pair<double, bool> >::iterator nextDiscontinuity = switchingPoints.begin();
@@ -513,7 +513,7 @@ namespace time_optimal_trajectory_parametrization
             }
 
             if(pathPos > path.getLength()) {
-                trajectory.push_back(TrajectoryStep(pathPos, pathVel));
+                current_trajectory.push_back(TrajectoryStep(pathPos, pathVel));
                 return true;
             }
             else if(pathVel < 0.0) {
@@ -528,15 +528,15 @@ namespace time_optimal_trajectory_parametrization
                 pathVel = getVelocityMaxPathVelocity(pathPos);
             }
 
-            trajectory.push_back(TrajectoryStep(pathPos, pathVel));
+            current_trajectory.push_back(TrajectoryStep(pathPos, pathVel));
             acceleration = getMinMaxPathAcceleration(pathPos, pathVel, true);
 
             if(pathVel > getAccelerationMaxPathVelocity(pathPos) || pathVel > getVelocityMaxPathVelocity(pathPos)) {
                 // find more accurate intersection with max-velocity curve using bisection
-                TrajectoryStep overshoot = trajectory.back();
-                trajectory.pop_back();
-                double before = trajectory.back().pathPos;
-                double beforePathVel = trajectory.back().pathVel;
+                TrajectoryStep overshoot = current_trajectory.back();
+                current_trajectory.pop_back();
+                double before = current_trajectory.back().pathPos;
+                double beforePathVel = current_trajectory.back().pathVel;
                 double after = overshoot.pathPos;
                 double afterPathVel = overshoot.pathVel;
                 while(after - before > eps) {
@@ -558,18 +558,18 @@ namespace time_optimal_trajectory_parametrization
                         beforePathVel = midpointPathVel;
                     }
                 }
-                trajectory.push_back(TrajectoryStep(before, beforePathVel));
+                current_trajectory.push_back(TrajectoryStep(before, beforePathVel));
 
                 if(getAccelerationMaxPathVelocity(after) < getVelocityMaxPathVelocity(after)) {
                     if(after > nextDiscontinuity->first) {
                         return false;
                     }
-                    else if(getMinMaxPhaseSlope(trajectory.back().pathPos, trajectory.back().pathVel, true) > getAccelerationMaxPathVelocityDeriv(trajectory.back().pathPos)) {
+                    else if(getMinMaxPhaseSlope(current_trajectory.back().pathPos, current_trajectory.back().pathVel, true) > getAccelerationMaxPathVelocityDeriv(current_trajectory.back().pathPos)) {
                         return false;
                     }
                 }
                 else {
-                    if(getMinMaxPhaseSlope(trajectory.back().pathPos, trajectory.back().pathVel, false) > getVelocityMaxPathVelocityDeriv(trajectory.back().pathPos)) {
+                    if(getMinMaxPhaseSlope(current_trajectory.back().pathPos, current_trajectory.back().pathVel, false) > getVelocityMaxPathVelocityDeriv(current_trajectory.back().pathPos)) {
                         return false;
                     }
                 }
@@ -582,7 +582,7 @@ namespace time_optimal_trajectory_parametrization
         start2--;
         std::list<TrajectoryStep>::iterator start1 = start2;
         start1--;
-        std::list<TrajectoryStep> trajectory;
+        std::list<TrajectoryStep> end_trajectory;
         double slope = 0.0;
         assert(start1->pathPos <= pathPos);
 
@@ -590,16 +590,16 @@ namespace time_optimal_trajectory_parametrization
         {
             if(start1->pathPos <= pathPos)
             {
-                trajectory.push_front(TrajectoryStep(pathPos, pathVel));
+                end_trajectory.push_front(TrajectoryStep(pathPos, pathVel));
                 pathVel -= timeStep * acceleration;
-                pathPos -= timeStep * 0.5 * (pathVel + trajectory.front().pathVel);
+                pathPos -= timeStep * 0.5 * (pathVel + end_trajectory.front().pathVel);
                 acceleration = getMinMaxPathAcceleration(pathPos, pathVel, false);
-                slope = (trajectory.front().pathVel - pathVel) / (trajectory.front().pathPos - pathPos);
+                slope = (end_trajectory.front().pathVel - pathVel) / (end_trajectory.front().pathPos - pathPos);
 
                 if(pathVel < 0.0) {
                     valid = false;
                     std::cout << "Error while integrating backward: Negative path velocity" << std::endl;
-                    endTrajectory = trajectory;
+                    endTrajectory = end_trajectory;
                     return;
                 }
             }
@@ -612,19 +612,19 @@ namespace time_optimal_trajectory_parametrization
             // check for intersection between current start trajectory and backward trajectory segments
             const double startSlope = (start2->pathVel - start1->pathVel) / (start2->pathPos - start1->pathPos);
             const double intersectionPathPos = (start1->pathVel - pathVel + slope * pathPos - startSlope * start1->pathPos) / (slope - startSlope);
-            if(std::max(start1->pathPos, pathPos) - eps <= intersectionPathPos && intersectionPathPos <= eps + std::min(start2->pathPos, trajectory.front().pathPos))
+            if(std::max(start1->pathPos, pathPos) - eps <= intersectionPathPos && intersectionPathPos <= eps + std::min(start2->pathPos, end_trajectory.front().pathPos))
             {
                 const double intersectionPathVel = start1->pathVel + startSlope * (intersectionPathPos - start1->pathPos);
                 startTrajectory.erase(start2, startTrajectory.end());
                 startTrajectory.push_back(TrajectoryStep(intersectionPathPos, intersectionPathVel));
-                startTrajectory.splice(startTrajectory.end(), trajectory);
+                startTrajectory.splice(startTrajectory.end(), end_trajectory);
                 return;
             }
         }
 
         valid = false;
         std::cout << "Error while integrating backward: Did not hit start trajectory" << std::endl;
-        endTrajectory = trajectory;
+        endTrajectory = end_trajectory;
     }
 
     double Trajectory::getMinMaxPathAcceleration(double pathPos, double pathVel, bool max) {
@@ -729,11 +729,11 @@ namespace time_optimal_trajectory_parametrization
         std::list<TrajectoryStep>::const_iterator previous = it;
         previous--;
 
-        double timeStep = it->time - previous->time;
-        const double acceleration = 2.0 * (it->pathPos - previous->pathPos - timeStep * previous->pathVel) / (timeStep * timeStep);
+        double query_timeStep = it->time - previous->time;
+        const double acceleration = 2.0 * (it->pathPos - previous->pathPos - query_timeStep * previous->pathVel) / (query_timeStep * query_timeStep);
 
-        timeStep = time - previous->time;
-        const double pathPos = previous->pathPos + timeStep * previous->pathVel + 0.5 * timeStep * timeStep * acceleration;
+        query_timeStep = time - previous->time;
+        const double pathPos = previous->pathPos + query_timeStep * previous->pathVel + 0.5 * query_timeStep * query_timeStep * acceleration;
 
         return path.getConfig(pathPos);
     }
@@ -743,12 +743,12 @@ namespace time_optimal_trajectory_parametrization
         std::list<TrajectoryStep>::const_iterator previous = it;
         previous--;
 
-        double timeStep = it->time - previous->time;
-        const double acceleration = 2.0 * (it->pathPos - previous->pathPos - timeStep * previous->pathVel) / (timeStep * timeStep);
+        double query_timeStep = it->time - previous->time;
+        const double acceleration = 2.0 * (it->pathPos - previous->pathPos - query_timeStep * previous->pathVel) / (query_timeStep * query_timeStep);
 
-        timeStep = time - previous->time;
-        const double pathPos = previous->pathPos + timeStep * previous->pathVel + 0.5 * timeStep * timeStep * acceleration;
-        const double pathVel = previous->pathVel + timeStep * acceleration;
+        query_timeStep = time - previous->time;
+        const double pathPos = previous->pathPos + query_timeStep * previous->pathVel + 0.5 * query_timeStep * query_timeStep * acceleration;
+        const double pathVel = previous->pathVel + query_timeStep * acceleration;
 
         return path.getTangent(pathPos) * pathVel;
     }

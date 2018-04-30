@@ -81,7 +81,7 @@ namespace time_optimal_trajectory_parametrization
         // Generates a time-optimal trajectory
         Trajectory(const std::list<Eigen::VectorXd>& waypoints, const Eigen::VectorXd& max_velocity, const Eigen::VectorXd& max_acceleration, const double max_deviation, const double timestep);
 
-        Trajectory(const Path &path, const Eigen::VectorXd &maxVelocity, const Eigen::VectorXd &maxAcceleration, double timeStep = 0.001);
+        Trajectory(const Path &in_path, const Eigen::VectorXd &in_maxVelocity, const Eigen::VectorXd &in_maxAcceleration, double in_timeStep = 0.001);
 
         ~Trajectory(void);
 
@@ -102,9 +102,9 @@ namespace time_optimal_trajectory_parametrization
     private:
         struct TrajectoryStep {
             TrajectoryStep() {}
-            TrajectoryStep(double pathPos, double pathVel) :
-                pathPos(pathPos),
-                pathVel(pathVel)
+            TrajectoryStep(double in_pathPos, double in_pathVel) :
+                pathPos(in_pathPos),
+                pathVel(in_pathVel)
             {}
             double pathPos;
             double pathVel;
@@ -114,7 +114,7 @@ namespace time_optimal_trajectory_parametrization
         bool getNextSwitchingPoint(double pathPos, TrajectoryStep &nextSwitchingPoint, double &beforeAcceleration, double &afterAcceleration);
         bool getNextAccelerationSwitchingPoint(double pathPos, TrajectoryStep &nextSwitchingPoint, double &beforeAcceleration, double &afterAcceleration);
         bool getNextVelocitySwitchingPoint(double pathPos, TrajectoryStep &nextSwitchingPoint, double &beforeAcceleration, double &afterAcceleration);
-        bool integrateForward(std::list<TrajectoryStep> &trajectory, double acceleration);
+        bool integrateForward(std::list<TrajectoryStep> &current_trajectory, double acceleration);
         void integrateBackward(std::list<TrajectoryStep> &startTrajectory, double pathPos, double pathVel, double acceleration);
         double getMinMaxPathAcceleration(double pathPosition, double pathVelocity, bool max);
         double getMinMaxPhaseSlope(double pathPosition, double pathVelocity, bool max);

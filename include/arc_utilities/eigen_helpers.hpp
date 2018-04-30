@@ -49,12 +49,12 @@ namespace std
     {
         std::size_t operator() (const Eigen::Matrix<_Scalar, _Rows, 1>& vector) const
         {
-            std::size_t hash = 0;
+            std::size_t hash_val = 0;
             for (ssize_t idx = 0; idx < vector.size(); idx++)
             {
-                std::hash_combine(hash, vector(idx));
+                std::hash_combine(hash_val, vector(idx));
             }
-            return hash;
+            return hash_val;
         }
     };
 
