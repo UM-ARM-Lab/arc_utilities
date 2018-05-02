@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstdio>
 
+
 using namespace arc_utilities;
 
 double GlobalStopwatch(const StopwatchControl control)
@@ -30,6 +31,7 @@ void Profiler::reset_and_preallocate(size_t num_names, size_t num_events)
 {
     Profiler* monitor = getInstance();
     monitor->data.clear();
+    monitor->timed_double_data.clear();
     monitor->prealloc_buffer.resize(num_names);
     for (size_t i=0; i<num_names; i++)
     {
@@ -74,18 +76,40 @@ void Profiler::startTimer(std::string timer_name)
     m->timers[timer_name](RESET);
 }
 
-
-double Profiler::record(std::string timer_name)
+bool Profiler::isTimerStarted(std::string timer_name)
 {
     Profiler* m = getInstance();
     if (m->timers.find(timer_name) == m->timers.end())
     {
         std::cout << "Attempting to record timer \""<< timer_name <<
             "\" before timer started\n";
-        assert(false);
+        return false;
     }
+    return true;
+}
+
+double Profiler::record(std::string timer_name)
+{
+    Profiler* m = getInstance();
+    assert(m->isTimerStarted(timer_name)); //too harsh?
+    
     double time_elapsed = m->timers[timer_name]();
     m->addData(timer_name, time_elapsed);
+    return time_elapsed;
+}
+
+double Profiler::recordDouble(std::string timer_name, double datum)
+{
+    Profiler* m = getInstance();
+    assert(m->isTimerStarted(timer_name)); //too harsh?
+    
+    double time_elapsed = m->timers[timer_name]();
+    
+    if (m->timed_double_data.find(timer_name) == m->timed_double_data.end())
+    {
+        m->timed_double_data[timer_name] = std::vector<TimedDouble>();
+    }
+    m->timed_double_data[timer_name].push_back(TimedDouble(time_elapsed, datum));
     return time_elapsed;
 }
 
@@ -192,6 +216,10 @@ void Profiler::writeAllSummary(const std::string &filename)
     {
         all_names.push_back(imap.first);
     }
+    for(auto const& imap: m->timed_double_data)
+    {
+        all_names.push_back(imap.first);
+    }
 
     std::sort(all_names.begin(), all_names.end());
     
@@ -223,6 +251,8 @@ void Profiler::writeGroupSummary(const std::string &filename,
     fprintf(outfile, "%16s", "tot time (s)");
     fprintf(outfile, "%16s", "num_calls");
     fprintf(outfile, "%16s", "avg time (s)");
+    fprintf(outfile, "%16s", "total value");
+    fprintf(outfile, "%16s", "avg value");
     fprintf(outfile, "\n");
 
     std::string seperator = std::string(label_len-2, '~') + "      " + std::string(12, '.')
@@ -242,6 +272,10 @@ void Profiler::writeGroupSummary(const std::string &filename,
         size_t num_calls = 0;
         if(m->data.find(name) != m->data.end())
         {
+            if(m->timed_double_data.find(name) != m->timed_double_data.end())
+            {
+                std::cout << "!!!\nWarning\n!!!\n, using " << name << " as both time and TimedDouble name. Unsupporred summary output.\n";
+            }
             std::vector<double> &data = m->data[name];
             tot_time = 0;
             for(auto& val : data)
@@ -250,10 +284,91 @@ void Profiler::writeGroupSummary(const std::string &filename,
             }
             num_calls = data.size();
             avg_time = tot_time/(double)num_calls;
+            fprintf(outfile, " %15f %15ld %15f\n", tot_time, num_calls, avg_time);
         }
-        fprintf(outfile, " %15f %15ld %15f\n", tot_time, num_calls, avg_time);
+        else if(m->timed_double_data.find(name) != m->timed_double_data.end())
+        {
+            double tot_value = 0;
+            double avg_value = 0;
+            std::vector<TimedDouble> &data = m->timed_double_data[name];
+            for(auto& val : data)
+            {
+                tot_time += val.time;
+                tot_value += val.value;
+            }
+            num_calls = data.size();
+            avg_time = tot_time/(double)num_calls;
+            avg_value = tot_value/(double)num_calls;
+            fprintf(outfile, " %15f %15ld %15f %15f %15f\n",
+                    tot_time, num_calls, avg_time, tot_value, avg_value);
+        }
+        else {
+            fprintf(outfile, " %15f %15ld %15f\n", tot_time, num_calls, avg_time);
+        }
+        
+        
         
     }
     std::fclose(outfile);
 
+}
+
+void Profiler::writeAll(const std::string &filename)
+{
+    Profiler* m = getInstance();
+
+    FILE * outfile;
+    outfile = std::fopen(filename.c_str(), "a+");
+
+    std::vector<std::string> all_names;
+    for(auto const& imap: m->data)
+    {
+        all_names.push_back(imap.first);
+    }
+    for(auto const& imap: m->timed_double_data)
+    {
+        all_names.push_back(imap.first);
+    }
+
+    std::sort(all_names.begin(), all_names.end());
+
+
+    std::size_t label_len = max_element(all_names.begin(), all_names.end(),
+                                        [] (const std::string &a, const std::string &b)
+                                        {return a.length() < b.length();}) -> length() + 2;
+
+    label_len = std::max(label_len, (size_t)8);
+
+
+
+    const std::string label_format = ("%-" + std::to_string(label_len) + "s");
+    fprintf(outfile, label_format.c_str(), "Label");
+    fprintf(outfile, "%16s", "time");
+    fprintf(outfile, "%16s", "value");
+    fprintf(outfile, "\n");
+
+    std::string seperator = std::string(label_len-2, '~') + "      " + std::string(12, '.')
+        + "       " + std::string(9, '~');
+
+    fprintf(outfile, "%s\n", seperator.c_str());
+
+    for(const auto& name: all_names)
+    {
+        for(auto& val : m->data[name])
+        {
+            fprintf(outfile, label_format.c_str(), name.c_str());
+            fprintf(outfile, " %15f \n", val);
+        }
+
+        for(auto& val : m->timed_double_data[name])
+        {
+            fprintf(outfile, label_format.c_str(), name.c_str());
+            fprintf(outfile, " %15f %15f \n", val.time, val.value);
+        }
+
+    }
+        
+ 
+        
+    std::fclose(outfile);
 }
