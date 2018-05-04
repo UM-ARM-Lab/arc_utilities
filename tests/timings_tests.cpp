@@ -132,7 +132,10 @@ TEST(TimerTest, WritingAll)
     PROFILE_RECORD_DOUBLE("double values", 1.1);
     PROFILE_RECORD_DOUBLE("double values", 2.2);
     PROFILE_RECORD_DOUBLE("double values", 3.3);
+    PROFILE_RECORD_DOUBLE("double values", 4.4);
+            PROFILE_RECORD_DOUBLE("double values", 5.5);
     PROFILE_WRITE_ALL("testing_output_full.txt");
+    PROFILE_WRITE_ALL_FEWER_THAN("testing_output_limited.txt", 3);
 }
 
 

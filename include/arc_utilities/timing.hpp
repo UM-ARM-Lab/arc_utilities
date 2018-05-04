@@ -43,8 +43,6 @@
  *   '======================'
  */
 
-/* to use profiling, "#define ENABLE_PROFILING" needs to appear before "#import timing.hpp"*/
-#ifdef ENABLE_PROFILING
 
 /* Clears all stored data and preallocates space for later recordings*/
 #define PROFILE_REINITIALIZE(prealloc_num_names, prealloc_num_events)        \
@@ -80,25 +78,14 @@
 #define PROFILE_WRITE_SUMMARY_FOR_ALL(filename)                \
     ::arc_utilities::Profiler::writeAllSummary(filename);
 
+/* Dumps all data to file */
 #define PROFILE_WRITE_ALL(filename)              \
     ::arc_utilities::Profiler::writeAll(filename);
+
+/*  Dumps data to file for each name that has fewer than count_limit instances */
+#define PROFILE_WRITE_ALL_FEWER_THAN(filename, name_count_limit)         \
+    ::arc_utilities::Profiler::writeAll(filename, name_count_limit);
     
-#else
-/*Void macros make it easy to turn off profiling*/
-#define PROFILE_REINITIALIZE(prealloc_num_names, prealloc_num_events) (void) 0
-#define PROFILE_RESET(name) (void) 0
-#define PROFILE_START(name) (void) 0
-#define PROFILE_RECORD(name) (void) 0
-#define PROFILE_RECORD_DOUBLE(name, value) (void) 0
-#define PROFILE_PRINT_SUMMARY_FOR_SINGLE(name) (void) 0
-#define PROFILE_PRINT_SUMMARY_FOR_GROUP(names) (void) 0
-#define PROFILE_WRITE_SUMMARY_FOR_GROUP(filename, names) 0
-#define PROFILE_WRITE_SUMMARY_FOR_ALL(filename) 0
-
-
-
-#endif
-
 
 
 
@@ -176,7 +163,8 @@ namespace arc_utilities
         static void writeGroupSummary(const std::string &filename,
                                       const std::vector<std::string> &names);
 
-        static void writeAll(const std::string &filename);
+        static void writeAll(const std::string &filename,
+                             size_t limit_per_name = std::numeric_limits<size_t>::max());
 
     protected:
         bool isTimerStarted(std::string timer_name);

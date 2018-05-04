@@ -227,12 +227,28 @@ void Profiler::writeAllSummary(const std::string &filename)
 }
 
 
+void addHeader(FILE * outfile)
+{
+    time_t rawtime;
+    tm * timeinfo;
+    char buffer[80];
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", timeinfo);
+
+    fprintf(outfile, "%s\n\n", buffer);
+}
+
 void Profiler::writeGroupSummary(const std::string &filename,
                                  const std::vector<std::string> &names)
 {
     FILE * outfile;
     outfile = std::fopen(filename.c_str(), "a+");
-    
+
+    addHeader(outfile);
+        
     Profiler* m = getInstance();
     // std::cout << " .=======================. \n";
     // std::cout << "||    Profile Summary    ||\n";
@@ -309,17 +325,20 @@ void Profiler::writeGroupSummary(const std::string &filename,
         
         
     }
+    fprintf(outfile, "\n");
     std::fclose(outfile);
 
 }
 
-void Profiler::writeAll(const std::string &filename)
+void Profiler::writeAll(const std::string &filename, size_t limit_per_name)
 {
     Profiler* m = getInstance();
 
     FILE * outfile;
     outfile = std::fopen(filename.c_str(), "a+");
 
+    addHeader(outfile);
+    
     std::vector<std::string> all_names;
     for(auto const& imap: m->data)
     {
@@ -354,21 +373,29 @@ void Profiler::writeAll(const std::string &filename)
 
     for(const auto& name: all_names)
     {
-        for(auto& val : m->data[name])
+        if(m->data.find(name) != m->data.end() &&
+           m->data[name].size() < limit_per_name)
         {
-            fprintf(outfile, label_format.c_str(), name.c_str());
-            fprintf(outfile, " %15f \n", val);
+            for(auto& val : m->data[name])
+            {
+                fprintf(outfile, label_format.c_str(), name.c_str());
+                fprintf(outfile, " %15f \n", val);
+            }
         }
 
-        for(auto& val : m->timed_double_data[name])
+        if(m->timed_double_data.find(name) != m->timed_double_data.end() &&
+           m->timed_double_data[name].size() < limit_per_name)
         {
-            fprintf(outfile, label_format.c_str(), name.c_str());
-            fprintf(outfile, " %15f %15f \n", val.time, val.value);
+            for(auto& val : m->timed_double_data[name])
+            {
+                fprintf(outfile, label_format.c_str(), name.c_str());
+                fprintf(outfile, " %15f %15f \n", val.time, val.value);
+            }
         }
 
     }
         
  
-        
+    fprintf(outfile, "\n");
     std::fclose(outfile);
 }
