@@ -141,7 +141,6 @@ IF(GTEST_FOUND)
   add_executable(test_timings tests/timings_tests)
   target_link_libraries(test_timings ${PROJECT_NAME} ${GTEST_LIBRARIES})
 ENDIF(GTEST_FOUND)
-  
 
 #############
 ## Install ##

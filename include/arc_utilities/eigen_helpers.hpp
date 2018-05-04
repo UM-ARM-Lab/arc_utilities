@@ -88,6 +88,8 @@ namespace EigenHelpers
     typedef std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>> VectorIsometry3d;
     typedef std::vector<Eigen::Affine3f, Eigen::aligned_allocator<Eigen::Affine3f>> VectorAffine3f;
     typedef std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> VectorAffine3d;
+    typedef std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> VectorMatrix4f;
+    typedef std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> VectorMatrix4d;
     typedef std::map<std::string, Eigen::Vector3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3f>>> MapStringVector3f;
     typedef std::map<std::string, Eigen::Vector3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3d>>> MapStringVector3d;
     typedef std::map<std::string, Eigen::Vector4f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4f>>> MapStringVector4f;
@@ -642,6 +644,25 @@ namespace EigenHelpers
         return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
     }
 
+    inline Eigen::VectorXd Interpolate(const Eigen::VectorXd& v1, const Eigen::VectorXd& v2, const double ratio)
+    {
+        // Safety check ratio
+        double real_ratio = ratio;
+        if (real_ratio < 0.0)
+        {
+            real_ratio = 0.0;
+            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
+        }
+        else if (real_ratio > 1.0)
+        {
+            real_ratio = 1.0;
+            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
+        }
+        // Interpolate
+        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
+        return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
+    }
+
     inline Eigen::Isometry3d Interpolate(const Eigen::Isometry3d& t1, const Eigen::Isometry3d& t2, const double ratio)
     {
         // Safety check ratio
@@ -707,6 +728,8 @@ namespace EigenHelpers
         return (v2 - v1).norm();
     }
 
+    // From here: https://chrischoy.github.io/research/measuring-rotation/
+    // This assumes that the incomming quaternions are normalized
     inline double Distance(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2)
     {
         const double dq = std::fabs((q1.w() * q2.w()) + (q1.x() * q2.x()) + (q1.y() * q2.y()) + (q1.z() * q2.z()));
@@ -718,6 +741,16 @@ namespace EigenHelpers
         {
             return 0.0;
         }
+    }
+
+    // From here: http://www.boris-belousov.net/2016/12/01/quat-dist/#rotation-matrices
+    // Returns the minimum angular rotation needed to align r1 and r2
+    // Assumes that r1 and r2 are proper rotation matrices
+    inline double Distance(const Eigen::Matrix3d& r1, const Eigen::Matrix3d& r2)
+    {
+        const auto delta = r1 * r2.transpose();
+        const auto tr = delta.trace();
+        return acos((tr - 1.0) / 2.0);
     }
 
     inline double Distance(const Eigen::Isometry3d& t1, const Eigen::Isometry3d& t2, const double alpha = 0.5)
@@ -1413,7 +1446,7 @@ namespace EigenHelpers
     inline std::pair<double, double> DistanceToLine(
             const Eigen::Vector3d& point_on_line,
             const Eigen::Vector3d& unit_vector,
-            const Eigen::Vector3d x)
+            const Eigen::Vector3d& x)
     {
         // Ensure that our input data is valid
         const auto real_unit_vector = unit_vector.normalized();
@@ -1714,17 +1747,36 @@ namespace EigenHelpers
         // Yes, this is ugly. This is to suppress a warning on type conversion related to Eigen operations
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wconversion"
-        Eigen::MatrixXd left_side = A.transpose() * w.asDiagonal() * A;
+        Eigen::MatrixXd lhs = A.transpose() * w.asDiagonal() * A;
         #pragma GCC diagnostic pop
-        const double minimum_singular_value = left_side.jacobiSvd().singularValues().minCoeff();
+        const double minimum_singular_value = lhs.jacobiSvd().singularValues().minCoeff();
 
         if (minimum_singular_value < damping_threshold)
         {
-            left_side += damping_value * Eigen::MatrixXd::Identity(left_side.rows(), left_side.cols());
+            lhs += damping_value * Eigen::MatrixXd::Identity(lhs.rows(), lhs.cols());
         }
 
         // With the damping we can assume that the left side is positive definite, so use LLT to solve this
-        return left_side.llt().solve(A.transpose() * w.cwiseProduct(b));
+        return lhs.llt().solve(A.transpose() * w.cwiseProduct(b));
+    }
+
+    inline Eigen::VectorXd UnderdeterminedSolver(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const double damping_threshold, const double damping_value)
+    {
+        assert(A.cols() > A.rows());
+        // Yes, this is ugly. This is to suppress a warning on type conversion related to Eigen operations
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wconversion"
+        Eigen::MatrixXd damped = A * A.transpose();
+        #pragma GCC diagnostic pop
+        const double minimum_singular_value = damped.jacobiSvd().singularValues().minCoeff();
+
+        if (minimum_singular_value < damping_threshold)
+        {
+            damped += damping_value * Eigen::MatrixXd::Identity(damped.rows(), damped.cols());
+        }
+
+        // With the damping we can assume that what we are inverting is positive definite, so use LLT to solve this
+        return A.transpose() * damped.llt().solve(b);
     }
 }
 

@@ -155,6 +155,48 @@ namespace arc_utilities
     }
 
     template<>
+    inline uint64_t SerializedSizeEigenType(const Eigen::Matrix3Xf& value)
+    {
+        // Space for a cols header, and the data itself
+        return (uint64_t)(sizeof(uint64_t) + ((size_t)value.size() * sizeof(float)));
+    }
+
+    template<>
+    inline uint64_t SerializeEigenType(const Eigen::Matrix3Xf& value, std::vector<uint8_t>& buffer)
+    {
+        // Takes a state to serialize and a buffer to serialize into
+        // Return number of bytes written to buffer
+        const uint64_t serialized_size = SerializedSizeEigenType(value);
+        std::vector<uint8_t> temp_buffer(serialized_size, 0x00);
+        // Make the header
+        const uint64_t cols_header = (uint64_t)value.cols();
+        memcpy(&temp_buffer.front(), &cols_header, sizeof(cols_header));
+        // Copy the data
+        memcpy(&(temp_buffer[sizeof(cols_header)]), value.data(), (serialized_size - sizeof(cols_header)));
+        buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
+        return serialized_size;
+    }
+
+    template<>
+    inline std::pair<Eigen::Matrix3Xf, uint64_t> DeserializeEigenType<Eigen::Matrix3Xf>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        assert(current < buffer.size());
+        assert((current + sizeof(uint64_t)) <= buffer.size());
+        // Takes a buffer to read from and the starting index in the buffer
+        // Return the loaded state and how many bytes we read from the buffer
+        // Load the headers
+        uint64_t cols_header = 0u;
+        memcpy(&cols_header, &buffer[current], sizeof(uint64_t));
+        // Check buffer size
+        Eigen::Matrix3Xf temp_value = Eigen::Matrix3Xf::Zero(3, (ssize_t)cols_header);
+        const uint64_t serialized_size = SerializedSizeEigenType(temp_value);
+        assert((current + serialized_size) <= buffer.size());
+        // Load from the buffer
+        memcpy(temp_value.data(), &buffer[current + sizeof(cols_header)], (serialized_size - sizeof(cols_header)));
+        return std::make_pair(temp_value, serialized_size);
+    }
+
+    template<>
     inline uint64_t SerializedSizeEigenType(const Eigen::Vector3d& value)
     {
         (void)(value);
