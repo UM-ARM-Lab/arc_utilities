@@ -5,11 +5,13 @@ project(arc_utilities)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs geometry_msgs)
+
+## System dependencies are found with CMake's conventions
 find_package(cmake_modules REQUIRED)
+
 find_package(Eigen3 REQUIRED)
 set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 
-## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS filesystem)
 
 find_package(GTest)
@@ -40,7 +42,7 @@ catkin_python_setup()
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs geometry_msgs DEPENDS Eigen3)
+catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs geometry_msgs DEPENDS Eigen3 Boost)
 
 ###########
 ## Build ##
@@ -88,9 +90,9 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/filesystem.hpp
     src/${PROJECT_NAME}/zlib_helpers.cpp
     src/${PROJECT_NAME}/base64_helpers.cpp
-    src/timing.cpp
+    src/${PROJECT_NAME}/timing.cpp
     src/${PROJECT_NAME}/first_order_deformation.cpp)
-add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
 
 ###########
@@ -99,52 +101,51 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
 
 # Simple test node for simple_hierarchical_clustering
 add_executable(test_hierarchical_clustering src/test_hierarchical_clustering.cpp)
-add_dependencies(test_hierarchical_clustering ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+add_dependencies(test_hierarchical_clustering ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_hierarchical_clustering ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for utility functions
 add_executable(test_arc_utilities src/test_arc_utilities.cpp)
-add_dependencies(test_arc_utilities ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+add_dependencies(test_arc_utilities ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_arc_utilities ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for Eigen3 math
 add_executable(test_eigen_math src/test_eigen_math.cpp)
-add_dependencies(test_eigen_math ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+add_dependencies(test_eigen_math ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_eigen_math ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for averaging math
 add_executable(test_averaging src/test_averaging.cpp)
-add_dependencies(test_averaging ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+add_dependencies(test_averaging ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_averaging ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for Dijkstras
 add_executable(test_dijkstras src/test_dijkstras.cpp)
-add_dependencies(test_dijkstras ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+add_dependencies(test_dijkstras ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_dijkstras ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for shortcut smoothing
 add_executable(test_shortcut_smoothing src/test_shortcut_smoothing.cpp)
-add_dependencies(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+add_dependencies(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for DistanceToLine function
 add_executable(test_closest_point src/test_closest_point.cpp)
-add_dependencies(test_closest_point ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+add_dependencies(test_closest_point ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_closest_point ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test for SO(3) distance functions (to be expanded to all distance functions later
-# Simple test node for DistanceToLine function
+# Simple test for SO(3) distance functions (to be expanded to all distance functions later)
 add_executable(test_distance_functions src/test_distance_functions.cpp)
-add_dependencies(test_distance_functions ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
+add_dependencies(test_distance_functions ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_distance_functions ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # To build tests, install google's testing framework
 # https://github.com/google/googletest/
 
 IF(GTEST_FOUND)
-  include_directories(${GTEST_INCLUDE_DIRS})
-  add_executable(test_timings tests/timings_tests)
-  target_link_libraries(test_timings ${PROJECT_NAME} ${GTEST_LIBRARIES})
+    include_directories(${GTEST_INCLUDE_DIRS})
+    add_executable(test_timings tests/timings_tests)
+    target_link_libraries(test_timings ${PROJECT_NAME} ${GTEST_LIBRARIES})
 ENDIF(GTEST_FOUND)
 
 #############
