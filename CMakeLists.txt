@@ -12,6 +12,8 @@ set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS filesystem)
 
+find_package(GTest)
+
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/groovy/api/catkin/html/user_guide/setup_dot_py.html
@@ -91,6 +93,10 @@ add_library(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
 
+###########
+## Tests ##
+###########
+
 # Simple test node for simple_hierarchical_clustering
 add_executable(test_hierarchical_clustering src/test_hierarchical_clustering.cpp)
 add_dependencies(test_hierarchical_clustering ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
@@ -131,6 +137,15 @@ target_link_libraries(test_closest_point ${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(test_distance_functions src/test_distance_functions.cpp)
 add_dependencies(test_distance_functions ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(test_distance_functions ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+# To build tests, install google's testing framework
+# https://github.com/google/googletest/
+
+IF(GTEST_FOUND)
+  include_directories(${GTEST_INCLUDE_DIRS})
+  add_executable(test_timings tests/timings_tests)
+  target_link_libraries(test_timings ${PROJECT_NAME} ${GTEST_LIBRARIES})
+ENDIF(GTEST_FOUND)
 
 #############
 ## Install ##
