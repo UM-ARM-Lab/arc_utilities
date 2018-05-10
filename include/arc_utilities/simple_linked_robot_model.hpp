@@ -48,7 +48,10 @@ namespace simple_linked_robot_model
             }
             else
             {
-                assert(limits.first <= limits.second);
+                if (limits.first > limits.second)
+                {
+                    throw std::invalid_argument("limits.first > limits.second");
+                }
                 limits_ = limits;
             }
             SetValue(value);
@@ -76,7 +79,6 @@ namespace simple_linked_robot_model
 
         inline uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer, const uint64_t current)
         {
-            assert(current < buffer.size());
             uint64_t current_position = current;
             const std::pair<double, uint64_t> deserialized_limits_first = arc_helpers::DeserializeFixedSizePOD<double>(buffer, current_position);
             limits_.first = deserialized_limits_first.first;
@@ -180,7 +182,7 @@ namespace simple_linked_robot_model
             }
             else
             {
-                assert(false);
+                throw std::runtime_error("Invalid joint model type");
             }
         }
 
@@ -215,26 +217,31 @@ namespace simple_linked_robot_model
 
         inline double EnforceLimits(const double value) const
         {
-            assert(std::isnan(value) == false);
-            assert(std::isinf(value) == false);
-            if (IsContinuous())
+            if (!std::isnan(value) && !std::isinf(value))
             {
-                return EigenHelpers::EnforceContinuousRevoluteBounds(value);
-            }
-            else
-            {
-                if (value < limits_.first)
+                if (IsContinuous())
                 {
-                    return limits_.first;
-                }
-                else if (value > limits_.second)
-                {
-                    return limits_.second;
+                    return EigenHelpers::EnforceContinuousRevoluteBounds(value);
                 }
                 else
                 {
-                    return value;
+                    if (value < limits_.first)
+                    {
+                        return limits_.first;
+                    }
+                    else if (value > limits_.second)
+                    {
+                        return limits_.second;
+                    }
+                    else
+                    {
+                        return value;
+                    }
                 }
+            }
+            else
+            {
+                throw std::invalid_argument("value is NAN or INF");
             }
         }
 
@@ -263,8 +270,14 @@ namespace simple_linked_robot_model
 
         inline double SignedDistance(const SimpleJointModel& other) const
         {
-            assert(IsSameType(other));
-            return SignedDistance(GetValue(), other.GetValue());
+            if (IsSameType(other))
+            {
+                return SignedDistance(GetValue(), other.GetValue());
+            }
+            else
+            {
+              throw std::invalid_argument("Cannot compute distance between joint models of different types");
+            }
         }
 
         inline double Distance(const double v1, const double v2) const
@@ -279,8 +292,7 @@ namespace simple_linked_robot_model
 
         inline double Distance(const SimpleJointModel& other) const
         {
-            assert(IsSameType(other));
-            return std::abs(SignedDistance(GetValue(), other.GetValue()));
+            return std::abs(SignedDistance(other));
         }
 
         inline SimpleJointModel CopyWithNewValue(const double value) const
@@ -466,28 +478,40 @@ namespace simple_linked_robot_model
 
         inline void SetConfig(const SimpleLinkedConfiguration& new_config)
         {
-            assert(new_config.size() == num_active_joints_);
-            config_.clear();
-            size_t config_idx = 0u;
-            for (size_t idx = 0; idx < joints_.size(); idx++)
+            if (new_config.size() == num_active_joints_)
             {
-                RobotJoint& current_joint = joints_[idx];
-                // Skip fixed joints
-                if (current_joint.JointModel().IsFixed())
+                config_.clear();
+                size_t config_idx = 0u;
+                for (size_t idx = 0; idx < joints_.size(); idx++)
                 {
-                    continue;
+                    RobotJoint& current_joint = joints_[idx];
+                    // Skip fixed joints
+                    if (current_joint.JointModel().IsFixed())
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        if (config_idx < new_config.size())
+                        {
+                            const SimpleJointModel& new_joint = new_config[config_idx];
+                            current_joint.JointModel().SetValue(new_joint.GetValue());
+                            config_.push_back(current_joint.JointModel());
+                            config_idx++;
+                        }
+                        else
+                        {
+                            throw std::runtime_error("config_idx out of range");
+                        }
+                    }
                 }
-                else
-                {
-                    assert(config_idx < new_config.size());
-                    const SimpleJointModel& new_joint = new_config[config_idx];
-                    current_joint.JointModel().SetValue(new_joint.GetValue());
-                    config_.push_back(current_joint.JointModel());
-                    config_idx++;
-                }
+                // Update forward kinematics
+                UpdateTransforms();
             }
-            // Update forward kinematics
-            UpdateTransforms();
+            else
+            {
+                throw std::invalid_argument("new_config.size() != num_active_joints_");
+            }
         }
 
         static inline std::pair<size_t, std::map<int64_t, int64_t>> MakeActiveJointIndexMap(const std::vector<RobotJoint>& joints)
@@ -718,7 +742,10 @@ namespace simple_linked_robot_model
             const auto active_joint_query = MakeActiveJointIndexMap(joints_);
             num_active_joints_ = active_joint_query.first;
             active_joint_index_map_ = active_joint_query.second;
-            assert(joint_distance_weights.size() == num_active_joints_);
+            if (joint_distance_weights.size() != num_active_joints_)
+            {
+                throw std::invalid_argument("joint_distance_weights.size() != num_active_joints_");
+            }
             joint_distance_weights_ = EigenHelpers::Abs(joint_distance_weights);
             // Generate the self colllision map
             SetPosition(initial_position);
@@ -743,8 +770,14 @@ namespace simple_linked_robot_model
                 }
             }
             active_joint_names.shrink_to_fit();
-            assert(active_joint_names.size() == num_active_joints_);
-            return active_joint_names;
+            if (active_joint_names.size() == num_active_joints_)
+            {
+                return active_joint_names;
+            }
+            else
+            {
+                throw std::runtime_error("Number of active joint names goes not match number of active joints");
+            }
         }
 
         inline void UpdateBaseTransform(const Eigen::Isometry3d& base_transform)
@@ -822,35 +855,42 @@ namespace simple_linked_robot_model
 
         static inline Eigen::VectorXd ComputeUnweightedPerDimensionConfigurationRawDistance(const SimpleLinkedConfiguration& config1, const SimpleLinkedConfiguration& config2)
         {
-            assert(config1.size() == config2.size());
-            Eigen::VectorXd distances = Eigen::VectorXd::Zero((ssize_t)(config1.size()));
-            for (size_t idx = 0; idx < config1.size(); idx++)
+            if (config1.size() == config2.size())
             {
-                const SimpleJointModel& j1 = config1[idx];
-                const SimpleJointModel& j2 = config2[idx];
-                assert(j1.IsRevolute() == j2.IsRevolute());
-                assert(j1.IsContinuous() == j2.IsContinuous());
-                distances((int64_t)idx) = j1.SignedDistance(j1.GetValue(), j2.GetValue());
+                Eigen::VectorXd distances = Eigen::VectorXd::Zero((ssize_t)(config1.size()));
+                for (size_t idx = 0; idx < config1.size(); idx++)
+                {
+                    const SimpleJointModel& j1 = config1[idx];
+                    const SimpleJointModel& j2 = config2[idx];
+                    distances((int64_t)idx) = j1.SignedDistance(j2);
+                }
+                return distances;
             }
-            return distances;
+            else
+            {
+                throw std::invalid_argument("config1.size() != config2.size()");
+            }
         }
 
         virtual Eigen::VectorXd ComputePerDimensionConfigurationSignedDistance(const SimpleLinkedConfiguration& config1, const SimpleLinkedConfiguration& config2) const
         {
-            assert(config1.size() == config2.size());
-            assert(config1.size() == num_active_joints_);
-            Eigen::VectorXd distances = Eigen::VectorXd::Zero((ssize_t)(config1.size()));
-            for (size_t idx = 0; idx < config1.size(); idx++)
+            if ((config1.size() == num_active_joints_) && (config2.size() == num_active_joints_))
             {
-                const SimpleJointModel& j1 = config1[idx];
-                const SimpleJointModel& j2 = config2[idx];
-                assert(j1.IsRevolute() == j2.IsRevolute());
-                assert(j1.IsContinuous() == j2.IsContinuous());
-                const double raw_distance = j1.SignedDistance(j1.GetValue(), j2.GetValue());
-                const double joint_distance_weight = joint_distance_weights_[idx];
-                distances((int64_t)idx) = raw_distance * joint_distance_weight;
+                Eigen::VectorXd distances = Eigen::VectorXd::Zero((ssize_t)(config1.size()));
+                for (size_t idx = 0; idx < config1.size(); idx++)
+                {
+                    const SimpleJointModel& j1 = config1[idx];
+                    const SimpleJointModel& j2 = config2[idx];
+                    const double raw_distance = j1.SignedDistance(j2);
+                    const double joint_distance_weight = joint_distance_weights_[idx];
+                    distances((int64_t)idx) = raw_distance * joint_distance_weight;
+                }
+                return distances;
             }
-            return distances;
+            else
+            {
+                throw std::invalid_argument("Size of config1 and/or config2 does not match num_active_joints_");
+            }
         }
 
         virtual double ComputeConfigurationDistance(const SimpleLinkedConfiguration& config1, const SimpleLinkedConfiguration& config2) const
@@ -860,28 +900,39 @@ namespace simple_linked_robot_model
 
         virtual SimpleLinkedConfiguration InterpolateBetweenConfigurations(const SimpleLinkedConfiguration& start, const SimpleLinkedConfiguration& end, const double ratio) const
         {
-            assert(start.size() == end.size());
-            // Make the interpolated config
-            SimpleLinkedConfiguration interpolated;
-            interpolated.reserve(start.size());
-            for (size_t idx = 0; idx < start.size(); idx++)
+            if (start.size() == end.size())
             {
-                const SimpleJointModel& j1 = start[idx];
-                const SimpleJointModel& j2 = end[idx];
-                assert(j1.IsRevolute() == j2.IsRevolute());
-                assert(j1.IsContinuous() == j2.IsContinuous());
-                if (j1.IsContinuous())
+                // Make the interpolated config
+                SimpleLinkedConfiguration interpolated;
+                interpolated.reserve(start.size());
+                for (size_t idx = 0; idx < start.size(); idx++)
                 {
-                    const double interpolated_value = EigenHelpers::InterpolateContinuousRevolute(j1.GetValue(), j2.GetValue(), ratio);
-                    interpolated.push_back(j1.CopyWithNewValue(interpolated_value));
+                    const SimpleJointModel& j1 = start[idx];
+                    const SimpleJointModel& j2 = end[idx];
+                    if (j1.IsSameType(j2))
+                    {
+                        if (j1.IsContinuous())
+                        {
+                            const double interpolated_value = EigenHelpers::InterpolateContinuousRevolute(j1.GetValue(), j2.GetValue(), ratio);
+                            interpolated.push_back(j1.CopyWithNewValue(interpolated_value));
+                        }
+                        else
+                        {
+                            const double interpolated_value = EigenHelpers::Interpolate(j1.GetValue(), j2.GetValue(), ratio);
+                            interpolated.push_back(j1.CopyWithNewValue(interpolated_value));
+                        }
+                    }
+                    else
+                    {
+                        throw std::invalid_argument("Joint model types do not match");
+                    }
                 }
-                else
-                {
-                    const double interpolated_value = EigenHelpers::Interpolate(j1.GetValue(), j2.GetValue(), ratio);
-                    interpolated.push_back(j1.CopyWithNewValue(interpolated_value));
-                }
+                return interpolated;
             }
-            return interpolated;
+            else
+            {
+                throw std::invalid_argument("start.size() != end.size()");
+            }
         }
 
         virtual SimpleLinkedConfiguration AverageConfigurations(const std::vector<SimpleLinkedConfiguration, SimpleLinkedConfigAlloc>& configurations) const
@@ -893,13 +944,21 @@ namespace simple_linked_robot_model
                 for (size_t idx = 0; idx < configurations.size(); idx++)
                 {
                     const SimpleLinkedConfiguration& current_config = configurations[idx];
-                    assert(representative_config.size() == current_config.size());
-                    for (size_t jdx = 0; jdx < representative_config.size(); jdx++)
+                    if (representative_config.size() == current_config.size())
                     {
-                        const SimpleJointModel& jr = representative_config[jdx];
-                        const SimpleJointModel& jc = current_config[jdx];
-                        assert(jr.IsRevolute() == jc.IsRevolute());
-                        assert(jr.IsContinuous() == jc.IsContinuous());
+                        for (size_t jdx = 0; jdx < representative_config.size(); jdx++)
+                        {
+                            const SimpleJointModel& jr = representative_config[jdx];
+                            const SimpleJointModel& jc = current_config[jdx];
+                            if (jr.IsSameType(jc) == false)
+                            {
+                                throw std::invalid_argument("Joint model of configuration does not match joint model in reference configuration");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw std::invalid_argument("Configuration does not match size of reference configuration");
                     }
                 }
                 // Get number of DoF
@@ -977,7 +1036,10 @@ namespace simple_linked_robot_model
             {
                 const KinematicSkeletonElement& current_element = kinematic_skeleton_[current_link_index];
                 const int64_t parent_joint_index = current_element.parent_joint_index_;
-                assert(parent_joint_index >= 0);
+                if (parent_joint_index < 0)
+                {
+                    throw std::runtime_error("Encountered invalid parent joint index (<0)");
+                }
                 const int64_t active_joint_index = active_joint_index_map_.at(parent_joint_index);
                 // Get the current joint
                 const RobotJoint& parent_joint = joints_[parent_joint_index];
@@ -999,8 +1061,11 @@ namespace simple_linked_robot_model
                 }
                 else
                 {
-                    assert(parent_joint.JointModel().IsFixed());
                     // We do nothing for fixed joints
+                    if (parent_joint.JointModel().IsFixed() == false)
+                    {
+                        throw std::runtime_error("Invalid parent joint model type");
+                    }
                 }
                 // Update
                 current_link_index = current_element.parent_link_index_;

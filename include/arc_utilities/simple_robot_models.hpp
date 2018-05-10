@@ -234,20 +234,29 @@ namespace simple_robot_models
 
         inline bool CheckIfSelfCollisionAllowed(const size_t link1_index, const size_t link2_index) const
         {
-            assert(link1_index < links_.size());
-            assert(link2_index < links_.size());
-            if (link1_index == link2_index)
+            if (link1_index < links_.size() && link2_index < links_.size())
             {
-                return true;
-            }
-            const int32_t stored = self_collision_map_((int64_t)link1_index, (int64_t)link2_index);
-            if (stored > 0)
-            {
-                return true;
+                if (link1_index == link2_index)
+                {
+                    return true;
+                }
+                const int32_t stored = self_collision_map_((int64_t)link1_index, (int64_t)link2_index);
+                if (stored > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
             else
             {
-                return false;
+                throw std::invalid_argument("Query link indices ("
+                                            + std::to_string(link1_index)
+                                            + ", " + std::to_string(link2_index)
+                                            + " out of range for robot with "
+                                            + std::to_string(links_.size()) + " links");
             }
         }
 
