@@ -707,6 +707,8 @@ namespace EigenHelpers
         return (v2 - v1).norm();
     }
 
+    // From here: https://chrischoy.github.io/research/measuring-rotation/
+    // This assumes that the incomming quaternions are normalized
     inline double Distance(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2)
     {
         const double dq = std::fabs((q1.w() * q2.w()) + (q1.x() * q2.x()) + (q1.y() * q2.y()) + (q1.z() * q2.z()));
@@ -718,6 +720,16 @@ namespace EigenHelpers
         {
             return 0.0;
         }
+    }
+
+    // From here: http://www.boris-belousov.net/2016/12/01/quat-dist/#rotation-matrices
+    // Returns the minimum angular rotation needed to align r1 and r2
+    // Assumes that r1 and r2 are proper rotation matrices
+    inline double Distance(const Eigen::Matrix3d& r1, const Eigen::Matrix3d& r2)
+    {
+        const auto delta = r1 * r2.transpose();
+        const auto tr = delta.trace();
+        return acos((tr - 1.0) / 2.0);
     }
 
     inline double Distance(const Eigen::Isometry3d& t1, const Eigen::Isometry3d& t2, const double alpha = 0.5)
