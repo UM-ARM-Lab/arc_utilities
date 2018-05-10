@@ -139,6 +139,11 @@ add_executable(test_distance_functions src/test_distance_functions.cpp)
 add_dependencies(test_distance_functions ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_distance_functions ${PROJECT_NAME} ${catkin_LIBRARIES})
 
+# Simple test Eigen (de)Serialization functions
+add_executable(test_eigen_serialization src/test_eigen_serialization.cpp)
+add_dependencies(test_eigen_serialization ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_eigen_serialization ${PROJECT_NAME} ${catkin_LIBRARIES})
+
 # To build tests, install google's testing framework
 # https://github.com/google/googletest/
 

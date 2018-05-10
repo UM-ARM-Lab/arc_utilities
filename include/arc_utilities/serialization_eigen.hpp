@@ -67,6 +67,42 @@ namespace arc_utilities
     // Concrete implementations for specific Eigen types
     ////////////////////////////////////////////////////////////////////////////
 
+    // Vector3d
+    template<>
+    inline std::pair<Eigen::Vector3d, uint64_t> DeserializeEigen<Eigen::Vector3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        Eigen::Vector3d temp_value;
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
+        assert(current < buffer.size());
+        assert(current + serialized_size <= buffer.size());
+        memcpy(temp_value.data(), &buffer[current], serialized_size);
+        return std::make_pair(temp_value, serialized_size);
+    }
+
+    // Vector6d
+    template<>
+    inline std::pair<Eigen::Matrix<double, 6, 1>, uint64_t> DeserializeEigen<Eigen::Matrix<double, 6, 1>>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        Eigen::Matrix<double, 6, 1> temp_value;
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
+        assert(current < buffer.size());
+        assert(current + serialized_size <= buffer.size());
+        memcpy(temp_value.data(), &buffer[current], serialized_size);
+        return std::make_pair(temp_value, serialized_size);
+    }
+
+    // Vector7d
+    template<>
+    inline std::pair<Eigen::Matrix<double, 7, 1>, uint64_t> DeserializeEigen<Eigen::Matrix<double, 7, 1>>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        Eigen::Matrix<double, 7, 1> temp_value;
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
+        assert(current < buffer.size());
+        assert(current + serialized_size <= buffer.size());
+        memcpy(temp_value.data(), &buffer[current], serialized_size);
+        return std::make_pair(temp_value, serialized_size);
+    }
+
     // Generic VectorXd
     template<>
     inline std::pair<Eigen::VectorXd, uint64_t> DeserializeEigen<Eigen::VectorXd>(const std::vector<uint8_t>& buffer, const uint64_t current)
@@ -141,44 +177,7 @@ namespace arc_utilities
         return std::make_pair(temp_value, serialized_size);
     }
 
-    // Vector3d
-    template<>
-    inline std::pair<Eigen::Vector3d, uint64_t> DeserializeEigen<Eigen::Vector3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
-    {
-        Eigen::Vector3d temp_value;
-        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
-        assert(current < buffer.size());
-        assert(current + serialized_size < buffer.size());
-        memcpy(temp_value.data(), &buffer[current], serialized_size);
-        return std::make_pair(temp_value, serialized_size);
-    }
-
-    // Vector6d
-    template<>
-    inline std::pair<Eigen::Matrix<double, 6, 1>, uint64_t> DeserializeEigen<Eigen::Matrix<double, 6, 1>>(const std::vector<uint8_t>& buffer, const uint64_t current)
-    {
-        Eigen::Matrix<double, 6, 1> temp_value;
-        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
-        assert(current < buffer.size());
-        assert(current + serialized_size < buffer.size());
-        memcpy(temp_value.data(), &buffer[current], serialized_size);
-        return std::make_pair(temp_value, serialized_size);
-    }
-
-    // Vector7d
-    template<>
-    inline std::pair<Eigen::Matrix<double, 7, 1>, uint64_t> DeserializeEigen<Eigen::Matrix<double, 7, 1>>(const std::vector<uint8_t>& buffer, const uint64_t current)
-    {
-        Eigen::Matrix<double, 7, 1> temp_value;
-        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
-        assert(current < buffer.size());
-        assert(current + serialized_size < buffer.size());
-        memcpy(temp_value.data(), &buffer[current], serialized_size);
-        return std::make_pair(temp_value, serialized_size);
-    }
-
     // Isometry3d
-
     inline uint64_t SerializedSizeEigen(const Eigen::Isometry3d& value)
     {
         (void)(value);
@@ -200,7 +199,7 @@ namespace arc_utilities
         Eigen::Isometry3d temp_value;
         const uint64_t serialized_size = SerializedSizeEigen(temp_value);
         assert(current < buffer.size());
-        assert(current + serialized_size < buffer.size());
+        assert(current + serialized_size <= buffer.size());
         memcpy(temp_value.matrix().data(), &buffer[current], serialized_size);
         return std::make_pair(temp_value, serialized_size);
     }
