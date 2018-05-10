@@ -369,6 +369,25 @@ namespace arc_dijkstras
                 nodes_.shrink_to_fit();
             }
 
+            bool IndexInRange(const int64_t index) const
+            {
+                if (index >= 0)
+                {
+                    if (index < (int64_t)(nodes_.size()))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
             bool CheckGraphLinkage() const
             {
                 return CheckGraphLinkage(GetNodesImmutable());
