@@ -561,55 +561,6 @@ namespace arc_helpers
     }
 
     template<typename Item, typename Value, typename ItemAlloc = std::allocator<Item>>
-    std::pair<int64_t, double> GetNearestNeighbor(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn)
-    {
-        if (items.size() > 0)
-        {
-            std::vector<std::pair<int64_t, double>> per_thread_nearest(GetNumOMPThreads(), std::make_pair(-1, std::numeric_limits<double>::infinity()));
-#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
-            #pragma omp parallel for
-#endif
-            for (size_t idx = 0; idx < items.size(); idx++)
-            {
-                const Item& item = items[idx];
-                const double distance = distance_fn(item, current);
-#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
-                #if defined(_OPENMP)
-                const size_t thread_num = (size_t)omp_get_thread_num();
-                #else
-                const size_t thread_num = 0;
-                #endif
-#else
-                const size_t thread_num = 0;
-#endif
-                std::pair<int64_t, double>& current_thread_nearest = per_thread_nearest[thread_num];
-                if (current_thread_nearest.second > distance)
-                {
-                    current_thread_nearest.first = (int64_t)idx;
-                    current_thread_nearest.second = distance;
-                }
-            }
-
-
-            std::pair<int64_t, double> nearest = per_thread_nearest[0];
-            for (size_t thread_idx = 1; thread_idx < per_thread_nearest.size(); thread_idx++)
-            {
-                std::pair<int64_t, double>& current_thread_nearest = per_thread_nearest[thread_idx];
-                if (nearest.second > current_thread_nearest.second)
-                {
-                    nearest = current_thread_nearest;
-                }
-            }
-            return nearest;
-        }
-        else
-        {
-            return std::make_pair(-1, std::numeric_limits<double>::quiet_NaN());
-        }
-    }
-
-
-    template<typename Item, typename Value, typename ItemAlloc = std::allocator<Item>>
     std::vector<std::pair<int64_t, double>> GetKNearestNeighbors(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
     {
         if (K == 0)
