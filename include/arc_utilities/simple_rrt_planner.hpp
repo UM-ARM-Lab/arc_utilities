@@ -588,14 +588,14 @@ namespace simple_rrt_planner
                 return std::pair<std::vector<std::vector<T>>, std::map<std::string, double>>(planned_paths, statistics);
             }
             // Update the start time
-            std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
+            const std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
             // Plan
             while (!termination_check_fn())
             {
                 // Sample a random goal
                 T random_target = sampling_fn();
                 // Get the nearest neighbor
-                int64_t nearest_neighbor_index = nearest_neighbor_fn(nodes, random_target);
+                const int64_t nearest_neighbor_index = nearest_neighbor_fn(nodes, random_target);
                 assert((nearest_neighbor_index >= 0) && (nearest_neighbor_index < nodes.size()));
                 const T& nearest_neighbor = nodes.at(nearest_neighbor_index).GetValueImmutable();
                 // Forward propagate towards the goal
@@ -631,10 +631,10 @@ namespace simple_rrt_planner
                         }
                         // Build the new state
                         const T& current_propagated = current_propagation.first;
-                        SimpleRRTPlannerState<T, Allocator> new_state(current_propagated, node_parent_index);
+                        const SimpleRRTPlannerState<T, Allocator> new_state(current_propagated, node_parent_index);
                         // Add the state to the tree
                         nodes.push_back(new_state);
-                        int64_t new_node_index = (int64_t)nodes.size() - 1;
+                        const int64_t new_node_index = (int64_t)nodes.size() - 1;
                         nodes[node_parent_index].AddChildIndex(new_node_index);
                         // Call the state added callback
                         state_added_fn(nodes[node_parent_index], nodes[new_node_index]);
@@ -655,9 +655,9 @@ namespace simple_rrt_planner
             // Put together the results
             // Make sure the tree is properly linked
             assert(CheckTreeLinkage(nodes));
-            std::vector<std::vector<T, Allocator>> planned_paths = ExtractSolutionPaths(nodes, goal_state_indices);
-            std::chrono::time_point<std::chrono::steady_clock> cur_time = std::chrono::steady_clock::now();
-            std::chrono::duration<double> planning_time(cur_time - start_time);
+            const std::vector<std::vector<T, Allocator>> planned_paths = ExtractSolutionPaths(nodes, goal_state_indices);
+            const std::chrono::time_point<std::chrono::steady_clock> cur_time = std::chrono::steady_clock::now();
+            const std::chrono::duration<double> planning_time(cur_time - start_time);
             statistics["planning_time"] = planning_time.count();
             statistics["total_states"] = nodes.size();
             statistics["solutions"] = (double)planned_paths.size();

@@ -88,6 +88,8 @@ namespace EigenHelpers
     typedef std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>> VectorIsometry3d;
     typedef std::vector<Eigen::Affine3f, Eigen::aligned_allocator<Eigen::Affine3f>> VectorAffine3f;
     typedef std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> VectorAffine3d;
+    typedef std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> VectorMatrix4f;
+    typedef std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> VectorMatrix4d;
     typedef std::map<std::string, Eigen::Vector3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3f>>> MapStringVector3f;
     typedef std::map<std::string, Eigen::Vector3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3d>>> MapStringVector3d;
     typedef std::map<std::string, Eigen::Vector4f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4f>>> MapStringVector4f;
@@ -269,9 +271,10 @@ namespace EigenHelpers
         return std::sqrt(SquaredNorm(vec));
     }
 
-    inline std::vector<double> Abs(const std::vector<double>& vec)
+    template <typename T>
+    inline std::vector<T> Abs(const std::vector<T>& vec)
     {
-        std::vector<double> absed(vec.size(), 0.0);
+        std::vector<T> absed(vec.size(), 0.0);
         for (size_t idx = 0; idx < absed.size(); idx++)
         {
             absed[idx] = std::abs(vec[idx]);
@@ -279,9 +282,10 @@ namespace EigenHelpers
         return absed;
     }
 
-    inline std::vector<double> Multiply(const std::vector<double>& vec, const double scalar)
+    template <typename T1, typename T2>
+    inline std::vector<T1> Multiply(const std::vector<T1>& vec, const T2 scalar)
     {
-        std::vector<double> multiplied(vec.size(), 0.0);
+        std::vector<T1> multiplied(vec.size(), 0.0);
         for (size_t idx = 0; idx < multiplied.size(); idx++)
         {
             const double element = vec[idx];
@@ -290,11 +294,12 @@ namespace EigenHelpers
         return multiplied;
     }
 
-    inline std::vector<double> Multiply(const std::vector<double>& vec1, const std::vector<double>& vec2)
+    template <typename T>
+    inline std::vector<T> Multiply(const std::vector<T>& vec1, const std::vector<T>& vec2)
     {
         if (vec1.size() == vec2.size())
         {
-            std::vector<double> multiplied(vec1.size(), 0.0);
+            std::vector<T> multiplied(vec1.size(), 0.0);
             for (size_t idx = 0; idx < multiplied.size(); idx++)
             {
                 const double element1 = vec1[idx];
@@ -305,38 +310,41 @@ namespace EigenHelpers
         }
         else
         {
-            return std::vector<double>();
+            return std::vector<T>();
         }
     }
 
-    inline std::vector<double> Divide(const std::vector<double>& vec, const double scalar)
+    template <typename T1, typename T2>
+    inline std::vector<T1> Divide(const std::vector<T1>& vec, const T2 scalar)
     {
         const double inv_scalar = 1.0 / scalar;
         return Multiply(vec, inv_scalar);
     }
 
-    inline std::vector<double> Divide(const std::vector<double>& vec1, const std::vector<double>& vec2)
+    template <typename T>
+    inline std::vector<T> Divide(const std::vector<T>& vec1, const std::vector<T>& vec2)
     {
         if (vec1.size() == vec2.size())
         {
-            std::vector<double> divided(vec1.size(), 0.0);
+            std::vector<T> divided(vec1.size(), 0.0);
             for (size_t idx = 0; idx < divided.size(); idx++)
             {
-                const double element1 = vec1[idx];
-                const double element2 = vec2[idx];
+                const T element1 = vec1[idx];
+                const T element2 = vec2[idx];
                 divided[idx] = element1 / element2;
             }
             return divided;
         }
         else
         {
-            return std::vector<double>();
+            return std::vector<T>();
         }
     }
 
-    inline std::vector<double> Add(const std::vector<double>& vec, const double scalar)
+    template <typename T1, typename T2>
+    inline std::vector<T1> Add(const std::vector<T1>& vec, const T2 scalar)
     {
-        std::vector<double> added(vec.size(), 0.0);
+        std::vector<T1> added(vec.size(), 0.0);
         for (size_t idx = 0; idx < added.size(); idx++)
         {
             added[idx] = vec[idx] + scalar;
@@ -344,28 +352,30 @@ namespace EigenHelpers
         return added;
     }
 
-    inline std::vector<double> Add(const std::vector<double>& vec1, const std::vector<double>& vec2)
+    template <typename T>
+    inline std::vector<double> Add(const std::vector<T>& vec1, const std::vector<T>& vec2)
     {
         if (vec1.size() == vec2.size())
         {
-            std::vector<double> added(vec1.size(), 0.0);
+            std::vector<T> added(vec1.size(), 0.0);
             for (size_t idx = 0; idx < added.size(); idx++)
             {
-                const double element1 = vec1[idx];
-                const double element2 = vec2[idx];
+                const T element1 = vec1[idx];
+                const T element2 = vec2[idx];
                 added[idx] = element1 + element2;
             }
             return added;
         }
         else
         {
-            return std::vector<double>();
+            return std::vector<T>();
         }
     }
 
-    inline std::vector<double> Sub(const std::vector<double>& vec, const double scalar)
+    template <typename T1, typename T2>
+    inline std::vector<T1> Sub(const std::vector<T1>& vec, const T2 scalar)
     {
-        std::vector<double> subed(vec.size(), 0.0);
+        std::vector<T1> subed(vec.size(), 0.0);
         for (size_t idx = 0; idx < subed.size(); idx++)
         {
             subed[idx] = vec[idx] - scalar;
@@ -373,22 +383,23 @@ namespace EigenHelpers
         return subed;
     }
 
-    inline std::vector<double> Sub(const std::vector<double>& vec1, const std::vector<double>& vec2)
+    template <typename T>
+    inline std::vector<T> Sub(const std::vector<T>& vec1, const std::vector<T>& vec2)
     {
         if (vec1.size() == vec2.size())
         {
-            std::vector<double> subed(vec1.size(), 0.0);
+            std::vector<T> subed(vec1.size(), 0.0);
             for (size_t idx = 0; idx < subed.size(); idx++)
             {
-                const double element1 = vec1[idx];
-                const double element2 = vec2[idx];
+                const T element1 = vec1[idx];
+                const T element2 = vec2[idx];
                 subed[idx] = element1 - element2;
             }
             return subed;
         }
         else
         {
-            return std::vector<double>();
+            return std::vector<T>();
         }
     }
 
@@ -574,7 +585,8 @@ namespace EigenHelpers
         return interpolated;
     }
 
-    inline std::vector<double> Interpolate(const std::vector<double>& v1, const std::vector<double>& v2, const double ratio)
+    template <typename T>
+    inline std::vector<T> Interpolate(const std::vector<T>& v1, const std::vector<T>& v2, const double ratio)
     {
         // Safety check ratio
         double real_ratio = ratio;
@@ -593,16 +605,36 @@ namespace EigenHelpers
         if (len != v2.size())
         {
             std::cerr << "Vectors to interpolate are different sizes (" << v1.size() << " versus " << v2.size() << ")" << std::endl;
-            return std::vector<double>();
+            return std::vector<T>();
         }
         // Interpolate
         // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
-        std::vector<double> interped(len, 0);
+        std::vector<T> interped(len, 0);
         for (size_t idx = 0; idx < len; idx++)
         {
             interped[idx] = ((v1[idx] * (1.0 - real_ratio)) + (v2[idx] * real_ratio));
         }
         return interped;
+    }
+
+    template <typename T, int ROWS>
+    inline Eigen::Matrix<T, ROWS, 1> Interpolate(const Eigen::Matrix<T, ROWS, 1>& v1, const Eigen::Matrix<T, ROWS, 1>& v2, const double ratio)
+    {
+        // Safety check ratio
+        double real_ratio = ratio;
+        if (real_ratio < 0.0)
+        {
+            real_ratio = 0.0;
+            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
+        }
+        else if (real_ratio > 1.0)
+        {
+            real_ratio = 1.0;
+            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
+        }
+        // Interpolate
+        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
+        return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
     }
 
     inline Eigen::Quaterniond Interpolate(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2, const double ratio)
@@ -621,25 +653,6 @@ namespace EigenHelpers
         }
         // Interpolate
         return q1.slerp(real_ratio, q2);
-    }
-
-    inline Eigen::Vector3d Interpolate(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double ratio)
-    {
-        // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
-        // Interpolate
-        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
-        return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
     }
 
     inline Eigen::Isometry3d Interpolate(const Eigen::Isometry3d& t1, const Eigen::Isometry3d& t2, const double ratio)
@@ -1425,7 +1438,7 @@ namespace EigenHelpers
     inline std::pair<double, double> DistanceToLine(
             const Eigen::Vector3d& point_on_line,
             const Eigen::Vector3d& unit_vector,
-            const Eigen::Vector3d x)
+            const Eigen::Vector3d& x)
     {
         // Ensure that our input data is valid
         const auto real_unit_vector = unit_vector.normalized();
@@ -1726,17 +1739,36 @@ namespace EigenHelpers
         // Yes, this is ugly. This is to suppress a warning on type conversion related to Eigen operations
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wconversion"
-        Eigen::MatrixXd left_side = A.transpose() * w.asDiagonal() * A;
+        Eigen::MatrixXd lhs = A.transpose() * w.asDiagonal() * A;
         #pragma GCC diagnostic pop
-        const double minimum_singular_value = left_side.jacobiSvd().singularValues().minCoeff();
+        const double minimum_singular_value = lhs.jacobiSvd().singularValues().minCoeff();
 
         if (minimum_singular_value < damping_threshold)
         {
-            left_side += damping_value * Eigen::MatrixXd::Identity(left_side.rows(), left_side.cols());
+            lhs += damping_value * Eigen::MatrixXd::Identity(lhs.rows(), lhs.cols());
         }
 
         // With the damping we can assume that the left side is positive definite, so use LLT to solve this
-        return left_side.llt().solve(A.transpose() * w.cwiseProduct(b));
+        return lhs.llt().solve(A.transpose() * w.cwiseProduct(b));
+    }
+
+    inline Eigen::VectorXd UnderdeterminedSolver(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, const double damping_threshold, const double damping_value)
+    {
+        assert(A.cols() > A.rows());
+        // Yes, this is ugly. This is to suppress a warning on type conversion related to Eigen operations
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wconversion"
+        Eigen::MatrixXd damped = A * A.transpose();
+        #pragma GCC diagnostic pop
+        const double minimum_singular_value = damped.jacobiSvd().singularValues().minCoeff();
+
+        if (minimum_singular_value < damping_threshold)
+        {
+            damped += damping_value * Eigen::MatrixXd::Identity(damped.rows(), damped.cols());
+        }
+
+        // With the damping we can assume that what we are inverting is positive definite, so use LLT to solve this
+        return A.transpose() * damped.llt().solve(b);
     }
 }
 

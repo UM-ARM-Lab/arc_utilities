@@ -1,8 +1,6 @@
 #ifndef ARC_UTILITIES_TIMING_HPP
 #define ARC_UTILITIES_TIMING_HPP
 
-
-
 /*
  *  timing.hpp includes utilities for recording of execution time
  *
@@ -28,14 +26,10 @@
  *
  */
 
-
-
-
 #include <chrono>
 #include <string>
 #include <map>
 #include <vector>
-
 
 /**
  *   .======================.
@@ -85,12 +79,7 @@
 #define PROFILE_PRINT_SUMMARY_FOR_SINGLE(name) (void) 0
 #define PROFILE_PRINT_SUMMARY_FOR_GROUP(names) (void) 0
 
-
-
 #endif
-
-
-
 
 
 namespace arc_utilities
@@ -99,28 +88,27 @@ namespace arc_utilities
 
     class Stopwatch
     {
-        public:
-            Stopwatch()
-                : start_time_(std::chrono::steady_clock::now())
-            {}
+    public:
+        Stopwatch()
+            : start_time_(std::chrono::steady_clock::now())
+        {}
 
-            double operator() (const StopwatchControl control = READ)
+        double operator() (const StopwatchControl control = READ)
+        {
+            const auto end_time = std::chrono::steady_clock::now();
+            if (control == RESET)
             {
-                const auto end_time = std::chrono::steady_clock::now();
-                if (control == RESET)
-                {
-                    start_time_ = end_time;
-                }
-
-                return std::chrono::duration<double>(end_time - start_time_).count();
+                start_time_ = end_time;
             }
 
-        private:
-            std::chrono::steady_clock::time_point start_time_;
+            return std::chrono::duration<double>(end_time - start_time_).count();
+        }
+
+    private:
+        std::chrono::steady_clock::time_point start_time_;
     };
 
     double GlobalStopwatch(const StopwatchControl control = READ);
-
 
 
     /* 
@@ -167,14 +155,6 @@ namespace arc_utilities
         static Profiler* m_instance;
         
     };
-
-
-
-
-
-
-    
-    
 }
 
 #endif // ARC_UTILITIES_TIMING_HPP

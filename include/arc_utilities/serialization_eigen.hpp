@@ -7,97 +7,126 @@
 namespace arc_utilities
 {
     ////////////////////////////////////////////////////////////////////////////
-    // Serialization/Deserialization functions
+    // Templated serialization/deserialization functions - Base Vector/Matrices only
     ////////////////////////////////////////////////////////////////////////////
 
-    // Prototypes for serialization/deserialization functions
-    template<typename Container>
-    inline uint64_t SerializedSizeEigenType(const Container& value);
-
-    // For fixed-size containers only (others have a uint64_t size header first)
-    template<typename Container>
-    inline uint64_t SerializedSizeEigenType(void);
-
-    template<typename Container>
-    inline uint64_t SerializeEigenType(const Container& value, std::vector<uint8_t>& buffer);
-
-    template<typename Container>
-    inline std::pair<Container, uint64_t> DeserializeEigenType(const std::vector<uint8_t>& buffer, const uint64_t current);
-
-    // Concrete implementations
-    template<>
-    inline uint64_t SerializedSizeEigenType(const Eigen::VectorXd& value)
+    template<typename _Scalar, int _Rows, int _Cols>
+    inline uint64_t SerializedSizeEigen(const Eigen::Matrix<_Scalar, _Rows, _Cols>& value)
     {
-        return (uint64_t)((1 * sizeof(uint64_t)) + ((size_t)value.size() * sizeof(double))); // Space for a uint64_t size header and the data
+        uint64_t size = 0;
+
+        // Only dynamicly sized matrices have a row header
+        if (_Rows == Eigen::Dynamic)
+        {
+            size += sizeof(uint64_t);
+        }
+
+        // Only dynamicly sized matrices have a col header
+        if (_Cols == Eigen::Dynamic)
+        {
+            size += sizeof(uint64_t);
+        }
+
+        size += (uint64_t)value.size() * sizeof(_Scalar);
+        return size;
     }
 
-    template<>
-    inline uint64_t SerializeEigenType(const Eigen::VectorXd& value, std::vector<uint8_t>& buffer)
+    // Takes a state to serialize and a buffer to serialize into
+    // Return number of bytes written to buffer
+    template<typename _Scalar, int _Rows, int _Cols>
+    inline uint64_t SerializeEigen(const Eigen::Matrix<_Scalar, _Rows, _Cols>& value, std::vector<uint8_t>& buffer)
     {
-        // Takes a state to serialize and a buffer to serialize into
-        // Return number of bytes written to buffer
-        const uint64_t serialized_size = SerializedSizeEigenType(value);
+        const uint64_t serialized_size = SerializedSizeEigen(value);
         std::vector<uint8_t> temp_buffer(serialized_size, 0x00);
-        // Make the header
-        const uint64_t size_header = (uint64_t)value.size();
-        memcpy(&temp_buffer.front(), &size_header, sizeof(size_header));
+        uint64_t current = 0;
+        // Make the header if needed
+        if (_Rows == Eigen::Dynamic)
+        {
+            const uint64_t rows_header = (uint64_t)value.rows();
+            memcpy(temp_buffer.data() + current, &rows_header, sizeof(rows_header));
+            current += sizeof(rows_header);
+        }
+        if (_Cols == Eigen::Dynamic)
+        {
+            const uint64_t cols_header = (uint64_t)value.cols();
+            memcpy(temp_buffer.data() + current, &cols_header, sizeof(cols_header));
+            current += sizeof(cols_header);
+        }
         // Copy the data
-        memcpy(&(temp_buffer[sizeof(size_header)]), value.data(), (serialized_size - sizeof(size_header)));
+        memcpy(temp_buffer.data() + current, value.data(), serialized_size - current);
         buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
         return serialized_size;
     }
 
+    // Takes a a buffer to read from, and the next value to read
+    // Return a object of the given type, and the number of bytes read
+    template<typename EigenType>
+    inline std::pair<EigenType, uint64_t> DeserializeEigen(const std::vector<uint8_t>& buffer, const uint64_t current);
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Concrete implementations for specific Eigen types
+    ////////////////////////////////////////////////////////////////////////////
+
+    // Vector3d
     template<>
-    inline std::pair<Eigen::VectorXd, uint64_t> DeserializeEigenType<Eigen::VectorXd>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    inline std::pair<Eigen::Vector3d, uint64_t> DeserializeEigen<Eigen::Vector3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        Eigen::Vector3d temp_value;
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
+        assert(current < buffer.size());
+        assert(current + serialized_size <= buffer.size());
+        memcpy(temp_value.data(), &buffer[current], serialized_size);
+        return std::make_pair(temp_value, serialized_size);
+    }
+
+    // Vector6d
+    template<>
+    inline std::pair<Eigen::Matrix<double, 6, 1>, uint64_t> DeserializeEigen<Eigen::Matrix<double, 6, 1>>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        Eigen::Matrix<double, 6, 1> temp_value;
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
+        assert(current < buffer.size());
+        assert(current + serialized_size <= buffer.size());
+        memcpy(temp_value.data(), &buffer[current], serialized_size);
+        return std::make_pair(temp_value, serialized_size);
+    }
+
+    // Vector7d
+    template<>
+    inline std::pair<Eigen::Matrix<double, 7, 1>, uint64_t> DeserializeEigen<Eigen::Matrix<double, 7, 1>>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        Eigen::Matrix<double, 7, 1> temp_value;
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
+        assert(current < buffer.size());
+        assert(current + serialized_size <= buffer.size());
+        memcpy(temp_value.data(), &buffer[current], serialized_size);
+        return std::make_pair(temp_value, serialized_size);
+    }
+
+    // Generic VectorXd
+    template<>
+    inline std::pair<Eigen::VectorXd, uint64_t> DeserializeEigen<Eigen::VectorXd>(const std::vector<uint8_t>& buffer, const uint64_t current)
     {
         assert(current < buffer.size());
         assert((current + sizeof(uint64_t)) <= buffer.size());
-        // Takes a buffer to read from and the starting index in the buffer
-        // Return the loaded state and how many bytes we read from the buffer
         // Load the header
         uint64_t size_header = 0u;
         memcpy(&size_header, &buffer[current], sizeof(uint64_t));
         // Check buffer size
         Eigen::VectorXd temp_value = Eigen::VectorXd::Zero((ssize_t)size_header);
-        const uint64_t serialized_size = SerializedSizeEigenType(temp_value);
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
         assert((current + serialized_size) <= buffer.size());
         // Load from the buffer
         memcpy(temp_value.data(), &buffer[current + sizeof(size_header)], (serialized_size - sizeof(size_header)));
         return std::make_pair(temp_value, serialized_size);
     }
 
+    // Generic MatrixXd
     template<>
-    inline uint64_t SerializedSizeEigenType(const Eigen::MatrixXd& value)
-    {
-        // Space for a rows header, a cols header, and the data itself
-        return (uint64_t)((2 * sizeof(uint64_t)) + ((size_t)value.size() * sizeof(double)));
-    }
-
-    template<>
-    inline uint64_t SerializeEigenType(const Eigen::MatrixXd& value, std::vector<uint8_t>& buffer)
-    {
-        // Takes a state to serialize and a buffer to serialize into
-        // Return number of bytes written to buffer
-        const uint64_t serialized_size = SerializedSizeEigenType(value);
-        std::vector<uint8_t> temp_buffer(serialized_size, 0x00);
-        // Make the header
-        const uint64_t rows_header = (uint64_t)value.rows();
-        const uint64_t cols_header = (uint64_t)value.cols();
-        memcpy(&temp_buffer.front(), &rows_header, sizeof(rows_header));
-        memcpy(&(temp_buffer[sizeof(rows_header)]), &cols_header, sizeof(cols_header));
-        // Copy the data
-        memcpy(&(temp_buffer[2 * sizeof(rows_header)]), value.data(), (serialized_size - 2 * sizeof(rows_header)));
-        buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
-        return serialized_size;
-    }
-
-    template<>
-    inline std::pair<Eigen::MatrixXd, uint64_t> DeserializeEigenType<Eigen::MatrixXd>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    inline std::pair<Eigen::MatrixXd, uint64_t> DeserializeEigen<Eigen::MatrixXd>(const std::vector<uint8_t>& buffer, const uint64_t current)
     {
         assert(current < buffer.size());
         assert((current + 2 * sizeof(uint64_t)) <= buffer.size());
-        // Takes a buffer to read from and the starting index in the buffer
-        // Return the loaded state and how many bytes we read from the buffer
         // Load the headers
         uint64_t rows_header = 0u;
         memcpy(&rows_header, &buffer[current], sizeof(uint64_t));
@@ -105,161 +134,74 @@ namespace arc_utilities
         memcpy(&cols_header, &buffer[current + sizeof(rows_header)], sizeof(uint64_t));
         // Check buffer size
         Eigen::MatrixXd temp_value = Eigen::MatrixXd::Zero((ssize_t)rows_header, (ssize_t)cols_header);
-        const uint64_t serialized_size = SerializedSizeEigenType(temp_value);
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
         assert((current + serialized_size) <= buffer.size());
         // Load from the buffer
         memcpy(temp_value.data(), &buffer[current + 2 * sizeof(rows_header)], (serialized_size - 2 * sizeof(rows_header)));
         return std::make_pair(temp_value, serialized_size);
     }
 
+    // Generic Matrix3Xd
     template<>
-    inline uint64_t SerializedSizeEigenType(const Eigen::Matrix3Xd& value)
-    {
-        // Space for a cols header, and the data itself
-        return (uint64_t)(sizeof(uint64_t) + ((size_t)value.size() * sizeof(double)));
-    }
-
-    template<>
-    inline uint64_t SerializeEigenType(const Eigen::Matrix3Xd& value, std::vector<uint8_t>& buffer)
-    {
-        // Takes a state to serialize and a buffer to serialize into
-        // Return number of bytes written to buffer
-        const uint64_t serialized_size = SerializedSizeEigenType(value);
-        std::vector<uint8_t> temp_buffer(serialized_size, 0x00);
-        // Make the header
-        const uint64_t cols_header = (uint64_t)value.cols();
-        memcpy(&temp_buffer.front(), &cols_header, sizeof(cols_header));
-        // Copy the data
-        memcpy(&(temp_buffer[sizeof(cols_header)]), value.data(), (serialized_size - sizeof(cols_header)));
-        buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
-        return serialized_size;
-    }
-
-    template<>
-    inline std::pair<Eigen::Matrix3Xd, uint64_t> DeserializeEigenType<Eigen::Matrix3Xd>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    inline std::pair<Eigen::Matrix3Xd, uint64_t> DeserializeEigen<Eigen::Matrix3Xd>(const std::vector<uint8_t>& buffer, const uint64_t current)
     {
         assert(current < buffer.size());
         assert((current + sizeof(uint64_t)) <= buffer.size());
-        // Takes a buffer to read from and the starting index in the buffer
-        // Return the loaded state and how many bytes we read from the buffer
         // Load the headers
         uint64_t cols_header = 0u;
         memcpy(&cols_header, &buffer[current], sizeof(uint64_t));
         // Check buffer size
         Eigen::Matrix3Xd temp_value = Eigen::Matrix3Xd::Zero(3, (ssize_t)cols_header);
-        const uint64_t serialized_size = SerializedSizeEigenType(temp_value);
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
         assert((current + serialized_size) <= buffer.size());
         // Load from the buffer
         memcpy(temp_value.data(), &buffer[current + sizeof(cols_header)], (serialized_size - sizeof(cols_header)));
         return std::make_pair(temp_value, serialized_size);
     }
 
+    // Generic Matrix3Xf
     template<>
-    inline uint64_t SerializedSizeEigenType(const Eigen::Vector3d& value)
-    {
-        (void)(value);
-        return (uint64_t)(3 * sizeof(double));
-    }
-
-    template<>
-    inline uint64_t SerializedSizeEigenType<Eigen::Vector3d>(void)
-    {
-        return (uint64_t)(3 * sizeof(double));
-    }
-
-    template<>
-    inline uint64_t SerializeEigenType(const Eigen::Vector3d& value, std::vector<uint8_t>& buffer)
-    {
-        // Takes a state to serialize and a buffer to serialize into
-        // Return number of bytes written to buffer
-        std::vector<uint8_t> temp_buffer(SerializedSizeEigenType<Eigen::Vector3d>(), 0x00);
-        memcpy(&temp_buffer.front(), value.data(), SerializedSizeEigenType<Eigen::Vector3d>());
-        buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
-        return SerializedSizeEigenType<Eigen::Vector3d>();
-    }
-
-    template<>
-    inline std::pair<Eigen::Vector3d, uint64_t> DeserializeEigenType<Eigen::Vector3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    inline std::pair<Eigen::Matrix3Xf, uint64_t> DeserializeEigen<Eigen::Matrix3Xf>(const std::vector<uint8_t>& buffer, const uint64_t current)
     {
         assert(current < buffer.size());
-        assert((current + SerializedSizeEigenType<Eigen::Vector3d>()) <= buffer.size());
-        // Takes a buffer to read from and the starting index in the buffer
-        // Return the loaded state and how many bytes we read from the buffer
-        Eigen::Vector3d temp_value;
-        memcpy(temp_value.data(), &buffer[current], SerializedSizeEigenType<Eigen::Vector3d>());
-        return std::make_pair(temp_value, SerializedSizeEigenType<Eigen::Vector3d>());
+        assert((current + sizeof(uint64_t)) <= buffer.size());
+        // Load the headers
+        uint64_t cols_header = 0u;
+        memcpy(&cols_header, &buffer[current], sizeof(uint64_t));
+        // Check buffer size
+        Eigen::Matrix3Xf temp_value = Eigen::Matrix3Xf::Zero(3, (ssize_t)cols_header);
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
+        assert((current + serialized_size) <= buffer.size());
+        // Load from the buffer
+        memcpy(temp_value.data(), &buffer[current + sizeof(cols_header)], (serialized_size - sizeof(cols_header)));
+        return std::make_pair(temp_value, serialized_size);
     }
 
-    template<>
-    inline uint64_t SerializedSizeEigenType(const Eigen::Matrix<double, 6, 1>& value)
-    {
-        (void)(value);
-        return (uint64_t)(6 * sizeof(double));
-    }
-
-    template<>
-    inline uint64_t SerializedSizeEigenType<Eigen::Matrix<double, 6, 1>>(void)
-    {
-        return (uint64_t)(6 * sizeof(double));
-    }
-
-    template<>
-    inline uint64_t SerializeEigenType(const Eigen::Matrix<double, 6, 1>& value, std::vector<uint8_t>& buffer)
-    {
-        // Takes a state to serialize and a buffer to serialize into
-        // Return number of bytes written to buffer
-        std::vector<uint8_t> temp_buffer(SerializedSizeEigenType<Eigen::Matrix<double, 6, 1>>(), 0x00);
-        memcpy(&temp_buffer.front(), value.data(), SerializedSizeEigenType<Eigen::Matrix<double, 6, 1>>());
-        buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
-        return SerializedSizeEigenType<Eigen::Matrix<double, 6, 1>>();
-    }
-
-    template<>
-    inline std::pair<Eigen::Matrix<double, 6, 1>, uint64_t> DeserializeEigenType<Eigen::Matrix<double, 6, 1>>(const std::vector<uint8_t>& buffer, const uint64_t current)
-    {
-        assert(current < buffer.size());
-        assert((current + SerializedSizeEigenType<Eigen::Matrix<double, 6, 1>>()) <= buffer.size());
-        // Takes a buffer to read from and the starting index in the buffer
-        // Return the loaded state and how many bytes we read from the buffer
-        Eigen::Matrix<double, 6, 1> temp_value;
-        memcpy(temp_value.data(), &buffer[current], SerializedSizeEigenType<Eigen::Matrix<double, 6, 1>>());
-        return std::make_pair(temp_value, SerializedSizeEigenType<Eigen::Matrix<double, 6, 1>>());
-    }
-
-    template<>
-    inline uint64_t SerializedSizeEigenType(const Eigen::Isometry3d& value)
+    // Isometry3d
+    inline uint64_t SerializedSizeEigen(const Eigen::Isometry3d& value)
     {
         (void)(value);
         return (uint64_t)(16 * sizeof(double));
     }
 
-    template<>
-    inline uint64_t SerializedSizeEigenType<Eigen::Isometry3d>(void)
+    inline uint64_t SerializeEigen(const Eigen::Isometry3d& value, std::vector<uint8_t>& buffer)
     {
-        return (uint64_t)(16 * sizeof(double));
-    }
-
-    template<>
-    inline uint64_t SerializeEigenType(const Eigen::Isometry3d& value, std::vector<uint8_t>& buffer)
-    {
-        // Takes a state to serialize and a buffer to serialize into
-        // Return number of bytes written to buffer
-        std::vector<uint8_t> temp_buffer(SerializedSizeEigenType<Eigen::Isometry3d>(), 0x00);
-        memcpy(&temp_buffer.front(), value.matrix().data(), SerializedSizeEigenType<Eigen::Isometry3d>());
+        const uint64_t serialized_size = SerializedSizeEigen(value);
+        std::vector<uint8_t> temp_buffer(serialized_size, 0x00);
+        memcpy(&temp_buffer.front(), value.matrix().data(), serialized_size);
         buffer.insert(buffer.end(), temp_buffer.begin(), temp_buffer.end());
-        return SerializedSizeEigenType<Eigen::Isometry3d>();
+        return serialized_size;
     }
 
     template<>
-    inline std::pair<Eigen::Isometry3d, uint64_t> DeserializeEigenType<Eigen::Isometry3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    inline std::pair<Eigen::Isometry3d, uint64_t> DeserializeEigen<Eigen::Isometry3d>(const std::vector<uint8_t>& buffer, const uint64_t current)
     {
-        assert(current < buffer.size());
-        assert((current + SerializedSizeEigenType<Eigen::Isometry3d>()) <= buffer.size());
-        // Takes a buffer to read from and the starting index in the buffer
-        // Return the loaded state and how many bytes we read from the buffer
         Eigen::Isometry3d temp_value;
-        memcpy(temp_value.matrix().data(), &buffer[current], SerializedSizeEigenType<Eigen::Isometry3d>());
-        return std::make_pair(temp_value, SerializedSizeEigenType<Eigen::Isometry3d>());
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
+        assert(current < buffer.size());
+        assert(current + serialized_size <= buffer.size());
+        memcpy(temp_value.matrix().data(), &buffer[current], serialized_size);
+        return std::make_pair(temp_value, serialized_size);
     }
 }
 
