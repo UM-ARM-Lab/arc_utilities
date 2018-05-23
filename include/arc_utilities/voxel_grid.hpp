@@ -523,6 +523,8 @@ public:
     initialized_ = false;
   }
 
+  virtual ~VoxelGrid() {}
+
   inline void Initialize(const Eigen::Isometry3d& origin_transform,
                          const double cell_x_size,
                          const double cell_y_size,

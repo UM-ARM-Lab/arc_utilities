@@ -17,6 +17,8 @@ namespace simple_robot_model_interface
     {
     public:
 
+        virtual ~SimpleRobotModelInterface() {}
+
         virtual SimpleRobotModelInterface<Configuration, ConfigAlloc>* Clone() const = 0;
 
         virtual const Configuration& GetPosition() const = 0;
