@@ -45,17 +45,17 @@ namespace simple_robot_model_interface
         virtual Eigen::VectorXd ComputePerDimensionConfigurationSignedDistance(const Configuration& config1,
                                                                                const Configuration& config2) const = 0;
 
-        virtual double ComputeConfigurationDistance(const Configuration& config) const
+        virtual double ComputeConfigurationDistanceTo(const Configuration& config) const
         {
             return ComputeConfigurationDistance(GetPosition(), config);
         }
 
-        virtual Eigen::VectorXd ComputePerDimensionConfigurationDistance(const Configuration& config) const
+        virtual Eigen::VectorXd ComputePerDimensionConfigurationDistanceTo(const Configuration& config) const
         {
             return ComputePerDimensionConfigurationDistance(GetPosition(), config);
         }
 
-        virtual Eigen::VectorXd ComputePerDimensionConfigurationSignedDistance(const Configuration& config) const
+        virtual Eigen::VectorXd ComputePerDimensionConfigurationSignedDistanceTo(const Configuration& config) const
         {
             return ComputePerDimensionConfigurationSignedDistance(GetPosition(), config);
         }
