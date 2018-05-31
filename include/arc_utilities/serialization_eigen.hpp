@@ -58,6 +58,12 @@ namespace arc_utilities
         return serialized_size;
     }
 
+    // Takes a state to serialize and a buffer to serialize into
+    // Return number of bytes written to buffer
+    // Used to specialize specific Eigen types (such as Isometry3d)
+    template <typename EigenType>
+    inline uint64_t SerializeEigen(const EigenType& value, std::vector<uint8_t>& buffer);
+
     // Takes a a buffer to read from, and the next value to read
     // Return a object of the given type, and the number of bytes read
     template<typename EigenType>
@@ -184,6 +190,7 @@ namespace arc_utilities
         return (uint64_t)(16 * sizeof(double));
     }
 
+    template <>
     inline uint64_t SerializeEigen(const Eigen::Isometry3d& value, std::vector<uint8_t>& buffer)
     {
         const uint64_t serialized_size = SerializedSizeEigen(value);
