@@ -525,6 +525,12 @@ public:
 
   virtual ~VoxelGrid() {}
 
+  virtual VoxelGrid<T, Allocator, BackingStore>* Clone() const
+  {
+    return new VoxelGrid<T, Allocator, BackingStore>(
+          static_cast<const VoxelGrid<T, Allocator, BackingStore>&>(*this));
+  }
+
   inline void Initialize(const Eigen::Isometry3d& origin_transform,
                          const double cell_x_size,
                          const double cell_y_size,
