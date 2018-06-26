@@ -1,6 +1,7 @@
 # editor temporary files
 *.swp
 *~
+*.autosave
 
 # Vim Ctags file
 tags
