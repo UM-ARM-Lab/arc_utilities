@@ -289,7 +289,7 @@ namespace shortcut_smoothing
         assert(next_upsampled_ind == num_points - 1);
 
         // Add the last point to terminate the path
-        upsampled_path[num_points - 1] = path[end_ind];
+        upsampled_path[num_points - 1] = path[end_ind - 1];
 
         return upsampled_path;
     }
