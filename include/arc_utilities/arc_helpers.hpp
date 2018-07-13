@@ -1513,6 +1513,12 @@ namespace arc_helpers
     template<typename T, typename Allocator=std::allocator<T>>
     inline std::pair<std::vector<T, Allocator>, uint64_t> DeserializeVector(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& item_deserializer);
 
+    template<typename T, typename VectorLike=std::vector<T>>
+    inline uint64_t SerializeVectorLike(const VectorLike& vec_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& item_serializer);
+
+    template<typename T, typename VectorLike=std::vector<T>>
+    inline std::pair<VectorLike, uint64_t> DeserializeVectorLike(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& item_deserializer);
+
     template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, T>>>
     inline uint64_t SerializeMap(const std::map<Key, T, Compare, Allocator>& map_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const Key&, std::vector<uint8_t>&)>& key_serializer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& value_serializer);
 
@@ -1654,6 +1660,50 @@ namespace arc_helpers
         current_position += deserialized_size.second;
         // Deserialize the items
         std::vector<T, Allocator> deserialized;
+        deserialized.reserve(size);
+        for (uint64_t idx = 0; idx < size; idx++)
+        {
+            const std::pair<T, uint64_t> deserialized_item = item_deserializer(buffer, current_position);
+            deserialized.push_back(deserialized_item.first);
+            current_position += deserialized_item.second;
+        }
+        deserialized.shrink_to_fit();
+        // Figure out how many bytes were read
+        const uint64_t bytes_read = current_position - current;
+        return std::make_pair(deserialized, bytes_read);
+    }
+
+    template<typename T, typename VectorLike>
+    inline uint64_t SerializeVectorLike(const VectorLike& vec_to_serialize, std::vector<uint8_t>& buffer, const std::function<uint64_t(const T&, std::vector<uint8_t>&)>& item_serializer)
+    {
+        const uint64_t start_buffer_size = buffer.size();
+        // First, write a uint64_t size header
+        const uint64_t size = (uint64_t)vec_to_serialize.size();
+        SerializeFixedSizePOD<uint64_t>(size, buffer);
+        // Serialize the contained items
+        for (size_t idx = 0; idx < size; idx++)
+        {
+            const T& current = vec_to_serialize[idx];
+            item_serializer(current, buffer);
+        }
+        // Figure out how many bytes were written
+        const uint64_t end_buffer_size = buffer.size();
+        const uint64_t bytes_written = end_buffer_size - start_buffer_size;
+        return bytes_written;
+    }
+
+    template<typename T, typename VectorLike>
+    inline std::pair<VectorLike, uint64_t> DeserializeVectorLike(const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& item_deserializer)
+    {
+        // First, try to load the header
+        assert(current < buffer.size());
+        uint64_t current_position = current;
+        // Load the header
+        const std::pair<uint64_t, uint64_t> deserialized_size = DeserializeFixedSizePOD<uint64_t>(buffer, current_position);
+        const uint64_t size = deserialized_size.first;
+        current_position += deserialized_size.second;
+        // Deserialize the items
+        VectorLike deserialized;
         deserialized.reserve(size);
         for (uint64_t idx = 0; idx < size; idx++)
         {

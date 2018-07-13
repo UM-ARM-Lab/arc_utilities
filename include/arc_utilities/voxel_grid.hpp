@@ -17,10 +17,6 @@
 #define ENABLE_VOXEL_GRID_SERIALIZATION
 #endif
 
-#ifndef DISABLE_AUTOMATIC_BOUNDS_CHECKING
-#define ENABLE_AUTOMATIC_BOUNDS_CHECKING
-#endif
-
 namespace VoxelGrid
 {
 struct GRID_INDEX
@@ -40,8 +36,7 @@ struct GRID_INDEX
   }
 };
 
-template<typename T, typename Allocator=std::allocator<T>,
-         typename BackingStore=std::vector<T, Allocator>>
+template<typename T, typename BackingStore=std::vector<T>>
 class VoxelGrid
 {
 protected:
@@ -81,22 +76,26 @@ protected:
 
   inline T& AccessIndex(const int64_t& data_index)
   {
-    #ifdef ENABLE_AUTOMATIC_BOUNDS_CHECKING
-    return data_.at(data_index);
-    #else
-    assert(data_index >= 0 && data_index < (int64_t)data_.size());
-    return data_[data_index];
-    #endif
+    if ((data_index >= 0) && (data_index < (int64_t)data_.size()))
+    {
+      return data_[data_index];
+    }
+    else
+    {
+      throw std::out_of_range("data_index out of range");
+    }
   }
 
   inline const T& AccessIndex(const int64_t& data_index) const
   {
-    #ifdef ENABLE_AUTOMATIC_BOUNDS_CHECKING
-    return data_.at(data_index);
-    #else
-    assert(data_index >= 0 && data_index < (int64_t)data_.size());
-    return data_[data_index];
-    #endif
+    if ((data_index >= 0) && (data_index < (int64_t)data_.size()))
+    {
+      return data_[data_index];
+    }
+    else
+    {
+      throw std::out_of_range("data_index out of range");
+    }
   }
 
   inline void SetContents(const T& value)
@@ -277,28 +276,24 @@ public:
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  #ifdef ENABLE_VOXEL_GRID_SERIALIZATION
-
   inline static uint64_t Serialize(
-      const VoxelGrid<T, Allocator>& grid, std::vector<uint8_t>& buffer,
+      const VoxelGrid<T, BackingStore>& grid, std::vector<uint8_t>& buffer,
       const std::function<uint64_t(
         const T&, std::vector<uint8_t>&)>& value_serializer)
   {
     return grid.SerializeSelf(buffer, value_serializer);
   }
 
-  inline static std::pair<VoxelGrid<T, Allocator>, uint64_t> Deserialize(
+  inline static std::pair<VoxelGrid<T, BackingStore>, uint64_t> Deserialize(
       const std::vector<uint8_t>& buffer, const uint64_t current,
       const std::function<std::pair<T, uint64_t>(
         const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
   {
-    VoxelGrid<T, Allocator> temp_grid;
+    VoxelGrid<T, BackingStore> temp_grid;
     const uint64_t bytes_read
         = temp_grid.DeserializeSelf(buffer, current, value_deserializer);
     return std::make_pair(temp_grid, bytes_read);
   }
-
-  #endif
 
   VoxelGrid(const Eigen::Isometry3d& origin_transform,
             const double cell_size,
@@ -525,10 +520,10 @@ public:
 
   virtual ~VoxelGrid() {}
 
-  virtual VoxelGrid<T, Allocator, BackingStore>* Clone() const
+  virtual VoxelGrid<T, BackingStore>* Clone() const
   {
-    return new VoxelGrid<T, Allocator, BackingStore>(
-          static_cast<const VoxelGrid<T, Allocator, BackingStore>&>(*this));
+    return new VoxelGrid<T, BackingStore>(
+          static_cast<const VoxelGrid<T, BackingStore>&>(*this));
   }
 
   inline void Initialize(const Eigen::Isometry3d& origin_transform,
@@ -622,8 +617,6 @@ public:
     initialized_ = true;
   }
 
-  #ifdef ENABLE_VOXEL_GRID_SERIALIZATION
-
   virtual uint64_t SerializeSelf(
       std::vector<uint8_t>& buffer,
       const std::function<uint64_t(
@@ -637,7 +630,8 @@ public:
     EigenHelpers::Serialize<Eigen::Isometry3d>(inverse_origin_transform_,
                                                buffer);
     // Serialize the data
-    arc_helpers::SerializeVector<T, Allocator>(data_, buffer, value_serializer);
+    arc_helpers::SerializeVectorLike<T, BackingStore>(
+          data_, buffer, value_serializer);
     // Serialize the cell sizes
     arc_helpers::SerializeFixedSizePOD<double>(cell_x_size_, buffer);
     arc_helpers::SerializeFixedSizePOD<double>(cell_y_size_, buffer);
@@ -691,9 +685,8 @@ public:
     current_position += inverse_origin_transform_deserialized.second;
     // Deserialize the data
     const std::pair<BackingStore, uint64_t> data_deserialized
-        = arc_helpers::DeserializeVector<T, Allocator>(buffer,
-                                                       current_position,
-                                                       value_deserializer);
+        = arc_helpers::DeserializeVectorLike<T, BackingStore>(
+          buffer, current_position, value_deserializer);
     data_ = data_deserialized.first;
     current_position += data_deserialized.second;
     // Deserialize the cell sizes
@@ -783,8 +776,6 @@ public:
     const uint64_t bytes_read = current_position - current;
     return bytes_read;
   }
-
-  #endif
 
   inline bool IsInitialized() const
   {
