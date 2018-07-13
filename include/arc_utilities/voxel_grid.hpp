@@ -13,10 +13,6 @@
 #ifndef VOXEL_GRID_HPP
 #define VOXEL_GRID_HPP
 
-#ifndef DISABLE_VOXEL_GRID_SERIALIZATION
-#define ENABLE_VOXEL_GRID_SERIALIZATION
-#endif
-
 namespace VoxelGrid
 {
 struct GRID_INDEX
