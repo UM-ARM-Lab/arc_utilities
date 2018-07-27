@@ -9,19 +9,8 @@
 #include <chrono>
 #include <random>
 #include <omp.h>
-#ifdef ENABLE_PARALLEL_ROADMAP
-    #ifndef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
-        #define ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
-        #include <arc_utilities/arc_helpers.hpp>
-        #undef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
-    #else
-        #include <arc_utilities/arc_helpers.hpp>
-    #endif
-#else
-    #include <arc_utilities/arc_helpers.hpp>
-#endif
+#include <arc_utilities/arc_helpers.hpp>
 #include <arc_utilities/dijkstras.hpp>
-
 
 #ifndef SIMPLE_PRM_PLANNER_HPP
 #define SIMPLE_PRM_PLANNER_HPP

@@ -149,7 +149,7 @@ namespace arc_dijkstras
                 : value_(value), distance_(distance), in_edges_(new_in_edges), out_edges_(new_out_edges)
             {}
 
-            GraphNode(const NodeValueType& value)
+            explicit GraphNode(const NodeValueType& value)
                 : value_(value), distance_(std::numeric_limits<double>::infinity())
             {}
 

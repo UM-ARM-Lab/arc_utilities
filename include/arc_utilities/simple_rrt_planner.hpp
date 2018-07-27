@@ -62,7 +62,7 @@ namespace simple_rrt_planner
             initialized_ = true;
         }
 
-        SimpleRRTPlannerState(const T& value)
+        explicit SimpleRRTPlannerState(const T& value)
         {
             parent_index_ = -1;
             child_indices_.clear();
@@ -430,8 +430,7 @@ namespace simple_rrt_planner
             // Clear the tree we've been given
             nodes.clear();
             // Add the start state
-            SimpleRRTPlannerState<T, Allocator> start_state(start);
-            nodes.push_back(start_state);
+            nodes.emplace_back(SimpleRRTPlannerState<T, Allocator>(start));
             // Call the planner
             return PlanMultiPath(nodes, nearest_neighbor_fn, goal_reached_fn, goal_reached_callback_fn, sampling_fn, forward_propagation_fn, termination_check_fn);
         }
@@ -852,9 +851,9 @@ namespace simple_rrt_planner
         {
             // Initialize the trees
             std::vector<SimpleRRTPlannerState<T, Allocator>> start_tree;
-            start_tree.push_back(start);
+            start_tree.emplace_back(SimpleRRTPlannerState<T, Allocator>(start));
             std::vector<SimpleRRTPlannerState<T, Allocator>> goal_tree;
-            goal_tree.push_back(goal);
+            goal_tree.emplace_back(SimpleRRTPlannerState<T, Allocator>(goal));
             return PlanMultiPath(start_tree, goal_tree,
                                  nearest_neighbor_fn,
                                  state_added_fn,
