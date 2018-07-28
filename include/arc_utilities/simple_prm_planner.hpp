@@ -176,7 +176,7 @@ namespace simple_prm_planner
                     for (size_t in_edge_idx = 0; in_edge_idx < other_node_in_edges.size(); in_edge_idx++)
                     {
                         arc_dijkstras::GraphEdge& other_in_edge = other_node_in_edges[in_edge_idx];
-                        if (other_in_edge.GetFromIndex() == current_node_index)
+                        if (other_in_edge.GetFromIndex() == (int64_t)current_node_index)
                         {
                             other_in_edge.SetWeight(updated_weight);
                         }
