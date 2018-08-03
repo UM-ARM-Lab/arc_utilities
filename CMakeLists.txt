@@ -115,11 +115,6 @@ add_executable(test_dijkstras src/test_dijkstras.cpp)
 add_dependencies(test_dijkstras ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
 target_link_libraries(test_dijkstras ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test node for shortcut smoothing
-add_executable(test_shortcut_smoothing src/test_shortcut_smoothing.cpp)
-add_dependencies(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS}) # ${PROJECT_NAME}_gencpp)
-target_link_libraries(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_LIBRARIES})
-
 #############
 ## Install ##
 #############
