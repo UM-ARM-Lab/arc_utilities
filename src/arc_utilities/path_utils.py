@@ -61,6 +61,32 @@ def closest_point(path, query_point):
         
     return point_close, ind_close, alpha_close
 
+def densify_line(start_point, end_point, max_dist):
+    """
+    Returns a linear path from start point (exclusive) to end point (inclusive) 
+    with a distance of most max_dist between points
+    """
+    num_points = int(np.ceil(dist(start_point, end_point) / max_dist))
+    s_np = np.array(start_point)
+    dir_np = np.array(end_point) - start_point
+    return [s_np + dir_np * (idx+1)/num_points for idx in range(num_points)]
+    
+
+def densify(path, max_dist):
+    """
+    Returns a path that follows path with distance at most max_dist between points
+    """
+    if len(path) == 0:
+        return path
+        
+    new_path = [np.array(path[0])]
+
+    for i in range(1, len(path)):
+        new_path = new_path + densify_line(new_path[-1], path[i], max_dist)
+
+    return new_path
+
+
 def travel_along(path, distance, starting_point=None):
     """
     Travels along the path from the starting point for distance

@@ -105,6 +105,34 @@ class TestPathUtils(unittest.TestCase):
     def test_path_length(self):
         path = [[0,1], [0,2], [2,2], [3,3]]
         self.assertApprox(pu.path_length(path), 3 + np.sqrt(2))
+
+    def test_densify_line(self):
+        start = [1.0, 2.0, 3.0]
+        end = [1.0, 2.0, 4.0]
+        dense = pu.densify_line(start, end, .5)
+        expected = [[1.0, 2.0, 3.5], [1.0, 2.0, 4.0]]
+        for i in range(2):
+            for j in range(3):
+                self.assertApprox(dense[i][j], expected[i][j])
+
+    def test_densify(self):
+        path = [[1.0,2.0],
+                [1.0,3.0],
+                [1.0,3.1],
+                [1.6, 3.2]]
+        dense = pu.densify(path, .5)
+        expected = [[1.0, 2.0],
+                    [1.0, 2.5],
+                    [1.0, 3.0],
+                    [1.0, 3.1],
+                    [1.3, 3.15],
+                    [1.6, 3.2]]
+        self.assertEqual(len(expected), len(dense))
+        for i in range(len(expected)):
+            for j in range(2):
+                self.assertApprox(dense[i][j], expected[i][j])
+
+        
         
 
 if __name__ == '__main__':
