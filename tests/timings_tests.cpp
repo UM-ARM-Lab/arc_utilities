@@ -31,7 +31,7 @@ TEST(TimerTest, TimerAccuracy)
     Profiler::startTimer("sleepy");
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     double t_elapsed = Profiler::record("sleepy");
-    EXPECT_TRUE(t_elapsed < 0.051) << "Sleep for 50ms took too long";
+    EXPECT_TRUE(t_elapsed < 0.052) << "Sleep for 50ms took too long";
     EXPECT_TRUE(t_elapsed > 0.0500) << "Recorded time less than sleep time";
 }
 
@@ -102,19 +102,42 @@ TEST(TimerTest, Printing)
 }
 
 
-TEST(TimerTest, Writing)
+TEST(TimerTest, WritingSummary)
 {
     PROFILE_REINITIALIZE(100, 100);
     PROFILE_START("one");
     PROFILE_START("two");
     PROFILE_START("three");
+    PROFILE_START("double values");
     PROFILE_RECORD("one");
     PROFILE_RECORD("two");
     PROFILE_RECORD("three");
+    PROFILE_RECORD_DOUBLE("double values", 3.2);
+    PROFILE_RECORD_DOUBLE("double values", -1.966);
 
     PROFILE_WRITE_SUMMARY_FOR_ALL("testing_output.txt");
-    
 }
+
+
+TEST(TimerTest, WritingAll)
+{
+    PROFILE_REINITIALIZE(100, 100);
+    PROFILE_START("one");
+    PROFILE_START("two");
+    PROFILE_START("three");
+    PROFILE_START("double values");
+    PROFILE_RECORD("one");
+    PROFILE_RECORD("two");
+    PROFILE_RECORD("three");
+    PROFILE_RECORD_DOUBLE("double values", 1.1);
+    PROFILE_RECORD_DOUBLE("double values", 2.2);
+    PROFILE_RECORD_DOUBLE("double values", 3.3);
+    PROFILE_RECORD_DOUBLE("double values", 4.4);
+            PROFILE_RECORD_DOUBLE("double values", 5.5);
+    PROFILE_WRITE_ALL("testing_output_full.txt");
+    PROFILE_WRITE_ALL_FEWER_THAN("testing_output_limited.txt", 3);
+}
+
 
 GTEST_API_ int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
