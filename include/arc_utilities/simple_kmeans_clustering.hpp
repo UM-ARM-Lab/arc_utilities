@@ -67,7 +67,6 @@ namespace simple_kmeans_clustering
                 const uint32_t num_clusters)
         {
             assert(data.size() == cluster_labels.size());
-
             // Separate the datapoints into their clusters
             std::vector<std::vector<Datatype, Allocator>> clustered_data(num_clusters);
             for (size_t idx = 0; idx < data.size(); idx++)
@@ -76,7 +75,6 @@ namespace simple_kmeans_clustering
                 const uint32_t label = cluster_labels[idx];
                 clustered_data[label].push_back(datapoint);
             }
-
             // Compute the center of each cluster
             std::vector<Datatype, Allocator> cluster_centers(num_clusters);
             for (uint32_t cluster = 0; cluster < num_clusters; cluster++)
@@ -181,20 +179,17 @@ namespace simple_kmeans_clustering
         {
             assert(data.size() > 0);
             assert(num_clusters > 0);
-
             if (num_clusters == 1)
             {
                 std::cerr << "[K-means clustering] Provided num_clusters = 1, returning default labels for cluster 0" << std::endl;
                 return std::vector<uint32_t>(data.size(), 0u);
             }
-
             // Prepare an RNG for cluster initialization
             auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
             std::mt19937_64 prng(seed);
             std::uniform_int_distribution<size_t> initialization_distribution(0u, data.size() - 1);
             // Initialize cluster centers
             std::vector<Datatype, Allocator> cluster_centers;
-
             // Make sure we have enough datapoints to do meaningful preliminary clustering
             bool enable_preliminary_clustering = do_preliminary_clustering;
             if (enable_preliminary_clustering)
@@ -211,7 +206,6 @@ namespace simple_kmeans_clustering
                     std::cerr << "[K-means clustering] Preliminary clustering disabled as input data is too small w.r.t. number of clusters" << std::endl;
                 }
             }
-
             if (enable_preliminary_clustering)
             {
                 // Select a random 10% of the input data
@@ -260,7 +254,6 @@ namespace simple_kmeans_clustering
                     }
                 }
             }
-
             assert(cluster_centers.size() == num_clusters);
             return Cluster(data, distance_fn, average_fn, cluster_centers).first;
         }
@@ -280,7 +273,6 @@ namespace simple_kmeans_clustering
 
             // Run the first iteration of clustering
             std::vector<uint32_t> cluster_labels = PerformSingleClusteringIteration(data, distance_fn, cluster_centers);
-
             // Itterate until converged
             bool converged = false;
             uint32_t iteration = 1u;

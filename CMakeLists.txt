@@ -52,7 +52,7 @@ catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS ros
 ## Your package locations should be listed before other locations
 include_directories(include SYSTEM ${catkin_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS})
 
-set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wconversion -Werror")
+set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wconversion -Werror -Wshadow")
 
 # Utility library
 add_library(${PROJECT_NAME}
@@ -62,6 +62,7 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/abb_irb1600_145_fk_fast.hpp
     include/${PROJECT_NAME}/iiwa_7_fk_fast.hpp
     include/${PROJECT_NAME}/iiwa_14_fk_fast.hpp
+    include/${PROJECT_NAME}/ur_10_fk_fast.hpp
     include/${PROJECT_NAME}/arc_exceptions.hpp
     include/${PROJECT_NAME}/arc_helpers.hpp
     include/${PROJECT_NAME}/pretty_print.hpp
@@ -88,10 +89,17 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/serialization_eigen.hpp
     include/${PROJECT_NAME}/serialization_ros.hpp
     include/${PROJECT_NAME}/filesystem.hpp
+    include/${PROJECT_NAME}/simple_se2_robot_model.hpp
+    include/${PROJECT_NAME}/simple_se3_robot_model.hpp
+    include/${PROJECT_NAME}/simple_linked_robot_model.hpp
+    include/${PROJECT_NAME}/simple_robot_models.hpp
+    include/${PROJECT_NAME}/simple_robot_model_interface.hpp
+    include/${PROJECT_NAME}/time_optimal_trajectory_parametrization.hpp
     src/${PROJECT_NAME}/zlib_helpers.cpp
     src/${PROJECT_NAME}/base64_helpers.cpp
     src/${PROJECT_NAME}/timing.cpp
-    src/${PROJECT_NAME}/first_order_deformation.cpp)
+    src/${PROJECT_NAME}/first_order_deformation.cpp
+    src/${PROJECT_NAME}/time_optimal_trajectory_parametrization.cpp)
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
 
@@ -123,11 +131,6 @@ target_link_libraries(test_averaging ${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(test_dijkstras src/test_dijkstras.cpp)
 add_dependencies(test_dijkstras ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_dijkstras ${PROJECT_NAME} ${catkin_LIBRARIES})
-
-# Simple test node for shortcut smoothing
-add_executable(test_shortcut_smoothing src/test_shortcut_smoothing.cpp)
-add_dependencies(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_shortcut_smoothing ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for DistanceToLine function
 add_executable(test_closest_point src/test_closest_point.cpp)

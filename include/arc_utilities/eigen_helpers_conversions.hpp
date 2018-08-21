@@ -10,6 +10,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Transform.h>
 #include <geometry_msgs/Wrench.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <arc_utilities/eigen_helpers.hpp>
 
 #ifndef EIGEN_HELPERS_CONVERSIONS_HPP
@@ -67,6 +68,21 @@ namespace EigenHelpersConversions
         geom_vector.x = vector.x();
         geom_vector.y = vector.y();
         geom_vector.z = vector.z();
+        return geom_vector;
+    }
+
+    inline Eigen::Vector4d GeometryVector3ToEigenVector4d(const geometry_msgs::Vector3& vector)
+    {
+        Eigen::Vector4d eigen_vector(vector.x, vector.y, vector.z, 0.0);
+        return eigen_vector;
+    }
+
+    inline geometry_msgs::Vector3 EigenVector4dToGeometryVector3(const Eigen::Vector4d& vector)
+    {
+        geometry_msgs::Vector3 geom_vector;
+        geom_vector.x = vector(0);
+        geom_vector.y = vector(1);
+        geom_vector.z = vector(2);
         return geom_vector;
     }
 
@@ -207,6 +223,14 @@ namespace EigenHelpersConversions
         geom_transform.rotation.y = quat.y();
         geom_transform.rotation.z = quat.z();
         return geom_transform;
+    }
+
+    inline geometry_msgs::TransformStamped EigenIsometry3dToGeometryTransformStamped(const Eigen::Isometry3d& transform, const std::string& frame_id)
+    {
+        geometry_msgs::TransformStamped transform_stamped;
+        transform_stamped.header.frame_id = frame_id;
+        transform_stamped.transform = EigenIsometry3dToGeometryTransform(transform);
+        return transform_stamped;
     }
 
     inline Eigen::Matrix3Xd VectorGeometryPointToEigenMatrix3Xd(const std::vector<geometry_msgs::Point>& vector_geom)

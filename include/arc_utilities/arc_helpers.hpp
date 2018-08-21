@@ -15,6 +15,10 @@
 #include <Eigen/Cholesky>
 #include <arc_utilities/eigen_helpers.hpp>
 #include <omp.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #ifndef ARC_HELPERS_HPP
 #define ARC_HELPERS_HPP
@@ -51,6 +55,58 @@ namespace arc_helpers
     __attribute__((always_inline)) inline void DoNotOptimize(const T& value)
     {
         asm volatile("" : "+m"(const_cast<T &>(value)));
+    }
+
+    /*
+     * See: https://stackoverflow.com/questions/3596781/how-to-detect-if-the-current-process-is-being-run-by-gdb
+     */
+    inline bool IsDebuggerPresent()
+    {
+        const int status_fd = open("/proc/self/status", O_RDONLY);
+        if (status_fd == -1)
+        {
+            return false;
+        }
+        char buf[1024];
+        const ssize_t num_read = read(status_fd, buf, sizeof(buf) - 1);
+        if (num_read > 0)
+        {
+            static const char TracerPid[] = "TracerPid:";
+            char *tracer_pid;
+            buf[num_read] = 0;
+            tracer_pid = strstr(buf, TracerPid);
+            if (tracer_pid)
+            {
+                if (!!atoi(tracer_pid + sizeof(TracerPid) - 1))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    inline void InteractiveWaitToContinue()
+    {
+        if (IsDebuggerPresent() == false)
+        {
+            std::cout << "Press ENTER to continue..." << std::endl;
+            std::cin.get();
+        }
+        else
+        {
+            std::cout << "Process is under debugger, use breakpoints for interactive flow control instead" << std::endl;
+        }
+    }
+
+    inline void ConditionalPrintWaitForInteractiveInput(const std::string& msg, const int32_t msg_level, const int32_t print_level)
+    {
+        if (unlikely(msg_level <= print_level))
+        {
+            const std::string printstr = "[" + std::to_string(msg_level) + "/" + std::to_string(print_level) + "] " + msg + "\n";
+            std::cout << printstr << std::flush;
+            InteractiveWaitToContinue();
+        }
     }
 
     template<typename T>
@@ -236,13 +292,15 @@ namespace arc_helpers
         float b;
         float a;
 
-        RGBAColor(const float r, const float g, const float b, const float a) : r(TrimColorValue(r)), g(TrimColorValue(g)), b(TrimColorValue(b)), a(TrimColorValue(a)) {}
+        RGBAColor(const float in_r, const float in_g, const float in_b, const float in_a) : r(TrimColorValue(in_r)), g(TrimColorValue(in_g)), b(TrimColorValue(in_b)), a(TrimColorValue(in_a)) {}
 
-        RGBAColor(const float r, const float g, const float b) : r(TrimColorValue(r)), g(TrimColorValue(g)), b(TrimColorValue(b)), a(1.0f) {}
+        RGBAColor(const float in_r, const float in_g, const float in_b) : r(TrimColorValue(in_r)), g(TrimColorValue(in_g)), b(TrimColorValue(in_b)), a(1.0f) {}
 
-        RGBAColor(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a) : r(ColorChannelFromHex(r)), g(ColorChannelFromHex(g)), b(ColorChannelFromHex(b)), a(ColorChannelFromHex(a)) {}
+        RGBAColor(const uint8_t in_r, const uint8_t in_g, const uint8_t in_b, const uint8_t in_a) : r(ColorChannelFromHex(in_r)), g(ColorChannelFromHex(in_g)), b(ColorChannelFromHex(in_b)), a(ColorChannelFromHex(in_a)) {}
 
-        RGBAColor(const uint8_t r, const uint8_t g, const uint8_t b, const float a) : r(ColorChannelFromHex(r)), g(ColorChannelFromHex(g)), b(ColorChannelFromHex(b)), a(TrimColorValue(a)) {}
+        RGBAColor(const uint8_t in_r, const uint8_t in_g, const uint8_t in_b, const float in_a) : r(ColorChannelFromHex(in_r)), g(ColorChannelFromHex(in_g)), b(ColorChannelFromHex(in_b)), a(TrimColorValue(in_a)) {}
+
+        RGBAColor(const uint8_t in_r, const uint8_t in_g, const uint8_t in_b) : r(ColorChannelFromHex(in_r)), g(ColorChannelFromHex(in_g)), b(ColorChannelFromHex(in_b)), a(1.0f) {}
 
         RGBAColor() : r(0.0f), g(0.0f), b(0.0f), a(0.0f) {}
 
@@ -514,13 +572,13 @@ namespace arc_helpers
         #endif
     }
 
-    template<typename Datatype, typename Allocator = std::allocator<Datatype>>
-    inline Eigen::MatrixXd BuildDistanceMatrix(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
+    template<typename Datatype, typename Allocator=std::allocator<Datatype>>
+    inline Eigen::MatrixXd BuildDistanceMatrixParallel(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
     {
         Eigen::MatrixXd distance_matrix(data.size(), data.size());
-#ifdef ENABLE_PARALLEL_DISTANCE_MATRIX
+        #if defined(_OPENMP)
         #pragma omp parallel for
-#endif
+        #endif
         for (size_t idx = 0; idx < data.size(); idx++)
         {
             for (size_t jdx = idx; jdx < data.size(); jdx++)
@@ -541,13 +599,13 @@ namespace arc_helpers
         return distance_matrix;
     }
 
-    template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator = std::allocator<FirstDatatype>, typename SecondAllocator = std::allocator<SecondDatatype>>
-    inline Eigen::MatrixXd BuildDistanceMatrix(const std::vector<FirstDatatype, FirstAllocator>& data1, const std::vector<SecondDatatype, SecondAllocator>& data2, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
+    template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator=std::allocator<FirstDatatype>, typename SecondAllocator=std::allocator<SecondDatatype>>
+    inline Eigen::MatrixXd BuildDistanceMatrixParallel(const std::vector<FirstDatatype, FirstAllocator>& data1, const std::vector<SecondDatatype, SecondAllocator>& data2, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
     {
         Eigen::MatrixXd distance_matrix(data1.size(), data1.size());
-#ifdef ENABLE_PARALLEL_DISTANCE_MATRIX
+        #if defined(_OPENMP)
         #pragma omp parallel for
-#endif
+        #endif
         for (size_t idx = 0; idx < data1.size(); idx++)
         {
             for (size_t jdx = 0; jdx < data2.size(); jdx++)
@@ -560,8 +618,48 @@ namespace arc_helpers
         return distance_matrix;
     }
 
-    template<typename Item, typename Value, typename ItemAlloc = std::allocator<Item>>
-    std::vector<std::pair<int64_t, double>> GetKNearestNeighbors(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
+    template<typename Datatype, typename Allocator=std::allocator<Datatype>>
+    inline Eigen::MatrixXd BuildDistanceMatrixSerial(const std::vector<Datatype, Allocator>& data, const std::function<double(const Datatype&, const Datatype&)>& distance_fn)
+    {
+        Eigen::MatrixXd distance_matrix(data.size(), data.size());
+        for (size_t idx = 0; idx < data.size(); idx++)
+        {
+            for (size_t jdx = idx; jdx < data.size(); jdx++)
+            {
+                if (idx != jdx)
+                {
+                    const double distance = distance_fn(data[idx], data[jdx]);
+                    distance_matrix((ssize_t)idx, (ssize_t)jdx) = distance;
+                    distance_matrix((ssize_t)jdx, (ssize_t)idx) = distance;
+                }
+                else
+                {
+                    distance_matrix((ssize_t)idx, (ssize_t)jdx) = 0.0;
+                    distance_matrix((ssize_t)jdx, (ssize_t)idx) = 0.0;
+                }
+            }
+        }
+        return distance_matrix;
+    }
+
+    template<typename FirstDatatype, typename SecondDatatype, typename FirstAllocator=std::allocator<FirstDatatype>, typename SecondAllocator=std::allocator<SecondDatatype>>
+    inline Eigen::MatrixXd BuildDistanceMatrixSerial(const std::vector<FirstDatatype, FirstAllocator>& data1, const std::vector<SecondDatatype, SecondAllocator>& data2, const std::function<double(const FirstDatatype&, const SecondDatatype&)>& distance_fn)
+    {
+        Eigen::MatrixXd distance_matrix(data1.size(), data1.size());
+        for (size_t idx = 0; idx < data1.size(); idx++)
+        {
+            for (size_t jdx = 0; jdx < data2.size(); jdx++)
+            {
+                const double distance = distance_fn(data1[idx], data2[jdx]);
+                distance_matrix((ssize_t)idx, (ssize_t)jdx) = distance;
+                distance_matrix((ssize_t)jdx, (ssize_t)idx) = distance;
+            }
+        }
+        return distance_matrix;
+    }
+
+    template<typename Item, typename Value, typename ItemAlloc=std::allocator<Item>>
+    std::vector<std::pair<int64_t, double>> GetKNearestNeighborsParallel(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
     {
         if (K == 0)
         {
@@ -571,22 +669,18 @@ namespace arc_helpers
         {
             std::function<bool(const std::pair<int64_t, double>&, const std::pair<int64_t, double>&)> compare_fn = [] (const std::pair<int64_t, double>& index1, const std::pair<int64_t, double>& index2) { return index1.second < index2.second; };
             std::vector<std::vector<std::pair<int64_t, double>>> per_thread_nearests(GetNumOMPThreads(), std::vector<std::pair<int64_t, double>>(K, std::make_pair(-1, std::numeric_limits<double>::infinity())));
-#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
+            #if defined(_OPENMP)
             #pragma omp parallel for
-#endif
+            #endif
             for (size_t idx = 0; idx < items.size(); idx++)
             {
                 const Item& item = items[idx];
                 const double distance = distance_fn(item, current);
-#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
                 #if defined(_OPENMP)
                 const size_t thread_num = (size_t)omp_get_thread_num();
                 #else
                 const size_t thread_num = 0;
                 #endif
-#else
-                const size_t thread_num = 0;
-#endif
                 std::vector<std::pair<int64_t, double>>& current_thread_nearests = per_thread_nearests[thread_num];
                 auto itr = std::max_element(current_thread_nearests.begin(), current_thread_nearests.end(), compare_fn);
                 const double worst_distance = itr->second;
@@ -629,9 +723,47 @@ namespace arc_helpers
         else
         {
             std::vector<std::pair<int64_t, double>> k_nearests(items.size(), std::make_pair(-1, std::numeric_limits<double>::infinity()));
-#ifdef ENABLE_PARALLEL_K_NEAREST_NEIGHBORS
+            #if defined(_OPENMP)
             #pragma omp parallel for
-#endif
+            #endif
+            for (size_t idx = 0; idx < items.size(); idx++)
+            {
+                const Item& item = items[idx];
+                const double distance = distance_fn(item, current);
+                k_nearests[idx] = std::make_pair((int64_t)idx, distance);
+            }
+            return k_nearests;
+        }
+    }
+
+    template<typename Item, typename Value, typename ItemAlloc=std::allocator<Item>>
+    std::vector<std::pair<int64_t, double>> GetKNearestNeighborsSerial(const std::vector<Item, ItemAlloc>& items, const Value& current, const std::function<double(const Item&, const Value&)>& distance_fn, const size_t K)
+    {
+        if (K == 0)
+        {
+            return std::vector<std::pair<int64_t, double>>();
+        }
+        if (items.size() > K)
+        {
+            std::function<bool(const std::pair<int64_t, double>&, const std::pair<int64_t, double>&)> compare_fn = [] (const std::pair<int64_t, double>& index1, const std::pair<int64_t, double>& index2) { return index1.second < index2.second; };
+            std::vector<std::pair<int64_t, double>> k_nearests(K, std::make_pair(-1, std::numeric_limits<double>::infinity()));
+            for (size_t idx = 0; idx < items.size(); idx++)
+            {
+                const Item& item = items[idx];
+                const double distance = distance_fn(item, current);
+                auto itr = std::max_element(k_nearests.begin(), k_nearests.end(), compare_fn);
+                const double worst_distance = itr->second;
+                if (worst_distance > distance)
+                {
+                    itr->first = (int64_t)idx;
+                    itr->second = distance;
+                }
+            }
+            return k_nearests;
+        }
+        else
+        {
+            std::vector<std::pair<int64_t, double>> k_nearests(items.size(), std::make_pair(-1, std::numeric_limits<double>::infinity()));
             for (size_t idx = 0; idx < items.size(); idx++)
             {
                 const Item& item = items[idx];
@@ -653,7 +785,7 @@ namespace arc_helpers
 
     public:
 
-        AstarPQueueElement(const int64_t node_id_, const int64_t backpointer, const double cost_to_come, const double value) : node_id_(node_id_), backpointer_(backpointer), cost_to_come_(cost_to_come), value_(value) {}
+        AstarPQueueElement(const int64_t node_id, const int64_t backpointer, const double cost_to_come, const double value) : node_id_(node_id), backpointer_(backpointer), cost_to_come_(cost_to_come), value_(value) {}
 
         inline int64_t NodeID() const { return node_id_; }
 
@@ -758,11 +890,11 @@ namespace arc_helpers
                 queue_members_map.erase(top_node.NodeID());
             }
             // Check if the node has already been discovered
-            const auto explored_itr = explored.find(top_node.NodeID());
+            const auto node_explored_find_itr = explored.find(top_node.NodeID());
             // We have not been here before, or it is cheaper now
-            const bool in_explored = (explored_itr != explored.end());
-            const bool explored_is_better = (in_explored) ? (top_node.CostToCome() >= explored_itr->second.second) : false;
-            if (!explored_is_better)
+            const bool node_in_explored = (node_explored_find_itr != explored.end());
+            const bool node_explored_is_better = (node_in_explored) ? (top_node.CostToCome() >= node_explored_find_itr->second.second) : false;
+            if (!node_explored_is_better)
             {
                 // Add to the explored list
                 explored[top_node.NodeID()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
@@ -784,10 +916,10 @@ namespace arc_helpers
                         const double parent_to_child_cost = distance_fn(top_node.NodeID(), child_node_id);
                         const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
                         // Check if the child state has already been explored
-                        const auto explored_itr = explored.find(child_node_id);
+                        const auto child_explored_find_itr = explored.find(child_node_id);
                         // It is not in the explored list, or is there with a higher cost-to-come
-                        const bool in_explored = (explored_itr != explored.end());
-                        const bool explored_is_better = (in_explored) ? (child_cost_to_come >= explored_itr->second.second) : false;
+                        const bool child_in_explored = (child_explored_find_itr != explored.end());
+                        const bool explored_child_is_better = (child_in_explored) ? (child_cost_to_come >= child_explored_find_itr->second.second) : false;
                         // Check if the child state is already in the queue
                         bool queue_is_better = false;
                         if (limit_pqueue_duplicates)
@@ -797,7 +929,7 @@ namespace arc_helpers
                             queue_is_better = (in_queue) ? (child_cost_to_come >= queue_members_map_itr->second) : false;
                         }
                         // Only add the new state if we need to
-                        if (!explored_is_better && !queue_is_better)
+                        if (!explored_child_is_better && !queue_is_better)
                         {
                             // Compute the heuristic for the child
                             const double child_heuristic = heuristic_function(child_node_id);

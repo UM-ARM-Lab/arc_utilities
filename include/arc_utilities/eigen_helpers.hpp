@@ -48,12 +48,12 @@ namespace std
     {
         std::size_t operator() (const Eigen::Matrix<_Scalar, _Rows, 1>& vector) const
         {
-            std::size_t hash = 0;
+            std::size_t hash_val = 0;
             for (ssize_t idx = 0; idx < vector.size(); idx++)
             {
-                std::hash_combine(hash, vector(idx));
+                std::hash_combine(hash_val, vector(idx));
             }
-            return hash;
+            return hash_val;
         }
     };
 
@@ -77,6 +77,7 @@ namespace EigenHelpers
     // Typedefs for aligned STL containers using Eigen types
     ////////////////////////////////////////////////////////////////////////////
 
+    typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>> VectorVector2f;
     typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VectorVector2d;
     typedef std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> VectorVector3f;
     typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VectorVector3d;
@@ -90,6 +91,8 @@ namespace EigenHelpers
     typedef std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> VectorAffine3d;
     typedef std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> VectorMatrix4f;
     typedef std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> VectorMatrix4d;
+    typedef std::map<std::string, Eigen::Vector2f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector2f>>> MapStringVector2f;
+    typedef std::map<std::string, Eigen::Vector2d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector2d>>> MapStringVector2d;
     typedef std::map<std::string, Eigen::Vector3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3f>>> MapStringVector3f;
     typedef std::map<std::string, Eigen::Vector3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3d>>> MapStringVector3d;
     typedef std::map<std::string, Eigen::Vector4f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4f>>> MapStringVector4f;
@@ -101,9 +104,21 @@ namespace EigenHelpers
     typedef std::map<std::string, Eigen::Affine3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3f>>> MapStringAffine3f;
     typedef std::map<std::string, Eigen::Affine3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3d>>> MapStringAffine3d;
 
-    inline bool Equal(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
+    inline bool Equal3d(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
     {
         if ((v1.x() == v2.x()) && (v1.y() == v2.y()) && (v1.z() == v2.z()))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    inline bool Equal4d(const Eigen::Vector4d& v1, const Eigen::Vector4d& v2)
+    {
+        if ((v1(0) == v2(0)) && (v1(1) == v2(1)) && (v1(2) == v2(2)) && (v1(3) == v2(3)))
         {
             return true;
         }
@@ -129,16 +144,16 @@ namespace EigenHelpers
 
     inline bool CloseEnough(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double threshold)
     {
-        double real_threshold = std::fabs(threshold);
-        if (std::fabs(v1.x() - v2.x()) > real_threshold)
+        double real_threshold = std::abs(threshold);
+        if (std::abs(v1.x() - v2.x()) > real_threshold)
         {
             return false;
         }
-        if (std::fabs(v1.y() - v2.y()) > real_threshold)
+        if (std::abs(v1.y() - v2.y()) > real_threshold)
         {
             return false;
         }
-        if (std::fabs(v1.z() - v2.z()) > real_threshold)
+        if (std::abs(v1.z() - v2.z()) > real_threshold)
         {
             return false;
         }
@@ -403,6 +418,18 @@ namespace EigenHelpers
         }
     }
 
+    template <typename T>
+    inline T Sum(const std::vector<T>& vec)
+    {
+        T sum = 0.0;
+        for (size_t idx = 0; idx < vec.size(); idx++)
+        {
+            const T element = vec[idx];
+            sum += element;
+        }
+        return sum;
+    }
+
     inline Eigen::Matrix3d Skew(const Eigen::Vector3d& vector)
     {
         Eigen::Matrix3d skewed;
@@ -466,7 +493,7 @@ namespace EigenHelpers
 
     inline Eigen::Matrix3d ExpMatrixExact(const Eigen::Matrix3d& hatted_rot_velocity, const double delta_t)
     {
-        assert(std::fabs(Unskew(hatted_rot_velocity).norm() - 1.0) < 1e-10);
+        assert(std::abs(Unskew(hatted_rot_velocity).norm() - 1.0) < 1e-10);
         const Eigen::Matrix3d exp_matrix = Eigen::Matrix3d::Identity() + (hatted_rot_velocity * sin(delta_t)) + (hatted_rot_velocity * hatted_rot_velocity * (1.0 - cos(delta_t)));
         return exp_matrix;
     }
@@ -554,7 +581,7 @@ namespace EigenHelpers
         // Interpolate
         double interpolated = 0.0;
         double diff = real_p2 - real_p1;
-        if (std::fabs(diff) <= M_PI)
+        if (std::abs(diff) <= M_PI)
         {
             interpolated = real_p1 + diff * real_ratio;
         }
@@ -620,6 +647,11 @@ namespace EigenHelpers
     template <typename T, int ROWS>
     inline Eigen::Matrix<T, ROWS, 1> Interpolate(const Eigen::Matrix<T, ROWS, 1>& v1, const Eigen::Matrix<T, ROWS, 1>& v2, const double ratio)
     {
+        // Safety check sizes
+        if (v1.size() != v2.size())
+        {
+            throw std::invalid_argument("Vectors v1 and v2 must be the same size");
+        }
         // Safety check ratio
         double real_ratio = ratio;
         if (real_ratio < 0.0)
@@ -724,7 +756,7 @@ namespace EigenHelpers
     // This assumes that the incomming quaternions are normalized
     inline double Distance(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2)
     {
-        const double dq = std::fabs((q1.w() * q2.w()) + (q1.x() * q2.x()) + (q1.y() * q2.y()) + (q1.z() * q2.z()));
+        const double dq = std::abs((q1.w() * q2.w()) + (q1.x() * q2.x()) + (q1.y() * q2.y()) + (q1.z() * q2.z()));
         if (dq < (1.0 - std::numeric_limits<double>::epsilon()))
         {
             return acos(2.0 * (dq * dq) - 1.0);
@@ -816,7 +848,7 @@ namespace EigenHelpers
 
     inline double ContinuousRevoluteDistance(const double p1, const double p2)
     {
-        return std::fabs(ContinuousRevoluteSignedDistance(p1, p2));
+        return std::abs(ContinuousRevoluteSignedDistance(p1, p2));
     }
 
     inline double AddContinuousRevoluteValues(const double start, const double change)
@@ -1491,10 +1523,83 @@ namespace EigenHelpers
     template <typename DerivedB, typename DerivedV>
     inline Eigen::Matrix<typename DerivedB::Scalar, Eigen::Dynamic, 1> VectorRejection(
             const Eigen::MatrixBase<DerivedB>& base_vector,
-            const Eigen::MatrixBase<DerivedV>& vector_to_project)
+            const Eigen::MatrixBase<DerivedV>& vector_to_reject)
     {
         // Rejection is defined in relation to projection
-        return vector_to_project - VectorProjection(base_vector, vector_to_project);
+        return vector_to_reject - VectorProjection(base_vector, vector_to_reject);
+    }
+
+    template <typename DerivedV>
+    inline Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1> GetArbitraryOrthogonalVector(
+            const Eigen::MatrixBase<DerivedV>& vector)
+    {
+        // We're going to try arbitrary possibilities until one of them works
+        const ssize_t vector_size = vector.size();
+        if (vector_size > 0)
+        {
+            for (ssize_t idx = 0; idx < vector_size; idx++)
+            {
+                Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1> example_unit_vector = Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1>::Zero(vector_size);
+                example_unit_vector(idx) = (typename DerivedV::Scalar)1.0;
+                const auto rejected_vector = VectorRejection(vector, example_unit_vector);
+                const typename DerivedV::Scalar rejected_vector_squared_norm = rejected_vector.squaredNorm();
+                if (rejected_vector_squared_norm > 0)
+                {
+                    return rejected_vector;
+                }
+            }
+            throw std::runtime_error("Vector rejection failed to identify orthogonal vector, probably numerical error");
+        }
+        else
+        {
+            throw std::invalid_argument("Vector size is zero");
+        }
+    }
+
+    template <typename DerivedV>
+    inline Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1> GetArbitraryOrthogonalVectorToPlane(
+            const Eigen::MatrixBase<DerivedV>& plane_vector1,
+            const Eigen::MatrixBase<DerivedV>& plane_vector2,
+            const Eigen::MatrixBase<DerivedV>& vector)
+    {
+        const ssize_t vector_size = vector.size();
+        if ((vector_size > 0) && (vector_size == plane_vector1.size()) && (vector_size == plane_vector2.size()))
+        {
+            const Eigen::MatrixBase<DerivedV> unit_plane_vector1 = plane_vector1 / plane_vector1.norm();
+            const Eigen::MatrixBase<DerivedV> unit_plane_vector2 = plane_vector2 / plane_vector2.norm();
+            const typename DerivedV::Scalar plane_vector_dot_product_mag = std::abs(unit_plane_vector1.dot(unit_plane_vector2));
+            if (plane_vector_dot_product_mag == 1.0)
+            {
+                throw std::invalid_argument("Plane vectors do not define a valid plane");
+            }
+            else
+            {
+                // Try both plane vectors (by definition, one of the two MUST have an orthogonal component!)
+                const auto rejected_vector1 = VectorRejection(vector, plane_vector1);
+                const typename DerivedV::Scalar rejected_vector1_squared_norm = rejected_vector1.squaredNorm();
+                if (rejected_vector1_squared_norm > 0)
+                {
+                    return rejected_vector1;
+                }
+                else
+                {
+                    const auto rejected_vector2 = VectorRejection(vector, plane_vector2);
+                    const typename DerivedV::Scalar rejected_vector2_squared_norm = rejected_vector2.squaredNorm();
+                    if (rejected_vector2_squared_norm > 0)
+                    {
+                        return rejected_vector2;
+                    }
+                    else
+                    {
+                        throw std::runtime_error("Vector rejection failed to identify orthogonal vector, probably numerical error");
+                    }
+                }
+            }
+        }
+        else
+        {
+            throw std::invalid_argument("Vector size is zero");
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1569,6 +1674,11 @@ namespace EigenHelpers
         }
 
         Hyperplane() {}
+
+        size_t GetDimensionality() const
+        {
+            return (size_t)plane_origin_.size();
+        }
 
         const Eigen::VectorXd& GetOrigin() const
         {
@@ -1695,7 +1805,7 @@ namespace EigenHelpers
         Eigen::VectorXd vPseudoInvertedSingular(svdA.matrixV().cols());
         for (int iRow = 0; iRow < vSingular.rows(); iRow++)
         {
-            if (std::fabs(vSingular(iRow)) <= rcond) // Todo : Put epsilon in parameter
+            if (std::abs(vSingular(iRow)) <= rcond) // Todo : Put epsilon in parameter
             {
                 vPseudoInvertedSingular(iRow)= 0.0;
             }
