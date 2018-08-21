@@ -1,6 +1,7 @@
 #include <functional>
 #include <arc_utilities/arc_helpers.hpp>
 #include <arc_utilities/eigen_helpers.hpp>
+#include <arc_utilities/arc_exceptions.hpp>
 
 #ifndef SHORTCUT_SMOOTHING_HPP
 #define SHORTCUT_SMOOTHING_HPP
@@ -145,6 +146,103 @@ namespace shortcut_smoothing
             const InterpolationFn& state_interpolation_fn)
     {
         return ResamplePathPartial(path, 0, path.size(), resampled_state_distance, state_distance_fn, state_interpolation_fn);
+    }
+
+    /**
+     * @brief UpsamplePathPartial Returns the upsampled portion of the path between [start_ind, end_ind); *not* the whole path
+     * @param path
+     * @param start_ind
+     * @param end_ind
+     * @param num_points - this is the number of points to use, including the start point and the end point - i.e. path[start_ind] and path[end_ind-1]
+     * @param state_distance_fn - must match the following prototype: std::function<double(const Configuration&, const Configuration&)>
+     * @param state_interpolation_fn - must match the following prototype: std::function<Configuration(const Configuration&, const Configuration&, const double)>
+     * @return
+     */
+    template<typename Configuration, typename ConfigAlloc = std::allocator<Configuration>, class DistanceFn, class InterpolationFn>
+    inline std::vector<Configuration, ConfigAlloc> UpsamplePathPartial(
+            const std::vector<Configuration, ConfigAlloc>& path,
+            const ssize_t start_ind,
+            const ssize_t end_ind,
+            const ssize_t num_points,
+            const DistanceFn& state_distance_fn,
+            const InterpolationFn& state_interpolation_fn)
+    {
+        assert(end_ind > start_ind);
+        assert(end_ind <= path.size());
+
+        // Abort if the number of points is already sufficient
+        if (num_points <= end_ind - start_ind)
+        {
+            std::cerr << "[ResamplePathPartialNumPoints] Number of points in existing path is already larger than the desired number of points" << std::endl;
+            return path;
+        }
+
+        const ssize_t num_segments = end_ind - start_ind - 1;
+        assert(num_segments > 0);
+
+        Eigen::VectorXd individual_lengths(num_segments);
+        double total_dist = 0.0;
+        for (ssize_t ind = start_ind; ind < end_ind - 1; ++ind)
+        {
+            const double dist = state_distance_fn(path[ind], path[ind + 1]);
+            individual_lengths[ind - start_ind] = dist;
+            total_dist += dist;
+        }
+
+        const double nominal_delta = total_dist / (num_points - 1);
+        Eigen::VectorXi num_points_per_segment(num_segments);
+        Eigen::VectorXd distance_consumed_per_segment(num_segments);
+        for (size_t ind = start_ind; ind < end_ind - 1; ++ind)
+        {
+            num_points_per_segment(ind) = std::max((ssize_t)std::floor(individual_lengths(ind) / nominal_delta), (ssize_t)1);
+            distance_consumed_per_segment(ind) = nominal_delta * num_points_per_segment(ind);
+        }
+
+        const ssize_t nominal_points_used = num_points_per_segment.sum();
+        if (num_points < nominal_points_used + 1)
+        {
+            throw_arc_exception(std::runtime_error, "[ResamplePathPartialNumPoints] Unhandled edge case; more points needed than are available. Likely need to implement this using repeated splitting of the largest segment");
+        }
+
+        const ssize_t extra_points_needed = num_points - nominal_points_used - 1;
+        Eigen::VectorXd dist_remaining = individual_lengths - distance_consumed_per_segment;
+        for (ssize_t point = 0; point < extra_points_needed; ++point)
+        {
+            int ind;
+            dist_remaining.maxCoeff(&ind);
+            num_points_per_segment(ind)++;
+            dist_remaining(ind) = 0.0;
+        }
+
+        // Build the actual path
+        std::vector<Configuration, ConfigAlloc> upsampled_path(num_points);
+        ssize_t next_upsampled_ind = 0;
+        for (ssize_t segment_ind = 0; segment_ind < num_segments; ++segment_ind)
+        {
+            const double one_div_points_in_segment = 1.0 / (double)num_points_per_segment[segment_ind];
+            for (ssize_t interpolation_ind = 0; interpolation_ind < num_points_per_segment[segment_ind]; ++interpolation_ind)
+            {
+                const double ratio = (double)interpolation_ind * one_div_points_in_segment;
+                upsampled_path[next_upsampled_ind] = state_interpolation_fn(path[start_ind + segment_ind], path[start_ind + segment_ind + 1], ratio);
+                next_upsampled_ind++;
+            }
+        }
+        assert(next_upsampled_ind == num_points - 1);
+
+        // Add the last point to terminate the path
+        upsampled_path[num_points - 1] = path[end_ind - 1];
+
+        return upsampled_path;
+    }
+
+    template<typename Configuration, typename ConfigAlloc = std::allocator<Configuration>, class DistanceFn, class InterpolationFn>
+    inline std::vector<Configuration, ConfigAlloc> UpsamplePath(
+            const std::vector<Configuration, ConfigAlloc>& path,
+            const ssize_t num_points,
+            const DistanceFn& state_distance_fn,
+            const InterpolationFn& state_interpolation_fn)
+    {
+        return UpsamplePathPartial(path, 0, path.size(), num_points, state_distance_fn, state_interpolation_fn);
     }
 }
 
