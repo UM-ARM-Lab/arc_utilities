@@ -82,7 +82,7 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/simple_dtw.hpp
     include/${PROJECT_NAME}/timing.hpp
     include/${PROJECT_NAME}/dijkstras.hpp
-    include/${PROJECT_NAME}/shortcut_smoothing.hpp
+    include/${PROJECT_NAME}/path_utils.hpp
     include/${PROJECT_NAME}/first_order_deformation.h
     include/${PROJECT_NAME}/get_neighbours.hpp
     include/${PROJECT_NAME}/serialization.hpp

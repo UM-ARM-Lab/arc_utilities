@@ -3,11 +3,11 @@
 #include <arc_utilities/eigen_helpers.hpp>
 #include <arc_utilities/arc_exceptions.hpp>
 
-#ifndef SHORTCUT_SMOOTHING_HPP
-#define SHORTCUT_SMOOTHING_HPP
+#ifndef PATH_UTILS_HPP
+#define PATH_UTILS_HPP
 
-namespace shortcut_smoothing
-{    
+namespace path_utils
+{
     /**
      * @brief ShortcutSmoothPath
      * @param path
@@ -246,4 +246,4 @@ namespace shortcut_smoothing
     }
 }
 
-#endif // SHORTCUT_SMOOTHING_HPP
+#endif // PATH_UTILS_HPP
