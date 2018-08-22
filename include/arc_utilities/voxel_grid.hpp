@@ -1168,6 +1168,34 @@ public:
     inverse_origin_transform_ = origin_transform_.inverse();
   }
 
+  inline GRID_INDEX PointInFrameToGridIndex(const double x,
+                                            const double y,
+                                            const double z) const
+  {
+    const int64_t x_cell = (int64_t)(x * inv_cell_x_size_);
+    const int64_t y_cell = (int64_t)(y * inv_cell_y_size_);
+    const int64_t z_cell = (int64_t)(z * inv_cell_z_size_);
+    return GRID_INDEX(x_cell, y_cell, z_cell);
+  }
+
+  inline GRID_INDEX PointInFrameToGridIndex3d(
+          const Eigen::Vector3d& point_in_grid_frame) const
+  {
+    const int64_t x_cell = (int64_t)(point_in_grid_frame(0) * inv_cell_x_size_);
+    const int64_t y_cell = (int64_t)(point_in_grid_frame(1) * inv_cell_y_size_);
+    const int64_t z_cell = (int64_t)(point_in_grid_frame(2) * inv_cell_z_size_);
+    return GRID_INDEX(x_cell, y_cell, z_cell);
+  }
+
+  inline GRID_INDEX PointInFrameToGridIndex4d(
+          const Eigen::Vector4d& point_in_grid_frame) const
+  {
+    const int64_t x_cell = (int64_t)(point_in_grid_frame(0) * inv_cell_x_size_);
+    const int64_t y_cell = (int64_t)(point_in_grid_frame(1) * inv_cell_y_size_);
+    const int64_t z_cell = (int64_t)(point_in_grid_frame(2) * inv_cell_z_size_);
+    return GRID_INDEX(x_cell, y_cell, z_cell);
+  }
+
   inline GRID_INDEX LocationToGridIndex(const double x,
                                         const double y,
                                         const double z) const
@@ -1180,23 +1208,18 @@ public:
   {
     const Eigen::Vector3d point_in_grid_frame
         = inverse_origin_transform_ * location;
-    const int64_t x_cell
-        = (int64_t)(point_in_grid_frame.x() * inv_cell_x_size_);
-    const int64_t y_cell
-        = (int64_t)(point_in_grid_frame.y() * inv_cell_y_size_);
-    const int64_t z_cell
-        = (int64_t)(point_in_grid_frame.z() * inv_cell_z_size_);
-    return GRID_INDEX(x_cell, y_cell, z_cell);
+    return PointInFrameToGridIndex(point_in_grid_frame.x(),
+                                   point_in_grid_frame.y(),
+                                   point_in_grid_frame.z());
   }
 
   inline GRID_INDEX LocationToGridIndex4d(const Eigen::Vector4d& location) const
   {
     const Eigen::Vector4d point_in_grid_frame
         = inverse_origin_transform_ * location;
-    const int64_t x_cell = (int64_t)(point_in_grid_frame(0) * inv_cell_x_size_);
-    const int64_t y_cell = (int64_t)(point_in_grid_frame(1) * inv_cell_y_size_);
-    const int64_t z_cell = (int64_t)(point_in_grid_frame(2) * inv_cell_z_size_);
-    return GRID_INDEX(x_cell, y_cell, z_cell);
+    return PointInFrameToGridIndex(point_in_grid_frame(0),
+                                   point_in_grid_frame(1),
+                                   point_in_grid_frame(2));
   }
 
   inline Eigen::Vector4d GridIndexToLocation(const GRID_INDEX& index) const
