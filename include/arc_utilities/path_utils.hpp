@@ -88,9 +88,14 @@ namespace path_utils
             const InterpolationFn& state_interpolation_fn)
     {
         // If the input data makes no sense, return an empty path
-        if (end_ind >= start_ind || end_ind > path.size())
+        if (start_ind >= end_ind || end_ind > path.size())
         {
-            throw std::invalid_argument("Need start_ind < end_ind and end_ind <= path.size()");
+            throw_arc_exception(
+                  std::invalid_argument,
+                  "Need start_ind < end_ind and end_ind <= path.size(). start_ind: "
+                  + std::to_string(start_ind) + " end_ind: "
+                  + std::to_string(end_ind) + " path.size(): "
+                  + std::to_string(path.size()));
         }
 
         // If we only have one element, to resample between, return it
