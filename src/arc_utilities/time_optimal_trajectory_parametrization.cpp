@@ -16,7 +16,7 @@ public:
   Eigen::VectorXd GetConfig(const double s) const
   {
     const double ratio = s / length_;
-    return EigenHelpers::InterpolateXd(start_, end_, ratio);
+    return EigenHelpers::Interpolate(start_, end_, ratio);
   }
 
   Eigen::VectorXd GetTangent(const double s) const
