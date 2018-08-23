@@ -185,38 +185,29 @@ namespace path_utils
         const ssize_t num_segments = end_ind - start_ind - 1;
         assert(num_segments > 0);
 
+        // Determine the starting length for each segment that we are upsampling
+        std::priority_queue<std::pair<double, size_t>> ordered_segment_lengths;
         Eigen::VectorXd individual_lengths(num_segments);
-        double total_dist = 0.0;
         for (ssize_t ind = start_ind; ind < end_ind - 1; ++ind)
         {
             const double dist = state_distance_fn(path[ind], path[ind + 1]);
-            individual_lengths[ind - start_ind] = dist;
-            total_dist += dist;
+            ordered_segment_lengths.push({dist, ind - start_ind});
         }
 
-        const double nominal_delta = total_dist / (num_points - 1);
-        Eigen::VectorXi num_points_per_segment(num_segments);
-        Eigen::VectorXd distance_consumed_per_segment(num_segments);
-        for (size_t ind = start_ind; ind < end_ind - 1; ++ind)
+        // Determine how many times to split each segment, splitting the largest first
+        const ssize_t num_current_points = end_ind - start_ind;
+        std::vector<ssize_t> num_points_per_segment(num_segments, 1);
+        for (ssize_t idx = num_current_points; idx < num_points; ++idx)
         {
-            num_points_per_segment(ind) = std::max((ssize_t)std::floor(individual_lengths(ind) / nominal_delta), (ssize_t)1);
-            distance_consumed_per_segment(ind) = nominal_delta * num_points_per_segment(ind);
-        }
-
-        const ssize_t nominal_points_used = num_points_per_segment.sum();
-        if (num_points < nominal_points_used + 1)
-        {
-            throw_arc_exception(std::runtime_error, "[ResamplePathPartialNumPoints] Unhandled edge case; more points needed than are available. Likely need to implement this using repeated splitting of the largest segment");
-        }
-
-        const ssize_t extra_points_needed = num_points - nominal_points_used - 1;
-        Eigen::VectorXd dist_remaining = individual_lengths - distance_consumed_per_segment;
-        for (ssize_t point = 0; point < extra_points_needed; ++point)
-        {
-            int ind;
-            dist_remaining.maxCoeff(&ind);
-            num_points_per_segment(ind)++;
-            dist_remaining(ind) = 0.0;
+            // Retrieve the index of the segment that has the largest subsections
+            const std::pair<double, size_t> largest = ordered_segment_lengths.top();
+            const ssize_t segment_ind = largest.second;
+            // Add another subsection
+            const ssize_t new_count = num_points_per_segment[segment_ind] + 1;
+            const double new_length = individual_lengths(segment_ind) / new_count;
+            // Record the new number of points and resulting subsection length
+            ordered_segment_lengths.push({new_length, segment_ind});
+            num_points_per_segment[segment_ind] = new_count;
         }
 
         // Build the actual path
