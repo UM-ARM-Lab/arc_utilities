@@ -1,74 +1,13 @@
 #include <functional>
 #include <arc_utilities/arc_helpers.hpp>
 #include <arc_utilities/eigen_helpers.hpp>
+#include <arc_utilities/arc_exceptions.hpp>
 
-#ifndef SHORTCUT_SMOOTHING_HPP
-#define SHORTCUT_SMOOTHING_HPP
+#ifndef PATH_UTILS_HPP
+#define PATH_UTILS_HPP
 
-namespace shortcut_smoothing
-{    
-    inline EigenHelpers::VectorVector3d InterpolateWithCollisionCheck(
-            const EigenHelpers::VectorVector3d& input_vector,
-            const size_t first_ind,
-            const size_t second_ind,
-            const double step_size,
-            const std::function<bool(const Eigen::Vector3d&)>& collision_fn)
-    {
-        const size_t starting_ind = std::min(first_ind, second_ind);
-        const size_t ending_ind = std::max(first_ind, second_ind);
-
-        const Eigen::Vector3d& starting_point = input_vector[starting_ind];
-        const Eigen::Vector3d& ending_point = input_vector[ending_ind];
-        const Eigen::Vector3d delta = ending_point - starting_point;
-        const Eigen::Vector3d delta_unit_vec = delta.normalized();
-
-        const double total_dist = delta.norm();
-
-        if (total_dist <= step_size)
-        {
-            return input_vector;
-        }
-
-        // Collision check the path between the first and second index
-        // We assume that the endpoints are not in collision, so we don't check dist == 0 or dist == total_dist
-        bool collision = false;
-        for (double dist = step_size; !collision && dist < total_dist; dist += step_size)
-        {
-            const Eigen::Vector3d point_to_check = starting_point + dist * delta_unit_vec;
-            collision = collision_fn(point_to_check);
-        }
-
-
-        if (!collision)
-        {
-            const size_t num_original_elements = ending_ind - starting_ind - 1;
-            const size_t num_new_elements = (size_t)std::ceil(total_dist / step_size);
-
-            EigenHelpers::VectorVector3d output_vector(input_vector.size() - num_original_elements + num_new_elements - 1);
-
-            // Copy in the first unchanged elements of the vector
-            std::copy(input_vector.begin(), input_vector.begin() + starting_ind + 1, output_vector.begin());
-
-            // Assign the replaced elements
-            for (size_t new_element_ind = 1; new_element_ind < num_new_elements; ++new_element_ind)
-            {
-                const double dist = (double)new_element_ind * step_size;
-                output_vector[starting_ind + new_element_ind] = starting_point + dist * delta_unit_vec;
-            }
-
-            // Copy in the last unchanged elements of the vector
-            std::copy(input_vector.begin() + ending_ind, input_vector.end(), output_vector.begin() + starting_ind + num_new_elements);
-
-            return output_vector;
-
-        }
-        else
-        {
-            return input_vector;
-        }
-    }
-
-
+namespace path_utils
+{
     /**
      * @brief ShortcutSmoothPath
      * @param path
@@ -148,8 +87,16 @@ namespace shortcut_smoothing
             const DistanceFn& state_distance_fn,
             const InterpolationFn& state_interpolation_fn)
     {
-        assert(end_ind > start_ind);
-        assert(end_ind <= path.size());
+        // If the input data makes no sense, return an empty path
+        if (start_ind >= end_ind || end_ind > path.size())
+        {
+            throw_arc_exception(
+                  std::invalid_argument,
+                  "Need start_ind < end_ind and end_ind <= path.size(). start_ind: "
+                  + std::to_string(start_ind) + " end_ind: "
+                  + std::to_string(end_ind) + " path.size(): "
+                  + std::to_string(path.size()));
+        }
 
         // If we only have one element, to resample between, return it
         if (end_ind - start_ind == 1)
@@ -182,7 +129,7 @@ namespace shortcut_smoothing
             {
                 resampled_path.push_back(next_state);
             }
-            // If there is more than one segment, interpolate between previous_state and current_state (including the next_state)
+            // If there is more than one segment, interpolate between current_state and next_state (including the next_state)
             else
             {
                 for (uint32_t segment = 1u; segment <= num_segments; segment++)
@@ -205,6 +152,94 @@ namespace shortcut_smoothing
     {
         return ResamplePathPartial(path, 0, path.size(), resampled_state_distance, state_distance_fn, state_interpolation_fn);
     }
+
+    /**
+     * @brief UpsamplePathPartial Returns the upsampled portion of the path between [start_ind, end_ind); *not* the whole path
+     * @param path
+     * @param start_ind
+     * @param end_ind
+     * @param num_points - this is the number of points to use, including the start point and the end point - i.e. path[start_ind] and path[end_ind-1]
+     * @param state_distance_fn - must match the following prototype: std::function<double(const Configuration&, const Configuration&)>
+     * @param state_interpolation_fn - must match the following prototype: std::function<Configuration(const Configuration&, const Configuration&, const double)>
+     * @return
+     */
+    template<typename Configuration, typename ConfigAlloc = std::allocator<Configuration>, class DistanceFn, class InterpolationFn>
+    inline std::vector<Configuration, ConfigAlloc> UpsamplePathPartial(
+            const std::vector<Configuration, ConfigAlloc>& path,
+            const ssize_t start_ind,
+            const ssize_t end_ind,
+            const ssize_t num_points,
+            const DistanceFn& state_distance_fn,
+            const InterpolationFn& state_interpolation_fn)
+    {
+        assert(end_ind > start_ind);
+        assert(end_ind <= path.size());
+
+        // Abort if the number of points is already sufficient
+        if (num_points <= end_ind - start_ind)
+        {
+            std::cerr << "[ResamplePathPartialNumPoints] Number of points in existing path is already larger than the desired number of points" << std::endl;
+            return path;
+        }
+
+        const ssize_t num_segments = end_ind - start_ind - 1;
+        assert(num_segments > 0);
+
+        // Determine the starting length for each segment that we are upsampling
+        std::priority_queue<std::pair<double, size_t>> ordered_segment_lengths;
+        Eigen::VectorXd individual_lengths(num_segments);
+        for (ssize_t ind = start_ind; ind < end_ind - 1; ++ind)
+        {
+            const double dist = state_distance_fn(path[ind], path[ind + 1]);
+            ordered_segment_lengths.push({dist, ind - start_ind});
+        }
+
+        // Determine how many times to split each segment, splitting the largest first
+        const ssize_t num_current_points = end_ind - start_ind;
+        std::vector<ssize_t> num_points_per_segment(num_segments, 1);
+        for (ssize_t idx = num_current_points; idx < num_points; ++idx)
+        {
+            // Retrieve the index of the segment that has the largest subsections
+            const std::pair<double, size_t> largest = ordered_segment_lengths.top();
+            const ssize_t segment_ind = largest.second;
+            // Add another subsection
+            const ssize_t new_count = num_points_per_segment[segment_ind] + 1;
+            const double new_length = individual_lengths(segment_ind) / new_count;
+            // Record the new number of points and resulting subsection length
+            ordered_segment_lengths.push({new_length, segment_ind});
+            num_points_per_segment[segment_ind] = new_count;
+        }
+
+        // Build the actual path
+        std::vector<Configuration, ConfigAlloc> upsampled_path(num_points);
+        ssize_t next_upsampled_ind = 0;
+        for (ssize_t segment_ind = 0; segment_ind < num_segments; ++segment_ind)
+        {
+            const double one_div_points_in_segment = 1.0 / (double)num_points_per_segment[segment_ind];
+            for (ssize_t interpolation_ind = 0; interpolation_ind < num_points_per_segment[segment_ind]; ++interpolation_ind)
+            {
+                const double ratio = (double)interpolation_ind * one_div_points_in_segment;
+                upsampled_path[next_upsampled_ind] = state_interpolation_fn(path[start_ind + segment_ind], path[start_ind + segment_ind + 1], ratio);
+                next_upsampled_ind++;
+            }
+        }
+        assert(next_upsampled_ind == num_points - 1);
+
+        // Add the last point to terminate the path
+        upsampled_path[num_points - 1] = path[end_ind - 1];
+
+        return upsampled_path;
+    }
+
+    template<typename Configuration, typename ConfigAlloc = std::allocator<Configuration>, class DistanceFn, class InterpolationFn>
+    inline std::vector<Configuration, ConfigAlloc> UpsamplePath(
+            const std::vector<Configuration, ConfigAlloc>& path,
+            const ssize_t num_points,
+            const DistanceFn& state_distance_fn,
+            const InterpolationFn& state_interpolation_fn)
+    {
+        return UpsamplePathPartial(path, 0, path.size(), num_points, state_distance_fn, state_interpolation_fn);
+    }
 }
 
-#endif // SHORTCUT_SMOOTHING_HPP
+#endif // PATH_UTILS_HPP

@@ -5,15 +5,19 @@
 #include <cstdio>
 
 
-using namespace arc_utilities;
 
-double GlobalStopwatch(const StopwatchControl control)
+namespace arc_utilities
 {
-    static Stopwatch global_stopwatch;
-    return global_stopwatch(control);
+    double GlobalStopwatch(const StopwatchControl control)
+    {
+        static Stopwatch global_stopwatch;
+        return global_stopwatch(control);
+    }
 }
 
 
+
+using namespace arc_utilities;
 
 
 Profiler* Profiler::m_instance = NULL;
@@ -47,7 +51,7 @@ void Profiler::reset(std::string name)
         m->data[name].resize(0);
         startTimer(name);
     }
-        
+
 }
 
 void Profiler::addData(std::string name, double datum)
@@ -92,7 +96,7 @@ double Profiler::record(std::string timer_name)
 {
     Profiler* m = getInstance();
     assert(m->isTimerStarted(timer_name)); //too harsh?
-    
+
     double time_elapsed = m->timers[timer_name]();
     m->addData(timer_name, time_elapsed);
     return time_elapsed;
@@ -102,9 +106,9 @@ double Profiler::recordDouble(std::string timer_name, double datum)
 {
     Profiler* m = getInstance();
     assert(m->isTimerStarted(timer_name)); //too harsh?
-    
+
     double time_elapsed = m->timers[timer_name]();
-    
+
     if (m->timed_double_data.find(timer_name) == m->timed_double_data.end())
     {
         m->timed_double_data[timer_name] = std::vector<TimedDouble>();
@@ -147,7 +151,7 @@ void Profiler::printSingleSummary(std::string name)
     std::cout << "min time   : "   << *std::min_element(data.begin(), data.end()) << "s\n";
     std::cout << "max time   : "   << *std::max_element(data.begin(), data.end()) << "s\n";
     std::cout << "average    : "   << sum/(double)n << "s\n";
-        
+
     std::cout << "\n";
 }
 
@@ -167,7 +171,7 @@ void Profiler::printGroupSummary(const std::vector<std::string> &names)
     label_len = std::max(label_len, (size_t)8);
 
     const std::string label_format = ("%-" + std::to_string(label_len) + "s");
-    
+
     printf(label_format.c_str(), "Label");
     printf("%16s", "tot time (s)");
     printf("%16s", "num_calls");
@@ -222,7 +226,7 @@ void Profiler::writeAllSummary(const std::string &filename)
     }
 
     std::sort(all_names.begin(), all_names.end());
-    
+
     writeGroupSummary(filename, all_names);
 }
 
@@ -248,7 +252,7 @@ void Profiler::writeGroupSummary(const std::string &filename,
     outfile = std::fopen(filename.c_str(), "a+");
 
     addHeader(outfile);
-        
+
     Profiler* m = getInstance();
     // std::cout << " .=======================. \n";
     // std::cout << "||    Profile Summary    ||\n";
@@ -262,7 +266,7 @@ void Profiler::writeGroupSummary(const std::string &filename,
     label_len = std::max(label_len, (size_t)8);
 
     const std::string label_format = ("%-" + std::to_string(label_len) + "s");
-    
+
     fprintf(outfile, label_format.c_str(), "Label");
     fprintf(outfile, "%16s", "tot time (s)");
     fprintf(outfile, "%16s", "num_calls");
@@ -321,9 +325,9 @@ void Profiler::writeGroupSummary(const std::string &filename,
         else {
             fprintf(outfile, " %15f %15ld %15f\n", tot_time, num_calls, avg_time);
         }
-        
-        
-        
+
+
+
     }
     fprintf(outfile, "\n");
     std::fclose(outfile);
@@ -338,7 +342,7 @@ void Profiler::writeAll(const std::string &filename, size_t limit_per_name)
     outfile = std::fopen(filename.c_str(), "a+");
 
     addHeader(outfile);
-    
+
     std::vector<std::string> all_names;
     for(auto const& imap: m->data)
     {
@@ -394,8 +398,8 @@ void Profiler::writeAll(const std::string &filename, size_t limit_per_name)
         }
 
     }
-        
- 
+
+
     fprintf(outfile, "\n");
     std::fclose(outfile);
 }

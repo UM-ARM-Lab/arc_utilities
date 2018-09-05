@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
     std::cout << "Test weights: " << PrettyPrint::PrettyPrint(all_zero_weights) << std::endl;
     std::cout << "Test vectors:\n" << PrettyPrint::PrettyPrint(test_vectors, true, "\n") << std::endl;
     std::cout << "All Zero Weights Average:\n" << PrettyPrint::PrettyPrint(weighted_average_all_zero_weights) << std::endl << std::endl;
-    assert(weighted_average_all_zero_weights.isMuchSmallerThan(10^-10) && "The result of this average should be (0, 0, 0)");
+    assert(false && "This code should be unreachable as the result is 0/0 which is undefined");
 
     return 0;
 }
