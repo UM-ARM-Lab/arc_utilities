@@ -1456,46 +1456,6 @@ namespace EigenHelpers
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    // Geometry functions
-    ////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * @brief DistanceToLine
-     * Math taken from http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
-     * x = x0
-     * point_on_line = x1
-     * unit_vector = x2 - x1 / |x2 - x1|
-     * @param point_on_line
-     * @param unit_vector
-     * @param x
-     * @return The distance to the line, and the displacement along the line
-     */
-    inline std::pair<double, double> DistanceToLine(
-            const Eigen::Vector3d& point_on_line,
-            const Eigen::Vector3d& unit_vector,
-            const Eigen::Vector3d& x)
-    {
-        // Ensure that our input data is valid
-        const auto real_unit_vector = unit_vector.normalized();
-        if (!CloseEnough(unit_vector.norm(), 1.0, 1e-13))
-        {
-            std::cerr << "[Distance to line]: unit vector was not normalized: "
-                      << unit_vector.transpose() << " Norm: " << unit_vector.norm() << std::endl;
-        }
-
-        const auto delta = x - point_on_line;
-        const double displacement_along_line = real_unit_vector.dot(delta);
-        const auto x_projected_onto_line = point_on_line + real_unit_vector * displacement_along_line;
-        const double distance_to_line = (x_projected_onto_line - x).norm();
-
-        // A simple neccescary (but not sufficient) check to look for math errors
-        assert(IsApprox(distance_to_line * distance_to_line +
-                        displacement_along_line * displacement_along_line, delta.squaredNorm(), 1e-10));
-
-        return std::make_pair(distance_to_line, displacement_along_line);
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
     // Projection/Rejection functions
     ////////////////////////////////////////////////////////////////////////////
 
@@ -1603,6 +1563,85 @@ namespace EigenHelpers
         {
             throw std::invalid_argument("Vector size is zero");
         }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Geometry functions
+    ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief DistanceToLine
+     * Math taken from http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+     * x = x0
+     * point_on_line = x1
+     * unit_vector = x2 - x1 / |x2 - x1|
+     * @param point_on_line
+     * @param unit_vector
+     * @param x
+     * @return The distance to the line, and the displacement along the line
+     */
+    inline std::pair<double, double> DistanceToLine(
+            const Eigen::Vector3d& point_on_line,
+            const Eigen::Vector3d& unit_vector,
+            const Eigen::Vector3d& x)
+    {
+        // Ensure that our input data is valid
+        const auto real_unit_vector = unit_vector.normalized();
+        if (!CloseEnough(unit_vector.norm(), 1.0, 1e-13))
+        {
+            std::cerr << "[Distance to line]: unit vector was not normalized: "
+                      << unit_vector.transpose() << " Norm: " << unit_vector.norm() << std::endl;
+        }
+
+        const auto delta = x - point_on_line;
+        const double displacement_along_line = real_unit_vector.dot(delta);
+        const auto x_projected_onto_line = point_on_line + real_unit_vector * displacement_along_line;
+        const double distance_to_line = (x_projected_onto_line - x).norm();
+
+        // A simple neccescary (but not sufficient) check to look for math errors
+        assert(IsApprox(distance_to_line * distance_to_line +
+                        displacement_along_line * displacement_along_line, delta.squaredNorm(), 1e-10));
+
+        return std::make_pair(distance_to_line, displacement_along_line);
+    }
+
+    // We want to constrain all vectors "r" to lie within a specified angle of the cone direction.
+    // I.e. cone_direction.transpose() * r / norm(r) >= cos(angle)
+    // or cone_direction.transpose() * r_normalized >= min_normalized_dot_product
+    // It is assumed that cone_direction is already normalized
+    // Returns the normal vectors that point out of a pyramid approximation of the cone
+    inline VectorVector3d ConvertConeToPyramid(
+            const Eigen::Vector3d& cone_direction,
+            const double min_normalized_dot_product)
+    {
+        // Build a vector that is garunteed to be perpendicular to cone_direction, and non-zero
+        auto tmp = VectorRejection(cone_direction, Eigen::Vector3d::UnitX());
+        tmp += VectorRejection(cone_direction, Eigen::Vector3d::UnitY());
+        tmp += VectorRejection(cone_direction, Eigen::Vector3d::UnitZ());
+
+        assert(tmp.norm() > 1e-6);
+        tmp.normalize();
+
+        const Eigen::Vector3d p1 = tmp;
+        const Eigen::Vector3d p2 = cone_direction.cross(p1).normalized();
+        const Eigen::Vector3d p3 = -p1;
+        const Eigen::Vector3d p4 = -p2;
+
+        const double theta_max = std::acos(min_normalized_dot_product);
+        const double dist = std::tan(theta_max);
+
+        const Eigen::Vector3d ray1 = cone_direction + dist * p1;
+        const Eigen::Vector3d ray2 = cone_direction + dist * p2;
+        const Eigen::Vector3d ray3 = cone_direction + dist * p3;
+        const Eigen::Vector3d ray4 = cone_direction + dist * p4;
+
+        VectorVector3d normals(4);
+        normals[0] = -ray1.cross(ray2).normalized();
+        normals[1] = -ray2.cross(ray3).normalized();
+        normals[2] = -ray3.cross(ray4).normalized();
+        normals[3] = -ray4.cross(ray1).normalized();
+
+        return normals;
     }
 
     ////////////////////////////////////////////////////////////////////////////
