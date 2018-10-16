@@ -51,7 +51,7 @@ namespace simple_astar_planner
                         }
                     }
 
-                    const std::function<double(const ConfigType&)>& heuristic_fn_;
+                    const std::function<double(const ConfigType&)> heuristic_fn_;
             };
 
             template<typename ConfigHasher = std::hash<ConfigType>>
