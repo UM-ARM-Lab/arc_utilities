@@ -178,7 +178,7 @@ namespace path_utils
         // Abort if the number of points is already sufficient
         if (num_points <= end_ind - start_ind)
         {
-            std::cerr << "[ResamplePathPartialNumPoints] Number of points in existing path is already larger than the desired number of points" << std::endl;
+            std::cerr << "[UpsamplePathPartialNumPoints] Number of points in existing path is already larger than the desired number of points" << std::endl;
             return path;
         }
 
