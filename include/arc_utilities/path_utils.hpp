@@ -175,60 +175,68 @@ namespace path_utils
         assert(end_ind > start_ind);
         assert(end_ind <= path.size());
 
-        // Abort if the number of points is already sufficient
-        if (num_points <= end_ind - start_ind)
+        // Return early with no message if the number of points already matches
+        if (end_ind - start_ind == num_points)
         {
-            std::cerr << "[UpsamplePathPartialNumPoints] Number of points in existing path is already larger than the desired number of points" << std::endl;
             return path;
         }
-
-        const ssize_t num_segments = end_ind - start_ind - 1;
-        assert(num_segments > 0);
-
-        // Determine the starting length for each segment that we are upsampling
-        std::priority_queue<std::pair<double, size_t>> ordered_segment_lengths;
-        Eigen::VectorXd individual_lengths(num_segments);
-        for (ssize_t ind = start_ind; ind < end_ind - 1; ++ind)
+        // Abort with a warning if the number of points is already too many
+        else if (end_ind - start_ind > num_points)
         {
-            const double dist = state_distance_fn(path[ind], path[ind + 1]);
-            ordered_segment_lengths.push({dist, ind - start_ind});
+            std::cerr << "[UpsamplePathPartialNumPoints] Number of points in existing path is already larger than the desired number of points\n"
+                      << "Start ind: " << start_ind << "    End ind: " << end_ind << "    Num points: " << num_points << std::endl;
+            return path;
         }
-
-        // Determine how many times to split each segment, splitting the largest first
-        const ssize_t num_current_points = end_ind - start_ind;
-        std::vector<ssize_t> num_points_per_segment(num_segments, 1);
-        for (ssize_t idx = num_current_points; idx < num_points; ++idx)
+        else
         {
-            // Retrieve the index of the segment that has the largest subsections
-            const std::pair<double, size_t> largest = ordered_segment_lengths.top();
-            const ssize_t segment_ind = largest.second;
-            // Add another subsection
-            const ssize_t new_count = num_points_per_segment[segment_ind] + 1;
-            const double new_length = individual_lengths(segment_ind) / new_count;
-            // Record the new number of points and resulting subsection length
-            ordered_segment_lengths.push({new_length, segment_ind});
-            num_points_per_segment[segment_ind] = new_count;
-        }
+            const ssize_t num_segments = end_ind - start_ind - 1;
+            assert(num_segments > 0);
 
-        // Build the actual path
-        std::vector<Configuration, ConfigAlloc> upsampled_path(num_points);
-        ssize_t next_upsampled_ind = 0;
-        for (ssize_t segment_ind = 0; segment_ind < num_segments; ++segment_ind)
-        {
-            const double one_div_points_in_segment = 1.0 / (double)num_points_per_segment[segment_ind];
-            for (ssize_t interpolation_ind = 0; interpolation_ind < num_points_per_segment[segment_ind]; ++interpolation_ind)
+            // Determine the starting length for each segment that we are upsampling
+            std::priority_queue<std::pair<double, size_t>> ordered_segment_lengths;
+            Eigen::VectorXd individual_lengths(num_segments);
+            for (ssize_t ind = start_ind; ind < end_ind - 1; ++ind)
             {
-                const double ratio = (double)interpolation_ind * one_div_points_in_segment;
-                upsampled_path[next_upsampled_ind] = state_interpolation_fn(path[start_ind + segment_ind], path[start_ind + segment_ind + 1], ratio);
-                next_upsampled_ind++;
+                const double dist = state_distance_fn(path[ind], path[ind + 1]);
+                ordered_segment_lengths.push({dist, ind - start_ind});
             }
+
+            // Determine how many times to split each segment, splitting the largest first
+            const ssize_t num_current_points = end_ind - start_ind;
+            std::vector<ssize_t> num_points_per_segment(num_segments, 1);
+            for (ssize_t idx = num_current_points; idx < num_points; ++idx)
+            {
+                // Retrieve the index of the segment that has the largest subsections
+                const std::pair<double, size_t> largest = ordered_segment_lengths.top();
+                const ssize_t segment_ind = largest.second;
+                // Add another subsection
+                const ssize_t new_count = num_points_per_segment[segment_ind] + 1;
+                const double new_length = individual_lengths(segment_ind) / new_count;
+                // Record the new number of points and resulting subsection length
+                ordered_segment_lengths.push({new_length, segment_ind});
+                num_points_per_segment[segment_ind] = new_count;
+            }
+
+            // Build the actual path
+            std::vector<Configuration, ConfigAlloc> upsampled_path(num_points);
+            ssize_t next_upsampled_ind = 0;
+            for (ssize_t segment_ind = 0; segment_ind < num_segments; ++segment_ind)
+            {
+                const double one_div_points_in_segment = 1.0 / (double)num_points_per_segment[segment_ind];
+                for (ssize_t interpolation_ind = 0; interpolation_ind < num_points_per_segment[segment_ind]; ++interpolation_ind)
+                {
+                    const double ratio = (double)interpolation_ind * one_div_points_in_segment;
+                    upsampled_path[next_upsampled_ind] = state_interpolation_fn(path[start_ind + segment_ind], path[start_ind + segment_ind + 1], ratio);
+                    next_upsampled_ind++;
+                }
+            }
+            assert(next_upsampled_ind == num_points - 1);
+
+            // Add the last point to terminate the path
+            upsampled_path[num_points - 1] = path[end_ind - 1];
+
+            return upsampled_path;
         }
-        assert(next_upsampled_ind == num_points - 1);
-
-        // Add the last point to terminate the path
-        upsampled_path[num_points - 1] = path[end_ind - 1];
-
-        return upsampled_path;
     }
 
     template<typename Configuration, typename ConfigAlloc = std::allocator<Configuration>, class DistanceFn, class InterpolationFn>
