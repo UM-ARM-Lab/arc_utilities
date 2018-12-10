@@ -304,28 +304,28 @@ visualization_msgs::Marker RandomMarker(std::mt19937_64& generator)
     return m;
 }
 
-bool Equal(const std_msgs::Header& lhs, const std_msgs::Header& rhs)
+bool operator==(const std_msgs::Header& lhs, const std_msgs::Header& rhs)
 {
     return (lhs.seq == rhs.seq &&
             lhs.stamp == rhs.stamp &&
             lhs.frame_id == rhs.frame_id);
 }
 
-bool Equal(const geometry_msgs::Vector3 &lhs, const geometry_msgs::Vector3 &rhs)
+bool operator==(const geometry_msgs::Vector3 &lhs, const geometry_msgs::Vector3 &rhs)
 {
     return (lhs.x == rhs.x &&
             lhs.y == rhs.y &&
             lhs.z == rhs.z);
 }
 
-bool Equal(const geometry_msgs::Point &lhs, const geometry_msgs::Point &rhs)
+bool operator==(const geometry_msgs::Point &lhs, const geometry_msgs::Point &rhs)
 {
     return (lhs.x == rhs.x &&
             lhs.y == rhs.y &&
             lhs.z == rhs.z);
 }
 
-bool Equal(const geometry_msgs::Quaternion &lhs, const geometry_msgs::Quaternion &rhs)
+bool operator==(const geometry_msgs::Quaternion &lhs, const geometry_msgs::Quaternion &rhs)
 {
     return (lhs.x == rhs.x &&
             lhs.y == rhs.y &&
@@ -333,32 +333,32 @@ bool Equal(const geometry_msgs::Quaternion &lhs, const geometry_msgs::Quaternion
             lhs.w == rhs.w);
 }
 
-bool Equal(const geometry_msgs::Pose &lhs, const geometry_msgs::Pose &rhs)
+bool operator==(const geometry_msgs::Pose &lhs, const geometry_msgs::Pose &rhs)
 {
-    return (Equal(lhs.position, rhs.position) &&
-            Equal(lhs.orientation, rhs.orientation));
+    return (lhs.position == rhs.position &&
+            lhs.orientation == rhs.orientation);
 }
 
-bool Equal(const geometry_msgs::Transform &lhs, const geometry_msgs::Transform &rhs)
+bool operator==(const geometry_msgs::Transform &lhs, const geometry_msgs::Transform &rhs)
 {
-    return (Equal(lhs.translation, rhs.translation) &&
-            Equal(lhs.rotation, rhs.rotation));
+    return (lhs.translation == rhs.translation &&
+            lhs.rotation == rhs.rotation);
 }
 
-bool Equal(const geometry_msgs::PoseStamped& lhs, const geometry_msgs::PoseStamped& rhs)
+bool operator==(const geometry_msgs::PoseStamped& lhs, const geometry_msgs::PoseStamped& rhs)
 {
-    return (Equal(lhs.header, rhs.header) &&
-            Equal(lhs.pose, rhs.pose));
+    return (lhs.header == rhs.header &&
+            lhs.pose == rhs.pose);
 }
 
-bool Equal(const geometry_msgs::TransformStamped& lhs, const geometry_msgs::TransformStamped& rhs)
+bool operator==(const geometry_msgs::TransformStamped& lhs, const geometry_msgs::TransformStamped& rhs)
 {
-    return (Equal(lhs.header, rhs.header) &&
-            Equal(lhs.transform, rhs.transform) &&
+    return (lhs.header == rhs.header &&
+            lhs.transform == rhs.transform &&
             lhs.child_frame_id == rhs.child_frame_id);
 }
 
-bool Equal(const std_msgs::ColorRGBA& lhs, const std_msgs::ColorRGBA& rhs)
+bool operator==(const std_msgs::ColorRGBA& lhs, const std_msgs::ColorRGBA& rhs)
 {
     return (lhs.r == rhs.r &&
             lhs.g == rhs.g &&
@@ -366,6 +366,8 @@ bool Equal(const std_msgs::ColorRGBA& lhs, const std_msgs::ColorRGBA& rhs)
             lhs.a == rhs.a);
 }
 
+// Writen to address weird compiler template auto-dedeuction failure
+// TODO: figure out why the auto-deduction fails and remove this function
 template<typename RosType>
 bool Equal(const std::vector<RosType>& lhs, const std::vector<RosType>& rhs)
 {
@@ -375,7 +377,7 @@ bool Equal(const std::vector<RosType>& lhs, const std::vector<RosType>& rhs)
     }
     for (size_t idx = 0; idx < lhs.size(); ++idx)
     {
-        if (!Equal(lhs[idx], rhs[idx]))
+        if (!(lhs[idx] == rhs[idx]))
         {
             return false;
         }
@@ -383,16 +385,16 @@ bool Equal(const std::vector<RosType>& lhs, const std::vector<RosType>& rhs)
     return true;
 }
 
-bool Equal(const visualization_msgs::Marker& lhs, const visualization_msgs::Marker& rhs)
+bool operator==(const visualization_msgs::Marker& lhs, const visualization_msgs::Marker& rhs)
 {
-    return (Equal(lhs.header, rhs.header) &&
+    return (lhs.header == rhs.header &&
             lhs.ns == rhs.ns &&
             lhs.id == rhs.id &&
             lhs.type == rhs.type &&
             lhs.action == rhs.action &&
-            Equal(lhs.pose, rhs.pose) &&
-            Equal(lhs.scale, rhs.scale) &&
-            Equal(lhs.color, rhs.color) &&
+            lhs.pose == rhs.pose &&
+            lhs.scale == rhs.scale &&
+            lhs.color == rhs.color &&
             lhs.lifetime == rhs.lifetime &&
             lhs.frame_locked == rhs.frame_locked &&
             Equal(lhs.points, rhs.points) &&
@@ -420,13 +422,13 @@ void TestPoseStamped(std::mt19937_64& generator)
                       << bytes_written << " " << deserialized.second;
             assert(bytes_written == deserialized.second);
         }
-        if (!Equal(pose, deserialized.first))
+        if (pose == deserialized.first)
         {
             std::cerr << "Pre serialized data does not match deserialized data "
                       << PrettyPrint::PrettyPrint(pose, true, " ") << "    "
                       << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
                       << std::endl;
-            assert(Equal(pose, deserialized.first));
+            assert(pose == deserialized.first);
         }
 
     }
@@ -441,13 +443,13 @@ void TestPoseStamped(std::mt19937_64& generator)
                       << bytes_written << " " << deserialized.second;
             assert(bytes_written == deserialized.second);
         }
-        if (!Equal(pose, deserialized.first))
+        if (pose == deserialized.first)
         {
             std::cerr << "Pre serialized data does not match deserialized data "
                       << PrettyPrint::PrettyPrint(pose, true, " ") << "    "
                       << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
                       << std::endl;
-            assert(Equal(pose, deserialized.first));
+            assert(pose == deserialized.first);
         }
     }
 }
@@ -471,13 +473,13 @@ void TestTransformStamped(std::mt19937_64& generator)
                       << bytes_written << " " << deserialized.second;
             assert(bytes_written == deserialized.second);
         }
-        if (!Equal(transform, deserialized.first))
+        if (transform == deserialized.first)
         {
             std::cerr << "Pre serialized data does not match deserialized data "
                       << PrettyPrint::PrettyPrint(transform, true, " ") << "    "
                       << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
                       << std::endl;
-            assert(Equal(transform, deserialized.first));
+            assert(transform ==deserialized.first);
         }
     }
     // Relying on ROS serialization
@@ -491,13 +493,13 @@ void TestTransformStamped(std::mt19937_64& generator)
                       << bytes_written << " " << deserialized.second;
             assert(bytes_written == deserialized.second);
         }
-        if (!Equal(transform, deserialized.first))
+        if (transform == deserialized.first)
         {
             std::cerr << "Pre serialized data does not match deserialized data "
                       << PrettyPrint::PrettyPrint(transform, true, " ") << "    "
                       << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
                       << std::endl;
-            assert(Equal(transform, deserialized.first));
+            assert(transform == deserialized.first);
         }
     }
 }
@@ -515,13 +517,13 @@ void TestVisualizationMarker(std::mt19937_64& generator)
                   << bytes_written << " " << deserialized.second;
         assert(bytes_written == deserialized.second);
     }
-    if (!Equal(marker, deserialized.first))
+    if (marker == deserialized.first)
     {
         std::cerr << "Pre serialized data does not match deserialized data "
                   << PrettyPrint::PrettyPrint(marker, true, " ") << "    "
                   << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
                   << std::endl;
-        assert(Equal(marker, deserialized.first));
+        assert(marker == deserialized.first);
     }
 }
 
