@@ -147,6 +147,11 @@ add_executable(test_eigen_serialization src/test_eigen_serialization.cpp)
 add_dependencies(test_eigen_serialization ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_eigen_serialization ${PROJECT_NAME} ${catkin_LIBRARIES})
 
+# Simple test ROS (de)Serialization functions
+add_executable(test_ros_serialization src/test_ros_serialization.cpp)
+add_dependencies(test_ros_serialization ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_ros_serialization ${PROJECT_NAME} ${catkin_LIBRARIES})
+
 # To build tests, install google's testing framework
 # https://github.com/google/googletest/
 
