@@ -409,22 +409,46 @@ void TestPoseStamped(std::mt19937_64& generator)
     pose.header = RandomHeader(generator);
     pose.pose = RandomPose(generator);
 
-    auto buffer = std::vector<uint8_t>();
-    auto bytes_written = SerializePoseStamped(pose, buffer);
-    auto deserialized = DeserializePoseStamped(buffer, 0);
-    if (bytes_written != deserialized.second)
+    // Manual version
     {
-        std::cerr << "Bytes written does not match bytes read "
-                  << bytes_written << " " << deserialized.second;
-        assert(bytes_written == deserialized.second);
+        auto buffer = std::vector<uint8_t>();
+        auto bytes_written = SerializePoseStamped(pose, buffer);
+        auto deserialized = DeserializePoseStamped(buffer, 0);
+        if (bytes_written != deserialized.second)
+        {
+            std::cerr << "Bytes written does not match bytes read "
+                      << bytes_written << " " << deserialized.second;
+            assert(bytes_written == deserialized.second);
+        }
+        if (!Equal(pose, deserialized.first))
+        {
+            std::cerr << "Pre serialized data does not match deserialized data "
+                      << PrettyPrint::PrettyPrint(pose, true, " ") << "    "
+                      << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
+                      << std::endl;
+            assert(Equal(pose, deserialized.first));
+        }
+
     }
-    if (!Equal(pose, deserialized.first))
+    // Relying on ROS serialization
     {
-        std::cerr << "Pre serialized data does not match deserialized data "
-                  << PrettyPrint::PrettyPrint(pose, true, " ") << "    "
-                  << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
-                  << std::endl;
-        assert(Equal(pose, deserialized.first));
+        auto buffer = std::vector<uint8_t>();
+        auto bytes_written = RosMessageSerializationWrapper(pose, buffer);
+        auto deserialized = RosMessageDeserializationWrapper<geometry_msgs::PoseStamped>(buffer, 0);
+        if (bytes_written != deserialized.second)
+        {
+            std::cerr << "Bytes written does not match bytes read "
+                      << bytes_written << " " << deserialized.second;
+            assert(bytes_written == deserialized.second);
+        }
+        if (!Equal(pose, deserialized.first))
+        {
+            std::cerr << "Pre serialized data does not match deserialized data "
+                      << PrettyPrint::PrettyPrint(pose, true, " ") << "    "
+                      << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
+                      << std::endl;
+            assert(Equal(pose, deserialized.first));
+        }
     }
 }
 
@@ -436,22 +460,45 @@ void TestTransformStamped(std::mt19937_64& generator)
     transform.transform = RandomTransform(generator);
     transform.child_frame_id = "";
 
-    auto buffer = std::vector<uint8_t>();
-    auto bytes_written = SerializeTransformStamped(transform, buffer);
-    auto deserialized = DeserializeTransformStamped(buffer, 0);
-    if (bytes_written != deserialized.second)
+    // Manual version
     {
-        std::cerr << "Bytes written does not match bytes read "
-                  << bytes_written << " " << deserialized.second;
-        assert(bytes_written == deserialized.second);
+        auto buffer = std::vector<uint8_t>();
+        auto bytes_written = SerializeTransformStamped(transform, buffer);
+        auto deserialized = DeserializeTransformStamped(buffer, 0);
+        if (bytes_written != deserialized.second)
+        {
+            std::cerr << "Bytes written does not match bytes read "
+                      << bytes_written << " " << deserialized.second;
+            assert(bytes_written == deserialized.second);
+        }
+        if (!Equal(transform, deserialized.first))
+        {
+            std::cerr << "Pre serialized data does not match deserialized data "
+                      << PrettyPrint::PrettyPrint(transform, true, " ") << "    "
+                      << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
+                      << std::endl;
+            assert(Equal(transform, deserialized.first));
+        }
     }
-    if (!Equal(transform, deserialized.first))
+    // Relying on ROS serialization
     {
-        std::cerr << "Pre serialized data does not match deserialized data "
-                  << PrettyPrint::PrettyPrint(transform, true, " ") << "    "
-                  << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
-                  << std::endl;
-        assert(Equal(transform, deserialized.first));
+        auto buffer = std::vector<uint8_t>();
+        auto bytes_written = RosMessageSerializationWrapper(transform, buffer);
+        auto deserialized = RosMessageDeserializationWrapper<geometry_msgs::TransformStamped>(buffer, 0);
+        if (bytes_written != deserialized.second)
+        {
+            std::cerr << "Bytes written does not match bytes read "
+                      << bytes_written << " " << deserialized.second;
+            assert(bytes_written == deserialized.second);
+        }
+        if (!Equal(transform, deserialized.first))
+        {
+            std::cerr << "Pre serialized data does not match deserialized data "
+                      << PrettyPrint::PrettyPrint(transform, true, " ") << "    "
+                      << PrettyPrint::PrettyPrint(deserialized.first, true, " ")
+                      << std::endl;
+            assert(Equal(transform, deserialized.first));
+        }
     }
 }
 
