@@ -422,7 +422,7 @@ void TestPoseStamped(std::mt19937_64& generator)
                       << bytes_written << " " << deserialized.second;
             assert(bytes_written == deserialized.second);
         }
-        if (pose == deserialized.first)
+        if (!(pose == deserialized.first))
         {
             std::cerr << "Pre serialized data does not match deserialized data "
                       << PrettyPrint::PrettyPrint(pose, true, " ") << "    "
@@ -443,7 +443,7 @@ void TestPoseStamped(std::mt19937_64& generator)
                       << bytes_written << " " << deserialized.second;
             assert(bytes_written == deserialized.second);
         }
-        if (pose == deserialized.first)
+        if (!(pose == deserialized.first))
         {
             std::cerr << "Pre serialized data does not match deserialized data "
                       << PrettyPrint::PrettyPrint(pose, true, " ") << "    "
@@ -473,7 +473,7 @@ void TestTransformStamped(std::mt19937_64& generator)
                       << bytes_written << " " << deserialized.second;
             assert(bytes_written == deserialized.second);
         }
-        if (transform == deserialized.first)
+        if (!(transform == deserialized.first))
         {
             std::cerr << "Pre serialized data does not match deserialized data "
                       << PrettyPrint::PrettyPrint(transform, true, " ") << "    "
@@ -493,7 +493,7 @@ void TestTransformStamped(std::mt19937_64& generator)
                       << bytes_written << " " << deserialized.second;
             assert(bytes_written == deserialized.second);
         }
-        if (transform == deserialized.first)
+        if (!(transform == deserialized.first))
         {
             std::cerr << "Pre serialized data does not match deserialized data "
                       << PrettyPrint::PrettyPrint(transform, true, " ") << "    "
@@ -517,7 +517,7 @@ void TestVisualizationMarker(std::mt19937_64& generator)
                   << bytes_written << " " << deserialized.second;
         assert(bytes_written == deserialized.second);
     }
-    if (marker == deserialized.first)
+    if (!(marker == deserialized.first))
     {
         std::cerr << "Pre serialized data does not match deserialized data "
                   << PrettyPrint::PrettyPrint(marker, true, " ") << "    "
