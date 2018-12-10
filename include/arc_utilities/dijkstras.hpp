@@ -78,6 +78,10 @@ namespace arc_dijkstras
             const std::pair<double, uint64_t> deserialized_weight = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             weight_ = deserialized_weight.first;
             current_position += deserialized_weight.second;
+            const std::pair<EDGE_VALIDITY, uint64_t> deserialized_validity = arc_utilities::DeserializeFixedSizePOD<EDGE_VALIDITY>(buffer, current_position);
+            edge_validity_ = deserialized_validity.first;
+            current_position += deserialized_validity.second;
+            
             // Figure out how many bytes were read
             const uint64_t bytes_read = current_position - current;
             return bytes_read;
@@ -420,8 +424,8 @@ namespace arc_dijkstras
 
 
         uint64_t SerializeSelf(
-                std::vector<uint8_t>& buffer,
-                const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer) const
+            std::vector<uint8_t>& buffer,
+            const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer) const
         {
             const uint64_t start_buffer_size = buffer.size();
             const auto graph_state_serializer = std::bind(GraphNode<NodeValueType, Allocator>::Serialize, std::placeholders::_1, std::placeholders::_2, value_serializer);
@@ -433,9 +437,9 @@ namespace arc_dijkstras
         }
 
         uint64_t DeserializeSelf(
-                const std::vector<uint8_t>& buffer,
-                const uint64_t current,
-                const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+            const std::vector<uint8_t>& buffer,
+            const uint64_t current,
+            const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
         {
             const auto graph_state_deserializer = std::bind(GraphNode<NodeValueType, Allocator>::Deserialize, std::placeholders::_1, std::placeholders::_2, value_deserializer);
             const auto deserialized_nodes = arc_utilities::DeserializeVector<GraphNode<NodeValueType, Allocator>>(buffer, current, graph_state_deserializer);
