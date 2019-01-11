@@ -126,8 +126,8 @@ namespace arc_utilities
                 const Eigen::MatrixBase<Derived>& interpolation_points)
         {
             using namespace Eigen;
-            static_assert(MatrixBase<Derived>::ColsAtCompileTime == DIMENSIONS ||
-                          MatrixBase<Derived>::ColsAtCompileTime == Dynamic,
+            static_assert(MatrixBase<Derived>::RowsAtCompileTime == DIMENSIONS ||
+                          MatrixBase<Derived>::RowsAtCompileTime == Dynamic,
                           "INVALID DATA DIMENSIONS FOR interpolation_points");
 
             if (!solved_)
