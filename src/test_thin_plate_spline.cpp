@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
                     + 2.5 * Matrix2Xd::Ones(2, num_points)
                     + 0.2 * Matrix2Xd::Random(2, num_points);
 
-            arc_utilities::ThinPlateSpline<2> tps_2d(template_points, target_points.eval());
+            arc_utilities::ThinPlateSpline<2> tps_2d(template_points, target_points);
             const Matrix2Xd warped_grid_points = tps_2d.interpolate(grid_points);
 
             // Basic test for obvious errors
