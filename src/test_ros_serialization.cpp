@@ -71,7 +71,6 @@ void TestVector(const std::vector<T>& vec)
     }
 }
 
-// Assumes that the vector is a POD type
 template<typename T>
 void TestIntVector(std::mt19937_64& generator)
 {
@@ -87,7 +86,6 @@ void TestIntVector(std::mt19937_64& generator)
     TestVector<T>(vec);
 }
 
-// Assumes that the vector is a POD type
 template<typename T>
 void TestFloatVector(std::mt19937_64& generator)
 {
