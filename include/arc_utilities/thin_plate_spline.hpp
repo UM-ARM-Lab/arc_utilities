@@ -9,7 +9,7 @@
 namespace arc_utilities
 {
     // Note that DIMENSIONS must be a postive integer, not something like `Eigen::Dynamic`
-    template<int DIMENSIONS = 3>
+    template <int DIMENSIONS = 3>
     class ThinPlateSpline
     {
     public:
