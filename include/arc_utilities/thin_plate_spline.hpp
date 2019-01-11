@@ -81,6 +81,12 @@ namespace arc_utilities
         void solveForCoeffs()
         {
             using namespace Eigen;
+            if (homogeneous_template_points_.cols() < 1 || target_points_.cols() < 1)
+            {
+                throw_arc_exception(
+                            std::invalid_argument,
+                            "template and target points must have valid data before solving");
+            }
             if (homogeneous_template_points_.cols() != target_points_.cols())
             {
                 throw_arc_exception(
@@ -146,14 +152,8 @@ namespace arc_utilities
     protected:
         static double KernelFunction(const double r_sq)
         {
-            if (r_sq == 0)
-            {
-                return 0;
-            }
-            else
-            {
-                return r_sq * std::log(std::sqrt(r_sq));
-            }
+            // Handle the limit as r -> 0 explicitly
+            return r_sq == 0.0 ? 0.0 : r_sq * std::log(std::sqrt(r_sq));
         }
 
         HomogeneousPointSet homogeneous_template_points_;

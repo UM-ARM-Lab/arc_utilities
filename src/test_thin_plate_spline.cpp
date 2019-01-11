@@ -65,6 +65,10 @@ int main(int argc, char* argv[])
             arc_utilities::ThinPlateSpline<2> tps_2d(template_points, target_points.eval());
             const Matrix2Xd warped_grid_points = tps_2d.interpolate(grid_points);
 
+            // Basic test for obvious errors
+            const Matrix2Xd interpolate_test = tps_2d.interpolate(template_points);
+            assert(target_points.isApprox(interpolate_test));
+
             // Visualization
             {
                 using namespace visualization_msgs;
@@ -228,6 +232,10 @@ int main(int argc, char* argv[])
 
             arc_utilities::ThinPlateSpline<3> tps_3d(template_points, target_points);
             const auto warped_grid_points = tps_3d.interpolate(grid_points);
+
+            // Basic test for obvious errors
+            const Matrix3Xd interpolate_test = tps_3d.interpolate(template_points);
+            assert(target_points.isApprox(interpolate_test));
 
             // Visualization
             {
