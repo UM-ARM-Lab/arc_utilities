@@ -135,8 +135,8 @@ namespace arc_utilities
                 solveForCoeffs();
             }
 
-            HomogeneousPointSet homogeneous_interpolation_points;
-            homogeneous_interpolation_points.resize(DIMENSIONS + 1, interpolation_points.cols());
+            HomogeneousPointSet homogeneous_interpolation_points(
+                        DIMENSIONS + 1, interpolation_points.cols());
             homogeneous_interpolation_points << interpolation_points,
                                                 RowVectorXd::Ones(interpolation_points.cols());
 
