@@ -8,7 +8,7 @@
 
 namespace arc_utilities
 {
-    // Note that DIMENSIONS must be a postive integer, not something like `Eigen::Dynamic`
+    // Note that DIMENSIONS must be 2 or 3, not something like `Eigen::Dynamic`
     template <int DIMENSIONS = 3>
     class ThinPlateSpline
     {
@@ -17,6 +17,13 @@ namespace arc_utilities
         typedef Eigen::Matrix<double, DIMENSIONS + 1, Eigen::Dynamic> HomogeneousPointSet;
 
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+        static_assert(DIMENSIONS > 1,
+                      "Using TPS only makes sense for 2 or more dimensions");
+        static_assert(DIMENSIONS <= 3,
+                      "The choice of kernel function for DIMENSIONS >= 4 is not clear."
+                      " See note after equation (29) in "
+                      "https://www.geometrictools.com/Documentation/ThinPlateSplines.pdf");
 
         ThinPlateSpline()
             : solved_(false)
@@ -135,10 +142,11 @@ namespace arc_utilities
                 solveForCoeffs();
             }
 
+            const auto num_points = interpolation_points.cols();
             HomogeneousPointSet homogeneous_interpolation_points(
-                        DIMENSIONS + 1, interpolation_points.cols());
+                        DIMENSIONS + 1, num_points);
             homogeneous_interpolation_points << interpolation_points,
-                                                RowVectorXd::Ones(interpolation_points.cols());
+                                                RowVectorXd::Ones(num_points);
 
             // Calculate the kenerl matrix comparing the new points to the template (control) points
             const MatrixXd Rsquared = EigenHelpers::SquaredDistancesBetweenPointSets(
@@ -152,8 +160,24 @@ namespace arc_utilities
     protected:
         static double KernelFunction(const double r_sq)
         {
-            // Handle the limit as r -> 0 explicitly
-            return r_sq == 0.0 ? 0.0 : r_sq * std::log(std::sqrt(r_sq));
+            // Equations taken from
+            // https://www.geometrictools.com/Documentation/ThinPlateSplines.pdf
+            // with coefficient (alpha) dropped as it is absorbed by warping_coeffs_
+            switch (DIMENSIONS)
+            {
+                case 2:
+                    // This should be r^2 * log(r). We do not take the square root
+                    // because the factor of 2 gets absorbed by warping_coeffs_
+                    return r_sq == 0.0 ? 0.0 : r_sq * std::log(r_sq);
+                case 3:
+                    // The negative is kept here for consistency with
+                    // https://www.geometrictools.com/GTEngine/Include/Mathematics/GteIntpThinPlateSpline3.h
+                    // and other TPS implementations found online
+                    return r_sq == 0.0 ? 0.0 : -std::sqrt(r_sq);
+                default:
+                    static_assert(DIMENSIONS == 2 || DIMENSIONS == 3,
+                                  "Only 2 and 3 dimensional kernels are implemented");
+            }
         }
 
         HomogeneousPointSet homogeneous_template_points_;
