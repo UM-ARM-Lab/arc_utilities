@@ -19,6 +19,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <termios.h>
 
 #ifndef ARC_HELPERS_HPP
 #define ARC_HELPERS_HPP
@@ -97,6 +98,33 @@ namespace arc_helpers
         {
             std::cout << "Process is under debugger, use breakpoints for interactive flow control instead" << std::endl;
         }
+    }
+
+    /**
+     * @brief GetChar Gets a single character from STDIN, without needing the
+     *                user to press 'Enter' before returning.
+     * @return The integer representation of the key press
+     */
+    inline int GetChar()
+    {
+        // Disable buffered input on the terminal
+        termios t;
+        tcgetattr(STDIN_FILENO, &t);
+        const auto c_lflag_start = t.c_lflag;
+        t.c_lflag &= ~ICANON;
+        tcsetattr(STDIN_FILENO, TCSANOW, &t);
+
+        // Get the next single character, removing it from the buffer and
+        // clearing any flags that result
+        const int c = std::cin.peek();
+        std::cin.ignore(1);
+        std::cin.clear();
+
+        // Re-enable buffered input if needed
+        t.c_lflag = c_lflag_start;
+        tcsetattr(STDIN_FILENO, TCSANOW, &t);
+
+        return c;
     }
 
     inline void ConditionalPrintWaitForInteractiveInput(const std::string& msg, const int32_t msg_level, const int32_t print_level)
