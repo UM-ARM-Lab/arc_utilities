@@ -13,14 +13,6 @@ int main(int argc, char* argv[])
     // Read in all ROS parameters
     ros::init(argc, argv, "test_thin_plate_spline_node");
 
-    // Disable buffered input on the terminal
-    {
-        termios t;
-        tcgetattr(STDIN_FILENO, &t);
-        t.c_lflag &= ~ICANON;
-        tcsetattr(STDIN_FILENO, TCSANOW, &t);
-    }
-
     auto nh = ros::NodeHandle();
     auto visualization_marker_pub =
             nh.advertise<visualization_msgs::Marker>("visualization_marker", 4);
@@ -173,9 +165,7 @@ int main(int argc, char* argv[])
             std::cout << "Testing 2D TPS interpolation. "
                          "Press 'n' to generate a new instance, "
                          "anything else to move on. ";
-            int c = std::cin.peek();
-            std::cin.ignore(1);
-            std::cin.clear();
+            const int c = arc_helpers::GetChar();
             std::cout << std::endl;
             if (c != 'n')
             {
@@ -317,9 +307,7 @@ int main(int argc, char* argv[])
             std::cout << "Testing 3D TPS interpolation. "
                          "Press 'n' to generate a new instance, "
                          "anything else to move on. ";
-            int c = std::cin.peek();
-            std::cin.ignore(1);
-            std::cin.clear();
+            const int c = arc_helpers::GetChar();
             std::cout << std::endl;
             if (c != 'n')
             {
