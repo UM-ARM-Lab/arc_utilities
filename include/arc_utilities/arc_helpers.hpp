@@ -116,7 +116,7 @@ namespace arc_helpers
 
         // Get the next single character, removing it from the buffer and
         // clearing any flags that result
-        int c = std::cin.peek();
+        const int c = std::cin.peek();
         std::cin.ignore(1);
         std::cin.clear();
 
