@@ -311,6 +311,7 @@ namespace arc_dijkstras
                     return e;
                 }
             }
+            throw std::invalid_argument("invalid node index, no edge exists");
         }
 
         const std::vector<GraphEdge>& GetInEdgesImmutable() const
@@ -469,26 +470,22 @@ namespace arc_dijkstras
 
         bool IndexInRange(const int64_t index) const
         {
-            if (index >= 0)
-            {
-                if (index < (int64_t)(nodes_.size()))
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                return false;
-            }
+            return index >= 0 && index < (int64_t)(nodes_.size());
         }
 
         bool CheckGraphLinkage() const
         {
             return CheckGraphLinkage(GetNodesImmutable());
+        }
+
+        GraphEdge& GetEdgeMutable(const int64_t node_ind_1, const int64_t node_ind_2)
+        {
+            return GetNodeMutable(node_ind_1).GetEdgeMutable(node_ind_2);
+        }
+
+        GraphEdge& GetReverseEdgeMutable(const GraphEdge &e)
+        {
+            return GetNodeMutable(e.GetToIndex()).GetEdgeMutable(e.GetFromIndex());
         }
 
         static bool CheckGraphLinkage(const Graph<NodeValueType, Allocator>& graph)
@@ -618,7 +615,7 @@ namespace arc_dijkstras
             return (int64_t)(nodes_.size() - 1);
         }
 
-        void AddEdgeBetweenNodes(const int64_t from_index, const int64_t to_index, const double edge_weight)
+        GraphEdge& AddEdgeBetweenNodes(const int64_t from_index, const int64_t to_index, const double edge_weight)
         {
             // We retrieve the nodes first, since retrieval performs bounds checks first
             GraphNode<NodeValueType, Allocator>& from_node = GetNodeMutable(from_index);
@@ -630,23 +627,28 @@ namespace arc_dijkstras
             const GraphEdge new_edge(from_index, to_index, edge_weight);
             from_node.AddOutEdge(new_edge);
             to_node.AddInEdge(new_edge);
+            return from_node.GetEdgeMutable(to_index);
         }
 
-        void AddEdgesBetweenNodes(const int64_t first_index, const int64_t second_index, const double edge_weight)
+        std::pair<const GraphEdge, const GraphEdge>
+        AddEdgesBetweenNodes(const int64_t first_index, const int64_t second_index, const double edge_weight)
         {
             // We retrieve the nodes first, since retrieval performs bounds checks first
-            GraphNode<NodeValueType, Allocator>& first_node = GetNodeMutable(first_index);
-            GraphNode<NodeValueType, Allocator>& second_node = GetNodeMutable(second_index);
-            if (first_index == second_index)
-            {
-                throw std::invalid_argument("Invalid circular edge first==second not allowed");
-            }
-            const GraphEdge first_edge(first_index, second_index, edge_weight);
-            first_node.AddOutEdge(first_edge);
-            second_node.AddInEdge(first_edge);
-            const GraphEdge second_edge(second_index, first_index, edge_weight);
-            second_node.AddOutEdge(second_edge);
-            first_node.AddInEdge(second_edge);
+            // GraphNode<NodeValueType, Allocator>& first_node = GetNodeMutable(first_index);
+            // GraphNode<NodeValueType, Allocator>& second_node = GetNodeMutable(second_index);
+            // if (first_index == second_index)
+            // {
+            //     throw std::invalid_argument("Invalid circular edge first==second not allowed");
+            // }
+            // const GraphEdge first_edge(first_index, second_index, edge_weight);
+            // first_node.AddOutEdge(first_edge);
+            // second_node.AddInEdge(first_edge);
+            // const GraphEdge second_edge(second_index, first_index, edge_weight);
+            // second_node.AddOutEdge(second_edge);
+            // first_node.AddInEdge(second_edge);
+            GraphEdge& e1 = AddEdgeBetweenNodes(first_index, second_index, edge_weight);
+            GraphEdge& e2 = AddEdgeBetweenNodes(second_index, first_index, edge_weight);
+            return std::make_pair(e1, e2);
         }
 
         /**
@@ -697,7 +699,7 @@ namespace arc_dijkstras
                 const Graph<NodeValueType, Allocator>& graph,
                 const int64_t start_index)
         {
-            if ((start_index < 0) && (start_index >= (int64_t)graph.GetNodesImmutable().size()))
+            if ((start_index < 0) || (start_index >= (int64_t)graph.GetNodesImmutable().size()))
             {
                 throw std::invalid_argument("Start index out of range");
             }
@@ -982,6 +984,10 @@ namespace arc_dijkstras
             };
             return PerformLazyAstar(graph, start_index, goal_index, edge_validity_check_function, distance_function, heuristic_fn, limit_pqueue_duplicates);
         }
+
+
+
+
     };
 
     template<typename NodeValueType, typename Allocator = std::allocator<NodeValueType>>
