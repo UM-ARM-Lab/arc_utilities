@@ -236,6 +236,36 @@ namespace arc_utilities
         bytes_read += deserialized_child_frame_id.second;
         return {transform, bytes_read};
     }
+
+    template <typename MessageType>
+    inline uint64_t RosMessageSerializationWrapper(
+            const MessageType& message,
+            std::vector<uint8_t>& buffer)
+    {
+        const ros::SerializedMessage serialized_message = ros::serialization::serializeMessage(message);
+        buffer.insert(buffer.end(), serialized_message.message_start, serialized_message.message_start + serialized_message.num_bytes);
+        return serialized_message.num_bytes;
+    }
+
+    template <typename MessageType>
+    inline std::pair<MessageType, uint64_t> RosMessageDeserializationWrapper(
+            const std::vector<uint8_t>& buffer,
+            const uint64_t current)
+    {
+        // Convert the input buffer into the ROS/Boost format
+        const auto size_left = buffer.size() - current;
+        boost::shared_array<uint8_t> boost_buffer(new uint8_t[size_left]);
+        std::memcpy(boost_buffer.get(), &buffer[current], size_left);
+        const ros::SerializedMessage serialize_message(boost_buffer, size_left);
+
+        // Perform the actual deserialization
+        MessageType message;
+        ros::serialization::deserializeMessage(serialize_message, message);
+        // +4 is here to account for what happens in serializeMessage(...)
+        // This is used by serializeMessage to store the total size of the message in the buffer (excluding this length marker)
+        const uint64_t bytes_read = ros::serialization::serializationLength(message) + 4;
+        return {message, bytes_read};
+    }
 }
 
 #endif // SERIALIZATION_ROS_HPP

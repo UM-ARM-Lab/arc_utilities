@@ -839,7 +839,8 @@ namespace EigenHelpers
         #endif
         for (ssize_t i = 0; i < num_vectors; i++)
         {
-            for (ssize_t j = i; j < num_vectors; j++)
+            squared_dist(i, i) = 0.0;
+            for (ssize_t j = i + 1; j < num_vectors; j++)
             {
                 const double sq_dist = (set.col(i) - set.col(j)).squaredNorm();
                 squared_dist(i, j) = sq_dist;
@@ -907,6 +908,34 @@ namespace EigenHelpers
         const Eigen::VectorXd squared_dist = CalculateSquaredDistanceToSet(set, point);
         squared_dist.minCoeff(&min_ind);
         return min_ind;
+    }
+
+    /**
+     * @brief Calculates the squared distance between every point in A and every point in B.
+     *
+     * @param A (D x M) matrix of points
+     * @param B (D x N) matrix of points
+     *
+     * @return (M X N) matrix of distances between points
+     */
+    template<typename DerivedA, typename DerivedB>
+    inline Eigen::Matrix<double, Eigen::MatrixBase<DerivedA>::ColsAtCompileTime, Eigen::MatrixBase<DerivedB>::ColsAtCompileTime>
+    SquaredDistancesBetweenPointSets(const Eigen::MatrixBase<DerivedA>& A, const Eigen::MatrixBase<DerivedB>& B)
+    {
+        using namespace Eigen;
+        Matrix<double, MatrixBase<DerivedA>::ColsAtCompileTime, MatrixBase<DerivedB>::ColsAtCompileTime> distances_sq;
+        if (MatrixBase<DerivedA>::ColsAtCompileTime == Dynamic ||
+            MatrixBase<DerivedB>::ColsAtCompileTime == Dynamic)
+        {
+            distances_sq.resize(A.cols(), B.cols());
+        }
+
+        for (ssize_t i = 0; i < B.cols(); ++i)
+        {
+            distances_sq.col(i) = (A.colwise() - B.col(i)).colwise().squaredNorm();
+        }
+
+        return distances_sq;
     }
 
     ////////////////////////////////////////////////////////////////////////////
