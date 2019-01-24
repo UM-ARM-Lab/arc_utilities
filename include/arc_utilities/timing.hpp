@@ -44,41 +44,41 @@
 
 /* Clears the data for a single stored name */
 #define PROFILE_RESET(name) \
-    ::arc_utilities::Profiler::reset(name);
+    ::arc_utilities::Profiler::reset(name)
 
 /* Starts (or restarts) the specified stopwatch */
 #define PROFILE_START(name) \
-    ::arc_utilities::Profiler::startTimer(name);
+    ::arc_utilities::Profiler::startTimer(name)
 
 /* Record the value of the specified timer. Does not stop or restart the timer */
 #define PROFILE_RECORD(name) \
-    ::arc_utilities::Profiler::record(name);
+    ::arc_utilities::Profiler::record(name)
 
 /* Record the time of timers and value. Does not stop or restart the timer */
 #define PROFILE_RECORD_DOUBLE(name, value)            \
-    ::arc_utilities::Profiler::recordDouble(name, value);
+    ::arc_utilities::Profiler::recordDouble(name, value)
 
 /* Print a summary of the data for name */
 #define PROFILE_PRINT_SUMMARY_FOR_SINGLE(name) \
-    ::arc_utilities::Profiler::printSingleSummary(name);
+    ::arc_utilities::Profiler::printSingleSummary(name)
 
 /* Print a condensed summary for each of name in names */
 #define PROFILE_PRINT_SUMMARY_FOR_GROUP(names) \
-    ::arc_utilities::Profiler::printGroupSummary(names);
+    ::arc_utilities::Profiler::printGroupSummary(names)
 
 #define PROFILE_WRITE_SUMMARY_FOR_GROUP(filename, names)                 \
-    ::arc_utilities::Profiler::writeGroupSummary(filename, names);
+    ::arc_utilities::Profiler::writeGroupSummary(filename, names)
 
 #define PROFILE_WRITE_SUMMARY_FOR_ALL(filename)                \
-    ::arc_utilities::Profiler::writeAllSummary(filename);
+    ::arc_utilities::Profiler::writeAllSummary(filename)
 
 /* Dumps all data to file */
 #define PROFILE_WRITE_ALL(filename)              \
-    ::arc_utilities::Profiler::writeAll(filename);
+    ::arc_utilities::Profiler::writeAll(filename)
 
 /*  Dumps data to file for each name that has fewer than count_limit instances */
 #define PROFILE_WRITE_ALL_FEWER_THAN(filename, name_count_limit)         \
-    ::arc_utilities::Profiler::writeAll(filename, name_count_limit);
+    ::arc_utilities::Profiler::writeAll(filename, name_count_limit)
     
 
 namespace arc_utilities
