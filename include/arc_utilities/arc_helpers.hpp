@@ -127,6 +127,18 @@ namespace arc_helpers
         return c;
     }
 
+    /**
+     * @brief WaitForInput Waits for the user to press 'Enter'
+     * @return The string typed by the user
+     */
+    inline std::string WaitForInput(const std::string& message="Press ENTER to continue\n")
+    {
+        std::string user_input;
+        std::cout << message;
+        std::getline(std::cin, user_input);
+        return user_input;
+    }
+
     inline void ConditionalPrintWaitForInteractiveInput(const std::string& msg, const int32_t msg_level, const int32_t print_level)
     {
         if (unlikely(msg_level <= print_level))
