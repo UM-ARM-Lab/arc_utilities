@@ -302,7 +302,7 @@ namespace arc_dijkstras
             distance_ = distance;
         }
 
-        GraphEdge& GetEdgeMutable(int64_t other_node_ind)
+        GraphEdge& GetEdgeMutable(const int64_t other_node_ind)
         {
             for(auto &e: out_edges_)
             {
@@ -311,7 +311,7 @@ namespace arc_dijkstras
                     return e;
                 }
             }
-            throw std::invalid_argument("invalid node index, no edge exists");
+            throw std::invalid_argument("Invalid node index, no edge exists");
         }
 
         const std::vector<GraphEdge>& GetInEdgesImmutable() const
@@ -633,19 +633,6 @@ namespace arc_dijkstras
         std::pair<const GraphEdge, const GraphEdge>
         AddEdgesBetweenNodes(const int64_t first_index, const int64_t second_index, const double edge_weight)
         {
-            // We retrieve the nodes first, since retrieval performs bounds checks first
-            // GraphNode<NodeValueType, Allocator>& first_node = GetNodeMutable(first_index);
-            // GraphNode<NodeValueType, Allocator>& second_node = GetNodeMutable(second_index);
-            // if (first_index == second_index)
-            // {
-            //     throw std::invalid_argument("Invalid circular edge first==second not allowed");
-            // }
-            // const GraphEdge first_edge(first_index, second_index, edge_weight);
-            // first_node.AddOutEdge(first_edge);
-            // second_node.AddInEdge(first_edge);
-            // const GraphEdge second_edge(second_index, first_index, edge_weight);
-            // second_node.AddOutEdge(second_edge);
-            // first_node.AddInEdge(second_edge);
             GraphEdge& e1 = AddEdgeBetweenNodes(first_index, second_index, edge_weight);
             GraphEdge& e2 = AddEdgeBetweenNodes(second_index, first_index, edge_weight);
             return std::make_pair(e1, e2);
@@ -984,10 +971,6 @@ namespace arc_dijkstras
             };
             return PerformLazyAstar(graph, start_index, goal_index, edge_validity_check_function, distance_function, heuristic_fn, limit_pqueue_duplicates);
         }
-
-
-
-
     };
 
     template<typename NodeValueType, typename Allocator = std::allocator<NodeValueType>>
