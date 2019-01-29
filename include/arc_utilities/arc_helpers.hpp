@@ -616,6 +616,13 @@ namespace arc_helpers
         return ret;
     }
 
+    /**
+     * @brief InterpolateColor
+     * @param c1 Start color for interpolation
+     * @param c2 End color for interpolation
+     * @param ratio Value between 0 and 1, indicating how far to move from c1 towards c2
+     * @return
+     */
     template<typename ColorType>
     inline ColorType InterpolateColor(const ColorType& c1, const ColorType& c2, const float& ratio)
     {
