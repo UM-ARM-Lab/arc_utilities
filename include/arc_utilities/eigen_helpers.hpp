@@ -398,11 +398,10 @@ namespace EigenHelpers
     // Interpolation functions
     ////////////////////////////////////////////////////////////////////////////
 
-    template<typename T1, typename T2>
-    inline double Interpolate(const T1& p1, const T1& p2, const T2& ratio)
+    inline double Interpolate(const double p1, const double p2, const double ratio)
     {
         // Safety check ratio
-        T2 real_ratio = ratio;
+        double real_ratio = ratio;
         if (real_ratio < 0.0)
         {
             real_ratio = 0.0;
