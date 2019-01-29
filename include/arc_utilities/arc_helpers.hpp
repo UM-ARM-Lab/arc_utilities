@@ -296,6 +296,8 @@ namespace arc_helpers
         return val;
     }
 
+    //// Color Related Functionality ///////////////////////////////////////////
+
     inline constexpr float ColorChannelFromHex(uint8_t hexval)
     {
         return (float)hexval / 255.0f;
@@ -585,6 +587,56 @@ namespace arc_helpers
             return RGBAColorBuilder<ColorType>::MakeFromFloatColors(0.0f, 0.0f, 0.0f, alpha);
         }
     }
+
+    template<typename ColorType>
+    inline ColorType Multiply(const ColorType& color, const float factor)
+    {
+        ColorType ret;
+        ret.r = TrimColorValue(factor * color.r);
+        ret.g = TrimColorValue(factor * color.g);
+        ret.b = TrimColorValue(factor * color.b);
+        ret.a = TrimColorValue(factor * color.a);
+        return ret;
+    }
+
+    template<typename ColorType>
+    inline ColorType Multiply(const float factor, const ColorType& color)
+    {
+        return color * factor;
+    }
+
+    template<typename ColorType>
+    inline ColorType Add(const ColorType& c1, const ColorType& c2)
+    {
+        ColorType ret;
+        ret.r = TrimColorValue(c1.r + c2.r);
+        ret.r = TrimColorValue(c1.g + c2.b);
+        ret.r = TrimColorValue(c1.b + c2.g);
+        ret.r = TrimColorValue(c1.a + c2.a);
+        return ret;
+    }
+
+    template<typename ColorType>
+    inline ColorType InterpolateColor(const ColorType& c1, const ColorType& c2, const float& ratio)
+    {
+        // Safety check ratio
+        float real_ratio = ratio;
+        if (real_ratio < 0.0)
+        {
+            real_ratio = 0.0;
+            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
+        }
+        else if (real_ratio > 1.0)
+        {
+            real_ratio = 1.0;
+            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
+        }
+        // Interpolate
+        // This is the numerically stable version, rather than  (c1 + (c2 - c1) * real_ratio)
+        return Add(Multiply(c1, 1.0 - real_ratio), Multiply(c2, real_ratio));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     inline size_t GetNumOMPThreads()
     {
