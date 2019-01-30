@@ -892,11 +892,11 @@ namespace arc_dijkstras
                 const bool limit_pqueue_duplicates)
         {
             // Enforced sanity checks
-            if ((start_index < 0) && (start_index >= (int64_t)graph.getNodes().size()))
+            if ((start_index < 0) || (start_index >= (int64_t)graph.getNodes().size()))
             {
                 throw std::invalid_argument("Start index out of range");
             }
-            if ((goal_index < 0) && (goal_index >= (int64_t)graph.getNodes().size()))
+            if ((goal_index < 0) || (goal_index >= (int64_t)graph.getNodes().size()))
             {
                 throw std::invalid_argument("Goal index out of range");
             }
