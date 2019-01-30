@@ -610,9 +610,9 @@ namespace arc_helpers
     {
         ColorType ret;
         ret.r = TrimColorValue(c1.r + c2.r);
-        ret.r = TrimColorValue(c1.g + c2.b);
-        ret.r = TrimColorValue(c1.b + c2.g);
-        ret.r = TrimColorValue(c1.a + c2.a);
+        ret.g = TrimColorValue(c1.g + c2.g);
+        ret.b = TrimColorValue(c1.b + c2.b);
+        ret.a = TrimColorValue(c1.a + c2.a);
         return ret;
     }
 
