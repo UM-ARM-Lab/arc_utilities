@@ -588,6 +588,10 @@ namespace arc_helpers
         }
     }
 
+    /**
+     * @brief Multiply Multiples the color channels (r, g, b) of @color by
+     *        @factor, ensuring the result stays in the range [0, 1]
+     */
     template<typename ColorType>
     inline ColorType Multiply(const ColorType& color, const float factor)
     {
@@ -595,18 +599,7 @@ namespace arc_helpers
         ret.r = TrimColorValue(factor * color.r);
         ret.g = TrimColorValue(factor * color.g);
         ret.b = TrimColorValue(factor * color.b);
-        ret.a = TrimColorValue(factor * color.a);
-        return ret;
-    }
-
-    template<typename ColorType>
-    inline ColorType Add(const ColorType& c1, const ColorType& c2)
-    {
-        ColorType ret;
-        ret.r = TrimColorValue(c1.r + c2.r);
-        ret.g = TrimColorValue(c1.g + c2.g);
-        ret.b = TrimColorValue(c1.b + c2.b);
-        ret.a = TrimColorValue(c1.a + c2.a);
+        ret.a = color.a;
         return ret;
     }
 
@@ -634,7 +627,12 @@ namespace arc_helpers
         }
         // Interpolate
         // This is the numerically stable version, rather than  (c1 + (c2 - c1) * real_ratio)
-        return Add(Multiply(c1, 1.0 - real_ratio), Multiply(c2, real_ratio));
+        ColorType ret;
+        ret.r = TrimColorValue(c1.r * (1.0 - real_ratio) + c2.r * real_ratio);
+        ret.g = TrimColorValue(c1.g * (1.0 - real_ratio) + c2.g * real_ratio);
+        ret.b = TrimColorValue(c1.b * (1.0 - real_ratio) + c2.b * real_ratio);
+        ret.a = TrimColorValue(c1.a * (1.0 - real_ratio) + c2.a * real_ratio);
+        return ret;
     }
 
     ////////////////////////////////////////////////////////////////////////////
