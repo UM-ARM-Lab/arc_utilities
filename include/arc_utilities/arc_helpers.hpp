@@ -600,12 +600,6 @@ namespace arc_helpers
     }
 
     template<typename ColorType>
-    inline ColorType Multiply(const float factor, const ColorType& color)
-    {
-        return color * factor;
-    }
-
-    template<typename ColorType>
     inline ColorType Add(const ColorType& c1, const ColorType& c2)
     {
         ColorType ret;
