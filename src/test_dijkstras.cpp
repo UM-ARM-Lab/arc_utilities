@@ -71,52 +71,6 @@ int main(int argc, char* argv[])
 
     std::cout << "\nSerialization test... ";
 
-    arc_dijkstras::Graph<Eigen::Vector2d> serialization_test_graph(2);
-    serialization_test_graph.addNode(Eigen::Vector2d(0,0));
-    serialization_test_graph.addNode(Eigen::Vector2d(1,1));
-    serialization_test_graph.addEdgesBetweenNodes(0, 1, 1.0);
-
-    // Define the graph value serialization function
-    const auto value_serializer_fn = [] (const Eigen::Vector2d& value, std::vector<uint8_t>& buffer)
-    {
-        const uint64_t start_buffer_size = buffer.size();
-        uint64_t running_total = 0;
-
-        running_total += arc_utilities::SerializeFixedSizePOD<double>(value(0), buffer);
-        running_total += arc_utilities::SerializeFixedSizePOD<double>(value(1), buffer);
-
-        const uint64_t end_buffer_size = buffer.size();
-        const uint64_t bytes_written = end_buffer_size - start_buffer_size;
-
-        assert(running_total == bytes_written);
-
-        return bytes_written;
-    };
-
-    // Define the graph value serialization function
-    const auto value_deserializer_fn = [] (const std::vector<uint8_t>& buffer, const uint64_t current)
-    {
-        uint64_t current_position = current;
-
-        // Deserialze 2 doubles
-        std::pair<double, uint64_t> x = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
-        current_position += x.second;
-        std::pair<double, uint64_t> y = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
-        current_position += y.second;
-
-        const Eigen::Vector2d deserialized(x.first, y.first);
-
-        // Figure out how many bytes were read
-        const uint64_t bytes_read = current_position - current;
-        return std::make_pair(deserialized, bytes_read);
-    };
-
-    // Serialze the graph
-    std::vector<uint8_t> buffer;
-    serialization_test_graph.serializeSelf(buffer, value_serializer_fn);
-
-    auto deserialized_result = arc_dijkstras::Graph<Eigen::Vector2d>::Deserialize(buffer, 0, value_deserializer_fn);
-    assert(deserialized_result.first.checkGraphLinkage());
 
     std::cout << "passed" << std::endl;
 

@@ -161,11 +161,21 @@ target_link_libraries(test_thin_plate_spline ${PROJECT_NAME} ${catkin_LIBRARIES}
 # To build tests, install google's testing framework
 # https://github.com/google/googletest/
 
+#############
+## Testing ##
+#############
+
 IF(GTEST_FOUND)
     include_directories(system ${GTEST_INCLUDE_DIRS})
     add_executable(test_timings tests/timings_tests)
     target_link_libraries(test_timings ${PROJECT_NAME} ${GTEST_LIBRARIES})
 ENDIF(GTEST_FOUND)
+
+catkin_add_gtest(graph-test tests/test_graph.cpp)
+target_link_libraries(graph-test ${catkin_LIBRARIES})
+catkin_add_gtest(dijkstras-test tests/test_dijkstras.cpp)
+target_link_libraries(dijkstras-test ${catkin_LIBRARIES})
+
 
 #############
 ## Install ##
