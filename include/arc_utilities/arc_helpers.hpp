@@ -827,13 +827,13 @@ namespace arc_helpers
 
         AstarPQueueElement(const int64_t node_id, const int64_t backpointer, const double cost_to_come, const double value) : node_id_(node_id), backpointer_(backpointer), cost_to_come_(cost_to_come), value_(value) {}
 
-        inline int64_t NodeID() const { return node_id_; }
+        inline int64_t id() const { return node_id_; }
 
-        inline int64_t Backpointer() const { return backpointer_; }
+        inline int64_t backpointer() const { return backpointer_; }
 
-        inline double CostToCome() const { return cost_to_come_; }
+        inline double costToCome() const { return cost_to_come_; }
 
-        inline double Value() const { return value_; }
+        inline double value() const { return value_; }
     };
 
     class CompareAstarPQueueElementFn
@@ -842,7 +842,7 @@ namespace arc_helpers
 
             bool operator()(const AstarPQueueElement& lhs, const AstarPQueueElement& rhs) const
             {
-                return lhs.Value() > rhs.Value();
+                return lhs.value() > rhs.value();
             }
     };
 
@@ -927,33 +927,33 @@ namespace arc_helpers
             // Remove from queue map if necessary
             if (limit_pqueue_duplicates)
             {
-                queue_members_map.erase(top_node.NodeID());
+                queue_members_map.erase(top_node.id());
             }
             // Check if the node has already been discovered
-            const auto node_explored_find_itr = explored.find(top_node.NodeID());
+            const auto node_explored_find_itr = explored.find(top_node.id());
             // We have not been here before, or it is cheaper now
             const bool node_in_explored = (node_explored_find_itr != explored.end());
-            const bool node_explored_is_better = (node_in_explored) ? (top_node.CostToCome() >= node_explored_find_itr->second.second) : false;
+            const bool node_explored_is_better = (node_in_explored) ? (top_node.costToCome() >= node_explored_find_itr->second.second) : false;
             if (!node_explored_is_better)
             {
                 // Add to the explored list
-                explored[top_node.NodeID()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
+                explored[top_node.id()] = std::make_pair(top_node.backpointer(), top_node.costToCome());
                 // Check if we have reached the goal
-                if (top_node.NodeID() == goal_id)
+                if (top_node.id() == goal_id)
                 {
                     break;
                 }
                 // Generate possible children
-                const std::vector<int64_t> candidate_children = generate_children_fn(top_node.NodeID());
+                const std::vector<int64_t> candidate_children = generate_children_fn(top_node.id());
                 // Loop through potential child nodes
                 for (const int64_t child_node_id : candidate_children)
                 {
                     // Check if the top node->child edge is valid
-                    if (edge_validity_check_fn(top_node.NodeID(), child_node_id))
+                    if (edge_validity_check_fn(top_node.id(), child_node_id))
                     {
                         // Compute the cost-to-come for the new child
-                        const double parent_cost_to_come = top_node.CostToCome();
-                        const double parent_to_child_cost = distance_fn(top_node.NodeID(), child_node_id);
+                        const double parent_cost_to_come = top_node.costToCome();
+                        const double parent_to_child_cost = distance_fn(top_node.id(), child_node_id);
                         const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
                         // Check if the child state has already been explored
                         const auto child_explored_find_itr = explored.find(child_node_id);
@@ -975,7 +975,7 @@ namespace arc_helpers
                             const double child_heuristic = heuristic_function(child_node_id);
                             // Compute the child value
                             const double child_value = child_cost_to_come + child_heuristic;
-                            queue.push(AstarPQueueElement(child_node_id, top_node.NodeID(), child_cost_to_come, child_value));
+                            queue.push(AstarPQueueElement(child_node_id, top_node.id(), child_cost_to_come, child_value));
                         }
                     }
                 }

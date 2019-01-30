@@ -891,6 +891,7 @@ namespace arc_dijkstras
                 const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn,
                 const bool limit_pqueue_duplicates)
         {
+            using namespace arc_helpers;
             // Enforced sanity checks
             if ((start_index < 0) || (start_index >= (int64_t)graph.getNodes().size()))
             {
@@ -910,9 +911,9 @@ namespace arc_dijkstras
                 return heuristic_fn(graph.getNode(node_index).getValue(), graph.getNode(goal_index).getValue());
             };
             // Setup
-            std::priority_queue<arc_helpers::AstarPQueueElement,
-                                std::vector<arc_helpers::AstarPQueueElement>,
-                                arc_helpers::CompareAstarPQueueElementFn> queue;
+            std::priority_queue<AstarPQueueElement,
+                                std::vector<AstarPQueueElement>,
+                                CompareAstarPQueueElementFn> queue;
             
             // Optional map to reduce the number of duplicate items added to the pqueue
             // Key is the node index in the provided graph
@@ -925,7 +926,7 @@ namespace arc_dijkstras
             std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
             
             // Initialize
-            queue.push(arc_helpers::AstarPQueueElement(start_index, -1, 0.0, heuristic_function(start_index)));
+            queue.push(AstarPQueueElement(start_index, -1, 0.0, heuristic_function(start_index)));
             if (limit_pqueue_duplicates)
             {
                 queue_members_map[start_index] = 0.0;
@@ -935,75 +936,61 @@ namespace arc_dijkstras
             while (queue.size() > 0)
             {
                 // Get the top of the priority queue
-                const arc_helpers::AstarPQueueElement top_node = queue.top();
+                const arc_helpers::AstarPQueueElement n = queue.top();
                 queue.pop();
 
-                // Remove from queue map if necessary
+                if (n.id() == goal_index)
+                {
+                    // Solution found
+                    explored[n.id()] = std::make_pair(n.backpointer(), n.costToCome());
+                    break;
+                }
+
                 if (limit_pqueue_duplicates)
                 {
-                    queue_members_map.erase(top_node.NodeID());
+                    queue_members_map.erase(n.id());
                 }
                 
-                // Check if the node has already been discovered
-                const auto node_explored_find_itr = explored.find(top_node.NodeID());
-                // We have not been here before, or it is cheaper now
-                const bool node_in_explored = (node_explored_find_itr != explored.end());
-                const bool explored_node_is_better = (node_in_explored) ?
-                    (top_node.CostToCome() >= node_explored_find_itr->second.second) : false;
-                if (!explored_node_is_better)
+                if (explored.count(n.id()) && n.costToCome() >= explored[n.id()].second)
                 {
-                    // Add to the explored list
-                    explored[top_node.NodeID()] = std::make_pair(top_node.Backpointer(), top_node.CostToCome());
-                    // Check if we have reached the goal
-                    if (top_node.NodeID() == goal_index)
+                    continue;
+                }
+                
+                // Add to the explored list
+                explored[n.id()] = std::make_pair(n.backpointer(), n.costToCome());
+                
+                
+                // Explore and add the children
+                for(const GraphEdge& current_out_edge: graph.getNode(n.id()).getOutEdges())
+                {
+                    // Get the next potential child node
+                    const int64_t child_id = current_out_edge.getToIndex();
+
+                    if (!edge_validity_check_fn(graph, current_out_edge))
                     {
-                        break;
+                        continue;
                     }
-                    // Explore and add the children
-                    const std::vector<GraphEdge>& out_edges = graph.getNode(top_node.NodeID()).getOutEdges();
-                    for (size_t out_edge_idx = 0; out_edge_idx < out_edges.size(); out_edge_idx++)
+                    
+                    // Compute the cost-to-come for the new child
+                    const double child_cost_to_come = n.costToCome() + distance_fn(graph, current_out_edge);
+
+                    if(explored.count(child_id) &&
+                       child_cost_to_come >= explored[child_id].second)
                     {
-                        // Get the next potential child node
-                        const GraphEdge& current_out_edge = out_edges[out_edge_idx];
-                        const int64_t child_node_index = current_out_edge.getToIndex();
-                        // Check if the top node->child edge is valid
-                        if (edge_validity_check_fn(graph, current_out_edge))
-                        {
-                            // Compute the cost-to-come for the new child
-                            const double parent_cost_to_come = top_node.CostToCome();
-                            const double parent_to_child_cost = distance_fn(graph, current_out_edge);
-                            const double child_cost_to_come = parent_cost_to_come + parent_to_child_cost;
-                            // Check if the child state has already been explored
-                            const auto child_explored_find_itr = explored.find(child_node_index);
-                            // It is not in the explored list, or is there with a higher cost-to-come
-                            const bool child_in_explored = (child_explored_find_itr != explored.end());
-                            const bool explored_child_is_better = (child_in_explored) ?
-                                (child_cost_to_come >= child_explored_find_itr->second.second) : false;
-                            // Check if the child state is already in the queue
-                            bool queue_is_better = false;
-                            if (limit_pqueue_duplicates)
-                            {
-                                const auto queue_members_map_itr = queue_members_map.find(child_node_index);
-                                const bool in_queue = (queue_members_map_itr != queue_members_map.end());
-                                queue_is_better = (in_queue) ?
-                                    (child_cost_to_come >= queue_members_map_itr->second) : false;
-                            }
-                            // Only add the new state if we need to
-                            if (!explored_child_is_better && !queue_is_better)
-                            {
-                                // Compute the heuristic for the child
-                                const double child_heuristic = heuristic_function(child_node_index);
-                                // Compute the child value
-                                const double child_value = child_cost_to_come + child_heuristic;
-                                queue.push(arc_helpers::AstarPQueueElement(child_node_index,
-                                                                           top_node.NodeID(),
-                                                                           child_cost_to_come, child_value));
-                            }
-                        }
+                        continue;
                     }
+
+                    if (limit_pqueue_duplicates && queue_members_map.count(child_id) &&
+                        child_cost_to_come >= queue_members_map[child_id])
+                    {
+                        continue;
+                    }
+                    
+                    const double child_value = child_cost_to_come + heuristic_function(child_id);
+                    queue.push(AstarPQueueElement(child_id, n.id(), child_cost_to_come, child_value));
                 }
             }
-            return arc_helpers::ExtractAstarResult(explored, start_index, goal_index);
+            return ExtractAstarResult(explored, start_index, goal_index);
         }
 
         static arc_helpers::AstarResult PerformLazyAstar(
