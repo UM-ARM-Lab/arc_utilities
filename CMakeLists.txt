@@ -54,8 +54,7 @@ include_directories(include SYSTEM ${catkin_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS}
 
 set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wconversion -Werror -Wshadow")
 
-# Utility library
-add_library(${PROJECT_NAME}
+add_custom_target(${PROJECT_NAME}_headers SOURCES
     include/${PROJECT_NAME}/log.hpp
     include/${PROJECT_NAME}/maybe.hpp
     include/${PROJECT_NAME}/ros_helpers.hpp
@@ -95,7 +94,10 @@ add_library(${PROJECT_NAME}
     include/${PROJECT_NAME}/simple_robot_models.hpp
     include/${PROJECT_NAME}/simple_robot_model_interface.hpp
     include/${PROJECT_NAME}/time_optimal_trajectory_parametrization.hpp
-    include/${PROJECT_NAME}/thin_plate_spline.hpp
+    include/${PROJECT_NAME}/thin_plate_spline.hpp)
+
+# Utility library
+add_library(${PROJECT_NAME}
     src/${PROJECT_NAME}/zlib_helpers.cpp
     src/${PROJECT_NAME}/base64_helpers.cpp
     src/${PROJECT_NAME}/timing.cpp
@@ -110,52 +112,52 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
 
 # Simple test node for simple_hierarchical_clustering
 add_executable(test_hierarchical_clustering src/test_hierarchical_clustering.cpp)
-add_dependencies(test_hierarchical_clustering ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_hierarchical_clustering ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_hierarchical_clustering ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for utility functions
 add_executable(test_arc_utilities src/test_arc_utilities.cpp)
-add_dependencies(test_arc_utilities ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_arc_utilities ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_arc_utilities ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for Eigen3 math
 add_executable(test_eigen_math src/test_eigen_math.cpp)
-add_dependencies(test_eigen_math ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_eigen_math ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_eigen_math ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for averaging math
 add_executable(test_averaging src/test_averaging.cpp)
-add_dependencies(test_averaging ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_averaging ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_averaging ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for Dijkstras
 add_executable(test_dijkstras src/test_dijkstras.cpp)
-add_dependencies(test_dijkstras ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_dijkstras ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_dijkstras ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test node for DistanceToLine function
 add_executable(test_closest_point src/test_closest_point.cpp)
-add_dependencies(test_closest_point ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_closest_point ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_closest_point ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test for SO(3) distance functions (to be expanded to all distance functions later)
 add_executable(test_distance_functions src/test_distance_functions.cpp)
-add_dependencies(test_distance_functions ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_distance_functions ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_distance_functions ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test Eigen (de)Serialization functions
 add_executable(test_eigen_serialization src/test_eigen_serialization.cpp)
-add_dependencies(test_eigen_serialization ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_eigen_serialization ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_eigen_serialization ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple test ROS (de)Serialization functions
 add_executable(test_ros_serialization src/test_ros_serialization.cpp)
-add_dependencies(test_ros_serialization ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_ros_serialization ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_ros_serialization ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # Simple thin plate sline tests in 2D and 3D
 add_executable(test_thin_plate_spline src/test_thin_plate_spline.cpp)
-add_dependencies(test_thin_plate_spline ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_thin_plate_spline ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_thin_plate_spline ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # To build tests, install google's testing framework
