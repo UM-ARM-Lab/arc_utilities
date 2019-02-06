@@ -11,7 +11,7 @@ inline void TestVector3d(const ssize_t iterations, const Eigen::Isometry3d& base
     std::chrono::time_point<std::chrono::steady_clock> vector3_start_time = std::chrono::steady_clock::now();
     for (ssize_t idx = 0; idx < iterations; idx++)
     {
-        Eigen::Vector3d test_vector(1.0 * (double)idx, 2.0 * (double)idx, 3.0 * (double)idx);
+        Eigen::Vector3d test_vector(1.0 * static_cast<double>(idx), 2.0 * static_cast<double>(idx), 3.0 * static_cast<double>(idx));
         results.block<3, 1>(idx * 4, 0) = base_transform * test_vector;
     }
     std::chrono::time_point<std::chrono::steady_clock> vector3_end_time = std::chrono::steady_clock::now();
@@ -24,7 +24,7 @@ inline void TestVector4d(const ssize_t iterations, const Eigen::Isometry3d& base
     std::chrono::time_point<std::chrono::steady_clock> vector4_start_time = std::chrono::steady_clock::now();
     for (ssize_t idx = 0; idx < iterations; idx++)
     {
-        Eigen::Vector4d test_vector(1.0 * (double)idx, 2.0 * (double)idx, 3.0 * (double)idx, 1.0);
+        Eigen::Vector4d test_vector(1.0 * static_cast<double>(idx), 2.0 * static_cast<double>(idx), 3.0 * static_cast<double>(idx), 1.0);
         results.block<4, 1>(idx * 4, 0) = base_transform * test_vector;
     }
     std::chrono::time_point<std::chrono::steady_clock> vector4_end_time = std::chrono::steady_clock::now();
@@ -37,7 +37,7 @@ inline void TestAlignedVector3d(const ssize_t iterations, const Eigen::Isometry3
     std::chrono::time_point<std::chrono::steady_clock> alignedvector3_start_time = std::chrono::steady_clock::now();
     for (ssize_t idx = 0; idx < iterations; idx++)
     {
-        Eigen::Aligned4Vector3<double> test_vector(1.0 * (double)idx, 2.0 * (double)idx, 3.0 * (double)idx);
+        Eigen::Aligned4Vector3<double> test_vector(1.0 * static_cast<double>(idx), 2.0 * static_cast<double>(idx), 3.0 * static_cast<double>(idx));
         results.block<3, 1>(idx * 4, 0) = base_transform * test_vector;
     }
     std::chrono::time_point<std::chrono::steady_clock> alignedvector3_end_time = std::chrono::steady_clock::now();
@@ -51,7 +51,7 @@ inline void TestManual(const ssize_t iterations, const Eigen::Isometry3d& base_t
     std::chrono::time_point<std::chrono::steady_clock> manual_start_time = std::chrono::steady_clock::now();
     for (ssize_t idx = 0; idx < iterations; idx++)
     {
-        Eigen::Vector4d test_vector(1.0 * (double)idx, 2.0 * (double)idx, 3.0 * (double)idx, 1.0);
+        Eigen::Vector4d test_vector(1.0 * static_cast<double>(idx), 2.0 * static_cast<double>(idx), 3.0 * static_cast<double>(idx), 1.0);
         results.block<4, 1>(idx * 4, 0) = base_transform_matrix * test_vector;
     }
     std::chrono::time_point<std::chrono::steady_clock> manual_end_time = std::chrono::steady_clock::now();
