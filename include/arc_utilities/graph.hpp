@@ -660,8 +660,7 @@ namespace arc_dijkstras
 
         int64_t addNode(const NodeValueType& new_value)
         {
-            nodes_.push_back(GraphNode<NodeValueType, Allocator>(new_value));
-            return (int64_t)(nodes_.size() - 1);
+            return addNode(GraphNode<NodeValueType, Allocator>(new_value));
         }
 
         GraphEdge& addEdgeBetweenNodes(const int64_t from_index, const int64_t to_index,
