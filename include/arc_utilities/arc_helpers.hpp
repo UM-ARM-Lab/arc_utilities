@@ -604,7 +604,9 @@ namespace arc_helpers
     }
 
     /**
-     * @brief InterpolateColor
+     * @brief InterpolateColor Interpolates between c1 and c2 directly in RGBA space.
+     *  @ColorType is intended to be a ros std_msgs::ColorRGBA type, or the RGBAColor
+     *  defined in this file
      * @param c1 Start color for interpolation
      * @param c2 End color for interpolation
      * @param ratio Value between 0 and 1, indicating how far to move from c1 towards c2
