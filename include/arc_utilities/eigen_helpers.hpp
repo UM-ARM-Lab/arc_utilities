@@ -142,6 +142,29 @@ namespace EigenHelpers
         }
     }
 
+    inline bool CloseEnough(const std::vector<double> &v1, const std::vector<double> &v2,
+                            const double threshold)
+    {
+        if(v1.size() != v2.size())
+        {
+            return false;
+        }
+        for(size_t i=0; i<v1.size(); i++)
+        {
+            if(!CloseEnough(v1[i], v2[i], threshold))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    inline bool CloseEnough(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2, const double threshold)
+    {
+        return CloseEnough(v1.x(), v2.x(), threshold) &&
+            CloseEnough(v1.y(), v2.y(), threshold);
+    }
+
     inline bool CloseEnough(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double threshold)
     {
         double real_threshold = std::abs(threshold);
