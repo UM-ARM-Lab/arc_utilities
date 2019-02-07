@@ -66,6 +66,9 @@
 #define PROFILE_PRINT_SUMMARY_FOR_GROUP(names) \
     ::arc_utilities::Profiler::printGroupSummary(names)
 
+#define PROFILE_PRINT_SUMMARY_FOR_ALL()                \
+    ::arc_utilities::Profiler::printAllSummary()
+
 #define PROFILE_WRITE_SUMMARY_FOR_GROUP(filename, names)                 \
     ::arc_utilities::Profiler::writeGroupSummary(filename, names)
 
@@ -148,6 +151,8 @@ namespace arc_utilities
         
         static void printGroupSummary(const std::vector<std::string> &names);
 
+        static void printAllSummary();
+
         static void writeAllSummary(const std::string &filename);
         
         static void writeGroupSummary(const std::string &filename,
@@ -158,6 +163,7 @@ namespace arc_utilities
 
     protected:
         bool isTimerStarted(std::string timer_name);
+        static std::vector<std::string> getAllNames();
 
     protected:
         std::map<std::string, std::vector<TimedDouble> > timed_double_data;
