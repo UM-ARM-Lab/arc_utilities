@@ -308,6 +308,8 @@ namespace arc_helpers
         return val;
     }
 
+    //// Color Related Functionality ///////////////////////////////////////////
+
     inline constexpr float ColorChannelFromHex(uint8_t hexval)
     {
         return (float)hexval / 255.0f;
@@ -597,6 +599,57 @@ namespace arc_helpers
             return RGBAColorBuilder<ColorType>::MakeFromFloatColors(0.0f, 0.0f, 0.0f, alpha);
         }
     }
+
+    /**
+     * @brief Multiply Multiples the color channels (r, g, b) of @color by
+     *        @factor, ensuring the result stays in the range [0, 1]
+     */
+    template<typename ColorType>
+    inline ColorType Multiply(const ColorType& color, const float factor)
+    {
+        ColorType ret;
+        ret.r = TrimColorValue(factor * color.r);
+        ret.g = TrimColorValue(factor * color.g);
+        ret.b = TrimColorValue(factor * color.b);
+        ret.a = color.a;
+        return ret;
+    }
+
+    /**
+     * @brief InterpolateColor Interpolates between c1 and c2 directly in RGBA space.
+     *  @ColorType is intended to be a ros std_msgs::ColorRGBA type, or the RGBAColor
+     *  defined in this file
+     * @param c1 Start color for interpolation
+     * @param c2 End color for interpolation
+     * @param ratio Value between 0 and 1, indicating how far to move from c1 towards c2
+     * @return
+     */
+    template<typename ColorType>
+    inline ColorType InterpolateColor(const ColorType& c1, const ColorType& c2, const float& ratio)
+    {
+        // Safety check ratio
+        float real_ratio = ratio;
+        if (real_ratio < 0.0)
+        {
+            real_ratio = 0.0;
+            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
+        }
+        else if (real_ratio > 1.0)
+        {
+            real_ratio = 1.0;
+            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
+        }
+        // Interpolate
+        // This is the numerically stable version, rather than  (c1 + (c2 - c1) * real_ratio)
+        ColorType ret;
+        ret.r = TrimColorValue(c1.r * (1.0 - real_ratio) + c2.r * real_ratio);
+        ret.g = TrimColorValue(c1.g * (1.0 - real_ratio) + c2.g * real_ratio);
+        ret.b = TrimColorValue(c1.b * (1.0 - real_ratio) + c2.b * real_ratio);
+        ret.a = TrimColorValue(c1.a * (1.0 - real_ratio) + c2.a * real_ratio);
+        return ret;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     inline size_t GetNumOMPThreads()
     {
