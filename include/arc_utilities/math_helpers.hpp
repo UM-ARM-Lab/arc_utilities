@@ -73,10 +73,13 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         }
     }
 
-    inline double Interpolate(const double p1, const double p2, const double ratio)
+    template <typename FloatType>
+    inline FloatType SafetyCheckRatio(const FloatType ratio)
     {
-        // Safety check ratio
-        double real_ratio = ratio;
+        static_assert(std::is_same<FloatType, double>::value
+                      || std::is_same<FloatType, float>::value,
+                      "Type must be a float type");
+        FloatType real_ratio = ratio;
         if (real_ratio < 0.0)
         {
             real_ratio = 0.0;
@@ -87,6 +90,13 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
             real_ratio = 1.0;
             std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
         }
+        return real_ratio;
+    }
+
+    inline double Interpolate(const double p1, const double p2, const double ratio)
+    {
+        // Safety check ratio
+        const double real_ratio = SafetyCheckRatio(ratio);
         // Interpolate
         // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
         return ((p1 * (1.0 - real_ratio)) + (p2 * real_ratio));
@@ -95,17 +105,7 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
     inline double InterpolateContinuousRevolute(const double p1, const double p2, const double ratio)
     {
         // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
+        const double real_ratio = SafetyCheckRatio(ratio);
         // Safety check args
         const double real_p1 = EnforceContinuousRevoluteBounds(p1);
         const double real_p2 = EnforceContinuousRevoluteBounds(p2);
@@ -147,17 +147,7 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
     inline std::vector<T> Interpolate(const std::vector<T>& v1, const std::vector<T>& v2, const double ratio)
     {
         // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
+        const double real_ratio = SafetyCheckRatio(ratio);
         // Safety check inputs
         const size_t len = v1.size();
         if (len != v2.size())

@@ -549,6 +549,7 @@ namespace arc_helpers
     inline ColorType InterpolateColor(const ColorType& c1, const ColorType& c2, const float& ratio)
     {
         // Safety check ratio
+        // TODO: use SafetyCheckRatio from eigen_helpers.hpp (or move that function to this file)
         float real_ratio = ratio;
         if (real_ratio < 0.0)
         {

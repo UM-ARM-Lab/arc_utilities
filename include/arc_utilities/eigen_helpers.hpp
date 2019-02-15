@@ -281,7 +281,6 @@ namespace EigenHelpers
     // Interpolation functions
     ////////////////////////////////////////////////////////////////////////////
 
-
     template <typename T, int ROWS>
     inline Eigen::Matrix<T, ROWS, 1> Interpolate(const Eigen::Matrix<T, ROWS, 1>& v1,
                                                  const Eigen::Matrix<T, ROWS, 1>& v2, const double ratio)
@@ -292,17 +291,7 @@ namespace EigenHelpers
             throw std::invalid_argument("Vectors v1 and v2 must be the same size");
         }
         // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
+        const double real_ratio = SafetyCheckRatio(ratio);
         // Interpolate
         // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
         return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
@@ -312,17 +301,7 @@ namespace EigenHelpers
                                           const Eigen::Quaterniond& q2, const double ratio)
     {
         // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
+        const double real_ratio = SafetyCheckRatio(ratio);
         // Interpolate
         return q1.slerp(real_ratio, q2);
     }
@@ -331,17 +310,7 @@ namespace EigenHelpers
                                          const Eigen::Isometry3d& t2, const double ratio)
     {
         // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
+        const double real_ratio = SafetyCheckRatio(ratio);
         // Interpolate
         const Eigen::Vector3d v1 = t1.translation();
         const Eigen::Quaterniond q1(t1.rotation());
