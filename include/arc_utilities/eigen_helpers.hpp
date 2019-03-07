@@ -122,6 +122,24 @@ namespace EigenHelpers
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    // Vectors of Eigen data transformations
+    ////////////////////////////////////////////////////////////////////////////
+
+    template <typename EigenType, typename Allocator>
+    inline std::vector<EigenType, Allocator> TransformData(
+            const Eigen::Isometry3d& transform,
+            const std::vector<EigenType, Allocator>& data)
+    {
+        std::vector<EigenType, Allocator> retval;
+        retval.reserve(data.size());
+        for (const auto& item : data)
+        {
+            retval.push_back(transform * item);
+        }
+        return retval;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
     // Kinematics functions
     ////////////////////////////////////////////////////////////////////////////
 
