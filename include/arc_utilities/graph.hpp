@@ -342,6 +342,18 @@ namespace arc_dijkstras
             }
             throw std::invalid_argument("Invalid node index, no edge exists");
         }
+        
+        const GraphEdge& getEdgeTo(const int64_t other_node_ind) const
+        {
+            for(const auto &e: out_edges_)
+            {
+                if(e.getToIndex() == other_node_ind)
+                {
+                    return e;
+                }
+            }
+            throw std::invalid_argument("Invalid node index, no edge exists");
+        }
 
         const std::vector<GraphEdge>& getInEdges() const
         {
@@ -523,6 +535,11 @@ namespace arc_dijkstras
         }
 
         GraphEdge& getEdge(const int64_t node_ind_1, const int64_t node_ind_2)
+        {
+            return getNode(node_ind_1).getEdgeTo(node_ind_2);
+        }
+
+        const GraphEdge& getEdge(const int64_t node_ind_1, const int64_t node_ind_2) const
         {
             return getNode(node_ind_1).getEdgeTo(node_ind_2);
         }
