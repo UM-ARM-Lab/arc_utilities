@@ -1,0 +1,20 @@
+sudo: required
+
+services:
+  - docker
+
+env: SH="docker exec -t ubuntu-test bash -c"
+    
+before_install:
+  - docker build -t ubuntu ./docker
+  - docker run --name "ubuntu-test" -d -v $(pwd):/root/catkin_ws/src/arc_utilities -w /root/catkin_ws ubuntu tail -f /dev/null
+  - docker ps
+
+install:
+  - $SH "./src/arc_utilities/docker/setup.sh"
+
+script:
+  - $SH "./src/arc_utilities/docker/test.sh"
+
+after_script:
+  - docker images
