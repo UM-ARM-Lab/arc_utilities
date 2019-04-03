@@ -4,6 +4,11 @@ services:
   - docker
 
 env: SH="docker exec -t ubuntu-test bash -c"
+
+matrix:
+  include:
+  - env: BUILD_TYPE=Debug
+  - env: BUILD_TYPE=Release
     
 before_install:
   - docker build -t ubuntu ./docker
@@ -11,10 +16,10 @@ before_install:
   - docker ps
 
 install:
-  - $SH "./src/arc_utilities/docker/setup.sh"
+  - $SH "./src/arc_utilities/docker/setup.sh $BUILD_TYPE"
 
 script:
-  - $SH "./src/arc_utilities/docker/test.sh"
+  - $SH "./src/arc_utilities/docker/test.sh $BUILD_TYPE"
 
 after_script:
   - docker images
