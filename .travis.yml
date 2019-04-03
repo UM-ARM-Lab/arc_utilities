@@ -16,10 +16,10 @@ before_install:
   - docker ps
 
 install:
-  - $SH "./src/arc_utilities/docker/setup.sh" $BUILD_TYPE
+  - $SH "./src/arc_utilities/docker/setup.sh $BUILD_TYPE"
 
 script:
-  - $SH "./src/arc_utilities/docker/test.sh" $BUILD_TYPE
+  - $SH "./src/arc_utilities/docker/test.sh $BUILD_TYPE"
 
 after_script:
   - docker images
