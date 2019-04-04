@@ -7,4 +7,11 @@ BUILD_TYPE=${2:-Release}
 echo $(rosversion -d)
 
 cd ~/catkin_ws
+
+# Note: As this script is intended for the CI image, things are run without sudo
+apt update
+rosdep init
+rosdep update
+rosdep install --as-root "apt:false pip:false" --from-paths src --ignore-src -r -y
+
 catkin_make_isolated -DCMAKE_BUILD_TYPE=$BUILD_TYPE
