@@ -46,7 +46,7 @@
 #endif
 
 // Macro to disable unused parameter compiler warnings
-#define UNUSED(x) (void)(x)
+#define UNUSED(x) ((void)(x))
 
 namespace arc_helpers
 {

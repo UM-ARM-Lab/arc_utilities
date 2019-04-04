@@ -1,4 +1,5 @@
 #include "arc_utilities/serialization_eigen.hpp"
+#include "arc_utilities/arc_helpers.hpp"
 
 template<typename Scalar, int _Rows>
 void testFloatVectors(const size_t num_tests, const ssize_t rows = -1)
@@ -19,9 +20,11 @@ void testFloatVectors(const size_t num_tests, const ssize_t rows = -1)
         // First, serialize
         std::vector<uint8_t> buffer;
         const size_t bytes_used = arc_utilities::SerializeEigen(vec, buffer);
+        UNUSED(bytes_used);
 
         // Then deserialze and compare
         const auto deserialized = arc_utilities::DeserializeEigen<EigenType>(buffer, 0);
+        UNUSED(deserialized);
         assert(deserialized.second == bytes_used);
         assert(deserialized.first == vec);
     }
@@ -46,9 +49,11 @@ void testFloatMatrices(const size_t num_tests, const ssize_t rows = -1, const ss
         // First, serialize
         std::vector<uint8_t> buffer;
         const size_t bytes_used = arc_utilities::SerializeEigen(matrix, buffer);
+        UNUSED(bytes_used);
 
         // Then deserialze and compare
         const auto deserialized = arc_utilities::DeserializeEigen<EigenType>(buffer, 0);
+        UNUSED(deserialized);
         assert(deserialized.second == bytes_used);
         assert(deserialized.first == matrix);
     }
