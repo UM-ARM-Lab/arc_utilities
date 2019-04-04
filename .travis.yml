@@ -16,6 +16,7 @@ before_install:
   - docker ps
 
 install:
+  - docker exec -ti ubuntu-test bash -c "echo $ROS_VERSION && echo $(rosversion -d)"
   - docker exec -ti ubuntu-test bash -c "./src/arc_utilities/docker/setup.sh $ROS_VERSION $BUILD_TYPE"
 
 script:
