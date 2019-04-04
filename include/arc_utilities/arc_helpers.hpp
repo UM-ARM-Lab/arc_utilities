@@ -154,16 +154,7 @@ namespace arc_helpers
     {
         const T* item_ptr = &item;
         const uintptr_t item_ptr_val = (uintptr_t)item_ptr;
-        if ((item_ptr_val % desired_alignment) == 0)
-        {
-            //std::cout << "Item @ " << item_ptr_val << " aligned to " << desired_alignment << " bytes" << std::endl;
-            return true;
-        }
-        else
-        {
-            //std::cout << "Item @ " << item_ptr_val << " not aligned to " << desired_alignment << " bytes" << std::endl;
-            return false;
-        }
+        return (item_ptr_val % desired_alignment) == 0;
     }
 
     template<typename T>
@@ -204,14 +195,7 @@ namespace arc_helpers
     {
         // Type safety checks are performed in the SetBit() function
         const uint32_t mask = arc_helpers::SetBit((T)0, bit_position, true);
-        if ((mask & current) > 0)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return (mask & current) > 0;
     }
 
     template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<const Key, Value>>>
@@ -222,10 +206,7 @@ namespace arc_helpers
         {
             return found_itr->second;
         }
-        else
-        {
-            return default_val;
-        }
+        return default_val;
     }
 
     template <typename Key, typename Value, typename Hash = std::hash<Key>, typename Predicate = std::equal_to<Key>, typename Allocator = std::allocator<std::pair<const Key, Value>>>
@@ -236,10 +217,7 @@ namespace arc_helpers
         {
             return found_itr->second;
         }
-        else
-        {
-            return default_val;
-        }
+        return default_val;
     }
 
     template <class T>
@@ -505,99 +483,42 @@ namespace arc_helpers
     template<typename ColorType>
     inline ColorType GenerateUniqueColor(const uint32_t color_code, const float alpha=1.0f)
     {
-        // For color_code < 22, we pick from a table
+        // Note: sdf_tools relies on this particular color (with alpha = 0) for color_code 0
         if (color_code == 0)
         {
             return RGBAColorBuilder<ColorType>::MakeFromFloatColors(1.0f, 1.0f, 1.0f, 0.0f);
         }
-        else if (color_code <= 20)
-        {
-            // CHECK TO MAKE SURE RGB/RBG IS CORRECT!
-            if (color_code == 1)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xff, 0x00, 0xb3, alpha);
-            }
-            else if (color_code == 2)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x80, 0x75, 0x3e, alpha);
-            }
-            else if (color_code == 3)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xff, 0x00, 0x68, alpha);
-            }
-            else if (color_code == 4)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xa6, 0xd7, 0xbd, alpha);
-            }
-            else if (color_code == 5)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xc1, 0x20, 0x00, alpha);
-            }
-            else if (color_code == 6)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xce, 0x62, 0xa2, alpha);
-            }
-            else if (color_code == 7)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x81, 0x66, 0x70, alpha);
-            }
-            else if (color_code == 8)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x00, 0x34, 0x7d, alpha);
-            }
-            else if (color_code == 9)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xf6, 0x8e, 0x76, alpha);
-            }
-            else if (color_code == 10)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x00, 0x8a, 0x53, alpha);
-            }
-            else if (color_code == 11)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xff, 0x5c, 0x7a, alpha);
-            }
-            else if (color_code == 12)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x53, 0x7a, 0x37, alpha);
-            }
-            else if (color_code == 13)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xff, 0x00, 0x8e, alpha);
-            }
-            else if (color_code == 14)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xb3, 0x51, 0x28, alpha);
-            }
-            else if (color_code == 15)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xf4, 0x00, 0xc8, alpha);
-            }
-            else if (color_code == 16)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x7f, 0x0d, 0x18, alpha);
-            }
-            else if (color_code == 17)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x93, 0x00, 0xaa, alpha);
-            }
-            else if (color_code == 18)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x59, 0x15, 0x33, alpha);
-            }
-            else if (color_code == 19)
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0xf1, 0x13, 0x3a, alpha);
-            }
-            else
-            {
-                return RGBAColorBuilder<ColorType>::MakeFromMixedColors(0x23, 0x16, 0x2c, alpha);
-            }
-        }
-        else
+        
+        static const std::map<uint32_t, std::vector<uint8_t>> color_map{
+            {1, {0xff, 0x00, 0xb3}},
+            {2, {0x80, 0x75, 0x3e}},
+            {3, {0xff, 0x00, 0x68}},
+            {4, {0xa6, 0xd7, 0xbd}},
+            {5, {0xc1, 0x20, 0x00}},
+            {6, {0xce, 0x62, 0xa2}},
+            {7, {0x81, 0x66, 0x70}},
+            {8, {0x00, 0x34, 0x7d}},
+            {9, {0xf6, 0x8e, 0x76}},
+            {10, {0x00, 0x8a, 0x53}},
+            {11, {0xff, 0x5c, 0x7a}},
+            {12, {0x53, 0x7a, 0x37}},
+            {13, {0xff, 0x00, 0x8e}},
+            {14, {0xb3, 0x51, 0x28}},
+            {15, {0xf4, 0x00, 0xc8}},
+            {16, {0x7f, 0x0d, 0x18}},
+            {17, {0x93, 0x00, 0xaa}},
+            {18, {0x59, 0x15, 0x33}},
+            {19, {0xf1, 0x13, 0x3a}},
+            {20, {0x23, 0x16, 0x2c}}
+        };
+
+        const auto itr = color_map.find(color_code);
+        if (itr == color_map.end())
         {
             return RGBAColorBuilder<ColorType>::MakeFromFloatColors(0.0f, 0.0f, 0.0f, alpha);
         }
+        const auto& c = itr->second;
+        return RGBAColorBuilder<ColorType>::MakeFromMixedColors(c[0], c[1], c[2], alpha);
     }
 
     /**
@@ -914,36 +835,32 @@ namespace arc_helpers
             return std::make_pair(std::vector<int64_t>(), std::numeric_limits<double>::infinity());
         }
         // If a solution was found
-        else
+        // Extract the path indices in reverse order
+        std::vector<int64_t> solution_path_indices;
+        solution_path_indices.push_back(goal_index);
+        int64_t backpointer = goal_index_itr->second.first;
+        // Any backpointer >= 0 is a valid node in the graph
+        // The backpointer for start_index is -1
+        while (backpointer >= 0)
         {
-            // Extract the path indices in reverse order
-            std::vector<int64_t> solution_path_indices;
-            solution_path_indices.push_back(goal_index);
-            int64_t backpointer = goal_index_itr->second.first;
-            // Any backpointer >= 0 is a valid node in the graph
-            // The backpointer for start_index is -1
-            while (backpointer >= 0)
+            const int64_t current_index = backpointer;
+            solution_path_indices.push_back(current_index);
+            if (current_index == start_index)
             {
-                const int64_t current_index = backpointer;
-                solution_path_indices.push_back(current_index);
-                if (current_index == start_index)
-                {
-                    break;
-                }
-                else
-                {
-                    // Using map.at(key) throws an exception if key not found
-                    // This provides bounds safety check
-                    const auto current_index_data = explored.at(current_index);
-                    backpointer = current_index_data.first;
-                }
+                break;
             }
-            // Reverse
-            std::reverse(solution_path_indices.begin(), solution_path_indices.end());
-            // Get the cost of the path
-            const double solution_path_cost = goal_index_itr->second.second;
-            return std::make_pair(solution_path_indices, solution_path_cost);
+
+            // This provides bounds safety check
+            const auto current_index_data = explored.at(current_index);
+            backpointer = current_index_data.first;
+
         }
+        // Reverse
+        std::reverse(solution_path_indices.begin(), solution_path_indices.end());
+        // Get the cost of the path
+        const double solution_path_cost = goal_index_itr->second.second;
+        return std::make_pair(solution_path_indices, solution_path_cost);
+
     }
 
     inline AstarResult GenericAstarSearch(const int64_t start_id, const int64_t goal_id, const std::function<std::vector<int64_t>(const int64_t)>& generate_children_fn, const std::function<bool(const int64_t, const int64_t)>& edge_validity_check_fn, const std::function<double(const int64_t, const int64_t)>& distance_fn, const std::function<double(const int64_t, const int64_t)>& heuristic_fn, const bool limit_pqueue_duplicates)
@@ -1231,17 +1148,15 @@ namespace arc_helpers
         {
             return 0.0;
         }
-        else if (val >= upper_bound)
+        if (val >= upper_bound)
         {
             return 1.0;
         }
-        else
-        {
-            const double cdf_lower_bound = EvaluateGaussianCDF(mean, std_dev, lower_bound);
-            const double numerator = EvaluateGaussianCDF(mean, std_dev, val) - cdf_lower_bound;
-            const double denominator = EvaluateGaussianCDF(mean, std_dev, upper_bound) - cdf_lower_bound;
-            return numerator / denominator;
-        }
+        
+        const double cdf_lower_bound = EvaluateGaussianCDF(mean, std_dev, lower_bound);
+        const double numerator = EvaluateGaussianCDF(mean, std_dev, val) - cdf_lower_bound;
+        const double denominator = EvaluateGaussianCDF(mean, std_dev, upper_bound) - cdf_lower_bound;
+        return numerator / denominator;
     }
 
     inline double EvaluateTruncatedGaussianPDF(const double mean, const double lower_bound, const double upper_bound, const double std_dev, const double val)
@@ -1251,19 +1166,17 @@ namespace arc_helpers
         {
             return 0.0;
         }
-        else if (val >= upper_bound)
+        if (val >= upper_bound)
         {
             return 0.0;
         }
-        else
-        {
-            const double cdf_upper = EvaluateGaussianCDF(mean, std_dev, upper_bound);
-            const double cdf_lower = EvaluateGaussianCDF(mean, std_dev, lower_bound);
-            const double probability_enclosed = cdf_upper - cdf_lower;
-            const double gaussian_pdf = EvaluateGaussianPDF(mean, std_dev, val);
-            const double pdf = gaussian_pdf / probability_enclosed;
-            return pdf;
-        }
+
+        const double cdf_upper = EvaluateGaussianCDF(mean, std_dev, upper_bound);
+        const double cdf_lower = EvaluateGaussianCDF(mean, std_dev, lower_bound);
+        const double probability_enclosed = cdf_upper - cdf_lower;
+        const double gaussian_pdf = EvaluateGaussianPDF(mean, std_dev, val);
+        const double pdf = gaussian_pdf / probability_enclosed;
+        return pdf;
     }
 
     inline double IntegrateGaussian(const double mean, const double std_dev, const double lower_limit, const double upper_limit)
@@ -1310,14 +1223,7 @@ namespace arc_helpers
             // Init Values Used in Inequality of Interest
             const double val1 = (2 * sqrt(exp(1))) / (lower_bound + sqrt(pow(lower_bound, 2) + 4));
             const double val2 = exp((pow(lower_bound, 2) - lower_bound * sqrt(pow(lower_bound, 2) + 4)) / (4));
-            if (upper_bound > lower_bound + val1 * val2)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return upper_bound > lower_bound + val1 * val2;
         }
 
         // Naive Accept-Reject algorithm
