@@ -107,6 +107,7 @@ TEST(TimerTest, Printing_to_screen_runs_without_error)
     // Uncomment this for viewing output.
     // Commented as to not pollute the testing output
     // PROFILE_PRINT_SUMMARY_FOR_GROUP(names); 
+    // TODO: Automate validation of summary text
 }
 
 
@@ -123,6 +124,9 @@ TEST(TimerTest, Writing_summary_to_file_runs_without_error)
     PROFILE_RECORD_DOUBLE("double values", 3.2);
     PROFILE_RECORD_DOUBLE("double values", -1.966);
 
+    PROFILE_RECORD_DOUBLE("unstarted double", 1.2345);
+
+    //TODO: Automate validation of summary text
     PROFILE_WRITE_SUMMARY_FOR_ALL("testing_output.txt");
 }
 
@@ -141,7 +145,9 @@ TEST(TimerTest, Writing_all_to_file_runs_without_error)
     PROFILE_RECORD_DOUBLE("double values", 2.2);
     PROFILE_RECORD_DOUBLE("double values", 3.3);
     PROFILE_RECORD_DOUBLE("double values", 4.4);
-            PROFILE_RECORD_DOUBLE("double values", 5.5);
+    PROFILE_RECORD_DOUBLE("double values", 5.5);
+
+    //TODO: Automate validation of summary text
     PROFILE_WRITE_ALL("testing_output_full.txt");
     PROFILE_WRITE_ALL_FEWER_THAN("testing_output_limited.txt", 3);
 }
