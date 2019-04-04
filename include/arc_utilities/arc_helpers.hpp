@@ -183,8 +183,11 @@ namespace arc_helpers
         {
             return (current | update_mask);
         }
-        update_mask = (~update_mask);
-        return (current & update_mask);
+        else
+        {
+            update_mask = (~update_mask);
+            return (current & update_mask);
+        }
     }
 
     template <typename T>
@@ -480,8 +483,13 @@ namespace arc_helpers
     template<typename ColorType>
     inline ColorType GenerateUniqueColor(const uint32_t color_code, const float alpha=1.0f)
     {
-        std::map<uint32_t, std::vector<uint8_t>> color_map{
-            {0, {0xff, 0xff, 0xff}},
+        // Note: sdf_tools relies on this particular color (with alpha = 0) for color_code 0
+        if (color_code == 0)
+        {
+            return RGBAColorBuilder<ColorType>::MakeFromFloatColors(1.0f, 1.0f, 1.0f, 0.0f);
+        }
+        
+        static const std::map<uint32_t, std::vector<uint8_t>> color_map{
             {1, {0xff, 0x00, 0xb3}},
             {2, {0x80, 0x75, 0x3e}},
             {3, {0xff, 0x00, 0x68}},
@@ -504,13 +512,13 @@ namespace arc_helpers
             {20, {0x23, 0x16, 0x2c}}
         };
 
-        if (color_map.count(color_code))
+        const auto itr = color_map.find(color_code);
+        if (itr == color_map.end())
         {
-            const auto& c = color_map[color_code];
-            return RGBAColorBuilder<ColorType>::MakeFromMixedColors(c[0], c[1], c[2], alpha);
+            return RGBAColorBuilder<ColorType>::MakeFromFloatColors(0.0f, 0.0f, 0.0f, alpha);
         }
-
-        return RGBAColorBuilder<ColorType>::MakeFromFloatColors(0.0f, 0.0f, 0.0f, alpha);
+        const auto& c = itr->second;
+        return RGBAColorBuilder<ColorType>::MakeFromMixedColors(c[0], c[1], c[2], alpha);
     }
 
     /**
