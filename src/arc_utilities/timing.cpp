@@ -85,8 +85,6 @@ bool Profiler::isTimerStarted(std::string timer_name)
     Profiler* m = getInstance();
     if (m->timers.find(timer_name) == m->timers.end())
     {
-        std::cout << "Attempting to record timer \""<< timer_name <<
-            "\" before timer started\n";
         return false;
     }
     return true;
@@ -105,9 +103,12 @@ double Profiler::record(std::string timer_name)
 double Profiler::recordDouble(std::string timer_name, double datum)
 {
     Profiler* m = getInstance();
-    assert(m->isTimerStarted(timer_name)); //too harsh?
 
-    double time_elapsed = m->timers[timer_name]();
+    double time_elapsed = 0;
+    if(m->isTimerStarted(timer_name))
+    {
+        time_elapsed = m->timers[timer_name]();
+    }
 
     if (m->timed_double_data.find(timer_name) == m->timed_double_data.end())
     {
@@ -208,8 +209,7 @@ void Profiler::printGroupSummary(const std::vector<std::string> &names)
     }
 }
 
-
-void Profiler::writeAllSummary(const std::string &filename)
+std::vector<std::string> Profiler::getAllNames()
 {
     std::vector<std::string> all_names;
     Profiler* m = getInstance();
@@ -226,8 +226,17 @@ void Profiler::writeAllSummary(const std::string &filename)
     }
 
     std::sort(all_names.begin(), all_names.end());
+    return all_names;
+}
 
-    writeGroupSummary(filename, all_names);
+void Profiler::printAllSummary()
+{
+    printGroupSummary(getAllNames());
+}
+
+void Profiler::writeAllSummary(const std::string &filename)
+{
+    writeGroupSummary(filename, getAllNames());
 }
 
 
