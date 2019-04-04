@@ -1,7 +1,8 @@
 #/bin/bash
-BUILD_TYPE=${1:-Release}
+ROS_VERSION=${1:-kinetic}
+BUILD_TYPE=${2:-Release}
 
-. /opt/ros/kinetic/setup.bash
+. /opt/ros/$ROS_VERSION/setup.bash
 . /root/catkin_ws/devel_isolated/setup.bash
 
 cd ~/catkin_ws
