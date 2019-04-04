@@ -9,7 +9,7 @@ using namespace arc_utilities;
 
 
 
-TEST(TimerTest, Functioning)
+TEST(TimerTest, Timer_is_monotonically_increasing_with_sequential_records)
 {
     Profiler::reset_and_preallocate(10,10);
     Profiler::startTimer("timer1");
@@ -26,7 +26,7 @@ TEST(TimerTest, Functioning)
 
 }
 
-TEST(TimerTest, TimerAccuracy)
+TEST(TimerTest, Timer_is_approximately_accurate)
 {
     Profiler::startTimer("sleepy");
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -35,38 +35,42 @@ TEST(TimerTest, TimerAccuracy)
     EXPECT_TRUE(t_elapsed > 0.0500) << "Recorded time less than sleep time";
 }
 
-TEST(TimerTest, MultiTimer)
+TEST(TimerTest, Multiple_timers_can_run_simultaneously)
 {
     Profiler::reset_and_preallocate(10,10);
     Profiler::startTimer("timer1");
     Profiler::startTimer("timer2");
     double t2_elapsed = Profiler::record("timer2");
     double t1_elapsed = Profiler::record("timer1");
-    EXPECT_TRUE(t1_elapsed > t2_elapsed) << "Timer1 started first but not registering longer time";
-    EXPECT_TRUE(t1_elapsed > 0) << "Timer 1 recorded non-positive elapsed time";
-    EXPECT_TRUE(t2_elapsed > 0) << "Timer 2 recorded non-positive elapsed time";
+    EXPECT_GT(t1_elapsed, t2_elapsed) << "Timer1 started first but not registering longer time";
+    EXPECT_GT(t1_elapsed, 0) << "Timer 1 recorded non-positive elapsed time";
+    EXPECT_GT(t2_elapsed, 0) << "Timer 2 recorded non-positive elapsed time";
 }
 
-TEST(TimerTest, RestartingTimer)
+TEST(TimerTest, startTimer_restarts_the_timer_from_zero)
 {
+    int sleep_s = 10;
     Profiler::reset_and_preallocate(10,10);
     Profiler::startTimer("timer1");
     Profiler::startTimer("timer2");
-    double t2_elapsed = Profiler::record("timer2");
-    double t1_elapsed = Profiler::record("timer1");
+    std::this_thread::sleep_for(std::chrono::seconds(sleep_s));
 
-
+    EXPECT_GE(Profiler::record("timer1"), sleep_s) << "Slept for " << sleep_s <<
+        " seconds. Inconsistent with timer 1";
     Profiler::startTimer("timer1");
     double t1_elapsed_restarted = Profiler::record("timer1");
-    EXPECT_TRUE(t1_elapsed_restarted < t2_elapsed) << "Restarted timer 1, but long time measured";
+    EXPECT_LT(t1_elapsed_restarted, sleep_s) << "Restarted timer 1, but long time measured";
 
+    
+    EXPECT_GE(Profiler::record("timer2"), sleep_s) << "Slept for " << sleep_s <<
+        " seconds. Inconsistent with timer2 after resetting timer 1";
     Profiler::startTimer("timer2");
     double t2_elapsed_restarted = Profiler::record("timer2");
-    EXPECT_TRUE(t1_elapsed > t2_elapsed_restarted) << "Restarted timer2 but long time measured";
+    EXPECT_LT(t2_elapsed_restarted, sleep_s) << "Restarted timer 2, but long time measured";
 
 }
 
-TEST(TimerTest, Macros)
+TEST(TimerTest, PROFILE_COMMAND_macros_run)
 {
     PROFILE_REINITIALIZE(100,100);
     PROFILE_START("testmacro1");
@@ -74,14 +78,16 @@ TEST(TimerTest, Macros)
     PROFILE_RECORD("testmacro2");
     PROFILE_RECORD("testmacro1");
 
+    // Uncomment this for viewing output.
+    // Commented as to not pollute the testing output
     // PROFILE_PRINT_SUMMARY_FOR_GROUP("testmacro1");
 
     double t1_elapsed = Profiler::getData("testmacro1")[0];
     double t2_elapsed = Profiler::getData("testmacro2")[0];
-    EXPECT_TRUE(t1_elapsed > t2_elapsed) << "Macro timer1 started first but recorded less time";
+    EXPECT_GT(t1_elapsed, t2_elapsed) << "Macro timer1 started first but recorded less time";
 }
 
-TEST(TimerTest, Printing)
+TEST(TimerTest, Printing_to_screen_runs_without_error)
 {
     PROFILE_REINITIALIZE(100,1000);
     PROFILE_START("name_01");
@@ -98,11 +104,13 @@ TEST(TimerTest, Printing)
                                       "really really really long name",
                                       "name_02"};
 
-    PROFILE_PRINT_SUMMARY_FOR_GROUP(names);
+    // Uncomment this for viewing output.
+    // Commented as to not pollute the testing output
+    // PROFILE_PRINT_SUMMARY_FOR_GROUP(names); 
 }
 
 
-TEST(TimerTest, WritingSummary)
+TEST(TimerTest, Writing_summary_to_file_runs_without_error)
 {
     PROFILE_REINITIALIZE(100, 100);
     PROFILE_START("one");
@@ -119,7 +127,7 @@ TEST(TimerTest, WritingSummary)
 }
 
 
-TEST(TimerTest, WritingAll)
+TEST(TimerTest, Writing_all_to_file_runs_without_error)
 {
     PROFILE_REINITIALIZE(100, 100);
     PROFILE_START("one");
