@@ -4,7 +4,6 @@ BUILD_TYPE=${2:-Release}
 
 . /opt/ros/$ROS_VERSION/setup.bash
 
-echo $ROS_VERSION
 echo $(rosversion -d)
 
 cd ~/catkin_ws
