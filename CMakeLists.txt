@@ -145,11 +145,6 @@ add_executable(test_distance_functions src/test_distance_functions.cpp)
 add_dependencies(test_distance_functions ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_distance_functions ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test Eigen (de)Serialization functions
-add_executable(test_eigen_serialization src/test_eigen_serialization.cpp)
-add_dependencies(test_eigen_serialization ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_eigen_serialization ${PROJECT_NAME} ${catkin_LIBRARIES})
-
 # Simple test ROS (de)Serialization functions
 add_executable(test_ros_serialization src/test_ros_serialization.cpp)
 add_dependencies(test_ros_serialization ${catkin_EXPORTED_TARGETS})
@@ -168,8 +163,11 @@ target_link_libraries(test_thin_plate_spline ${PROJECT_NAME} ${catkin_LIBRARIES}
 ##  Tests  ##
 #############
 
-catkin_add_gtest(test_timings tests/timings_tests)
+catkin_add_gtest(test_timings tests/timings_tests.cpp)
 target_link_libraries(test_timings ${PROJECT_NAME})
+
+catkin_add_gtest(test_eigen_serialization tests/test_eigen_serialization.cpp)
+target_link_libraries(test_eigen_serialization ${PROJECT_NAME})
 
 #############
 ## Install ##
