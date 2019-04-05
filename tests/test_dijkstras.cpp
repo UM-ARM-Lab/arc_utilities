@@ -52,7 +52,7 @@ TEST(DijkstrasTestSuite, AStarSimple)
                                                                       true);
     EXPECT_EQ(result.second, 1.0) << "AStar did not find optimal path cost of 1.0";
     auto path = result.first;
-    ASSERT_EQ(result.first.size(), 2) << "AStar did not find optimal path of length 2";
+    ASSERT_EQ(result.first.size(), (size_t)2) << "AStar did not find optimal path of length 2";
     EXPECT_EQ(result.first.front(), start) << "AStar's path does not begin at start node";
     EXPECT_EQ(result.first.back(), goal) << "AStar's path does not end at goal node";
 }
@@ -83,7 +83,7 @@ TEST(DijkstrasTestSuite, AStarNoSolution)
     EXPECT_GE(result.second, std::numeric_limits<double>::max()) <<
         "AStar did not return cost=INF when no path exists";
     auto path = result.first;
-    ASSERT_EQ(result.first.size(), 0) << "AStar returned a path when non exists";
+    ASSERT_EQ(result.first.size(), (size_t)0) << "AStar returned a path when non exists";
 }
 
 

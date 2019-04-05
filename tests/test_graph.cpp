@@ -13,26 +13,26 @@ TEST(GraphTestSuite, construction)
 {
     GraphD g;
 
-    EXPECT_EQ(g.getNodes().size(), 0) << "Empty graph has nodes";
+    EXPECT_EQ(g.getNodes().size(), (size_t)0) << "Empty graph has nodes";
     g.addNode(std::vector<double>{0,0});
-    EXPECT_EQ(g.getNodes().size(), 1) << "After adding nodes, wrong number appear in graph";
+    EXPECT_EQ(g.getNodes().size(), (size_t)1) << "After adding nodes, wrong number appear in graph";
     g.addNode(std::vector<double>{1,1});
-    EXPECT_EQ(g.getNodes().size(), 2) << "After adding nodes, wrong number appear in graph";
+    EXPECT_EQ(g.getNodes().size(), (size_t)2) << "After adding nodes, wrong number appear in graph";
     g.addNode(std::vector<double>{3,0});
-    EXPECT_EQ(g.getNodes().size(), 3) << "After adding nodes, wrong number appear in graph";
+    EXPECT_EQ(g.getNodes().size(), (size_t)3) << "After adding nodes, wrong number appear in graph";
 
-    EXPECT_EQ(g.getNode(0).getOutEdges().size(), 0) << "Node has edge before any added";
-    EXPECT_EQ(g.getNode(0).getInEdges().size(), 0) << "Node has edge before any added";
+    EXPECT_EQ(g.getNode(0).getOutEdges().size(), (size_t)0) << "Node has edge before any added";
+    EXPECT_EQ(g.getNode(0).getInEdges().size(), (size_t)0) << "Node has edge before any added";
 
     
     GraphEdge &e1 = g.addEdgeBetweenNodes(0, 1, 1.0);
-    ASSERT_EQ(g.getNode(0).getOutEdges().size(), 1) << "Node has wrong number of out edges";
-    ASSERT_EQ(g.getNode(1).getInEdges().size(), 1) << "Node has wrong number of in edges";
+    ASSERT_EQ(g.getNode(0).getOutEdges().size(), (size_t)1) << "Node has wrong number of out edges";
+    ASSERT_EQ(g.getNode(1).getInEdges().size(), (size_t)1) << "Node has wrong number of in edges";
     EXPECT_EQ(e1, g.getNode(0).getOutEdges()[0]) << "Edge returned and edge lookup are different";
     
     g.addEdgeBetweenNodes(1, 2, 1.0);
     g.addEdgeBetweenNodes(0, 2, 1.0);
-    EXPECT_EQ(g.getNode(0).getOutEdges().size(), 2) << "Node has wrong number of out edges";
+    EXPECT_EQ(g.getNode(0).getOutEdges().size(), (size_t)2) << "Node has wrong number of out edges";
 
 }
 
