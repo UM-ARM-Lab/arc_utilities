@@ -1151,6 +1151,52 @@ namespace EigenHelpers
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    // Math functions on std::pair types
+    ////////////////////////////////////////////////////////////////////////////
+
+    template <typename First, typename Second>
+    inline std::pair<First, Second> Abs(const std::pair<First, Second>& pair)
+    {
+        return {std::abs(pair.first), std::abs(pair.second)};
+    }
+
+    template <typename First, typename Second, typename Scalar>
+    inline std::pair<First, Second> Multiply(const std::pair<First, Second>& pair, const Scalar scalar)
+    {
+        return {pair.first * scalar, pair.second * scalar};
+    }
+
+    template <typename First, typename Second>
+    inline std::pair<First, Second> Multiply(const std::pair<First, Second>& pair1, const std::pair<First, Second>& pair2)
+    {
+        return {pair1.first * pair2.first, pair1.second * pair2.second};
+    }
+
+    template <typename First, typename Second, typename Scalar>
+    inline std::pair<First, Second> Divide(const std::pair<First, Second>& pair, const Scalar scalar)
+    {
+        return {pair.first / scalar, pair.second / scalar};
+    }
+
+    template <typename First, typename Second>
+    inline std::pair<First, Second> Divide(const std::pair<First, Second>& pair1, const std::pair<First, Second>& pair2)
+    {
+        return {pair1.first / pair2.first, pair1.second / pair2.second};
+    }
+
+    template <typename First, typename Second>
+    inline std::pair<First, Second> Add(const std::pair<First, Second>& pair1, const std::pair<First, Second>& pair2)
+    {
+        return {pair1.first + pair2.first, pair1.second + pair2.second};
+    }
+
+    template <typename First, typename Second>
+    inline std::pair<First, Second> Sub(const std::pair<First, Second>& pair1, const std::pair<First, Second>& pair2)
+    {
+        return {pair1.first - pair2.first, pair1.second - pair2.second};
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
     // Math functions on std::vector types
     ////////////////////////////////////////////////////////////////////////////
 

@@ -194,10 +194,11 @@ namespace path_utils
 
             // Determine the starting length for each segment that we are upsampling
             std::priority_queue<std::pair<double, size_t>> ordered_segment_lengths;
-            Eigen::VectorXd individual_lengths(num_segments);
+            std::vector<double> individual_lengths(num_segments);
             for (ssize_t ind = start_ind; ind < end_ind - 1; ++ind)
             {
                 const double dist = state_distance_fn(path[ind], path[ind + 1]);
+                individual_lengths[ind - start_ind] = dist;
                 ordered_segment_lengths.push({dist, ind - start_ind});
             }
 
@@ -208,10 +209,11 @@ namespace path_utils
             {
                 // Retrieve the index of the segment that has the largest subsections
                 const std::pair<double, size_t> largest = ordered_segment_lengths.top();
+                ordered_segment_lengths.pop();
                 const ssize_t segment_ind = largest.second;
                 // Add another subsection
                 const ssize_t new_count = num_points_per_segment[segment_ind] + 1;
-                const double new_length = individual_lengths(segment_ind) / new_count;
+                const double new_length = individual_lengths[segment_ind] / new_count;
                 // Record the new number of points and resulting subsection length
                 ordered_segment_lengths.push({new_length, segment_ind});
                 num_points_per_segment[segment_ind] = new_count;

@@ -14,7 +14,7 @@ class Listener:
         """
         Listener is a wrapper around a subscriber where the callback simply records the latest msg.
 
-        Listener does not consume the message 
+        Listener does not consume the message
             (for consuming behavior, use the standard ros callback pattern)
         Listener does not check timestamps of message headers
 
@@ -26,7 +26,7 @@ class Listener:
 
         self.data = None
         self.lock = Lock()
-            
+
         self.subscriber = rospy.Subscriber(topic_name, topic_type, self.callback)
         self.get(wait_for_data)
 
@@ -39,56 +39,72 @@ class Listener:
         Returns the latest msg from the subscribed topic
 
         Parameters:
-            block_until_data (bool): block if no message has been received yet. 
+            block_until_data (bool): block if no message has been received yet.
                                      Guarantees a msg is returned (not None)
         """
         wait_for(lambda: not (block_until_data and self.data is None))
-            
+
         with self.lock:
             return deepcopy(self.data)
 
-    
+
 def wait_for(func):
     """
     Waits for function evaluation to be true. Exits cleanly from ros.
 
     Introduces sleep delay, not recommended for time critical operations
     """
-    
+
     while not func() and not rospy.is_shutdown():
         time.sleep(0.01)
 
-        
-def joy_to_xbox(joy):
+
+def joy_to_xbox(joy, xpad=True):
     """
     Transforms a joystick sensor_msg to a XBox controller for easier code readability
-    
+
     Parameters:
     joy (sensor_msgs/Joy): xbox msg
+    xpad (bool): True if using the default xpad driver, False if using xboxdrv
 
     Returns:
     xbox struct where fields are the button names
     """
     class Xbox_msg():
-        pass
+        def __str__(self):
+            items = vars(self).items()
+            return "\n".join("%s: %s" % item for item in items)
     x = Xbox_msg()
-    x.A, x.B, x.X, x.Y, x.LB, x.RB, \
-        x.back, x.start, x.power,\
-        x.stick_button_left, x.stick_button_right, \
-        x.DL, x.DR, x.DU, x.DD = joy.buttons
-    x.LH, x.LV, x.LT, x.RH, x.RV, x.RT, x.DH, x.DV = joy.axes
+    if xpad:
+        x.A, x.B, x.X, x.Y, x.LB, x.RB, \
+            x.back, x.start, x.power,\
+            x.stick_button_left, x.stick_button_right, \
+            x.DL, x.DR, x.DU, x.DD = joy.buttons
+        x.LH, x.LV, x.RH, x.RV, x.RT, x.LT, x.DH, x.DV = joy.axes
+    else:
+        x.A, x.B, x.X, x.Y, x.LB, x.RB, \
+            x.back, x.start, x.power,\
+            x.stick_button_left, x.stick_button_right = joy.buttons
+        x.LH, x.LV, x.RH, x.RV, x.RT, x.LT, x.DH, x.DV = joy.axes
     return x
 
 
 class Xbox():
-    def __init__(self, joystick_topic="joy"):
+    def __init__(self, joystick_topic="joy", xpad=True):
+        """
+        Parameters:
+        joystick_topic (string): topic name to subscribe to
+        xpad (bool): True if using the default xpad driver, False if using xboxdrv
+
+        """
+        self.xpad = xpad
         self.xbox_listener = Listener(joystick_topic, Joy)
 
     def get_buttons_state(self):
         """
         Returns an xbox struct of the last joystick message received
         """
-        return joy_to_xbox(self.xbox_listener.get())
+        return joy_to_xbox(self.xbox_listener.get(), self.xpad)
 
     def get_button(self, button):
         """
@@ -108,7 +124,7 @@ class Xbox():
         """
         if message:
             rospy.loginfo("Waiting for xbox button: " + button)
-            
+
         wait_for(lambda: not self.get_button(button) == 0)
 
 
