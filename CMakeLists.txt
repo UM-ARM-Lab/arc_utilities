@@ -70,6 +70,7 @@ add_custom_target(${PROJECT_NAME}_headers SOURCES
     include/${PROJECT_NAME}/voxel_grid.hpp
     include/${PROJECT_NAME}/dynamic_spatial_hashed_voxel_grid.hpp
     include/${PROJECT_NAME}/aligned_eigen_types.hpp
+    include/${PROJECT_NAME}/eigen_typedefs.hpp
     include/${PROJECT_NAME}/eigen_helpers.hpp
     include/${PROJECT_NAME}/eigen_helpers_conversions.hpp
     include/${PROJECT_NAME}/simple_rrt_planner.hpp
