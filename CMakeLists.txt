@@ -94,7 +94,10 @@ add_custom_target(${PROJECT_NAME}_headers SOURCES
     include/${PROJECT_NAME}/simple_robot_models.hpp
     include/${PROJECT_NAME}/simple_robot_model_interface.hpp
     include/${PROJECT_NAME}/time_optimal_trajectory_parametrization.hpp
-    include/${PROJECT_NAME}/thin_plate_spline.hpp)
+    include/${PROJECT_NAME}/thin_plate_spline.hpp
+    include/${PROJECT_NAME}/math_helpers.hpp
+    include/${PROJECT_NAME}/vector_math.hpp
+    include/${PROJECT_NAME}/hash.hpp)
 
 # Utility library
 add_library(${PROJECT_NAME}
