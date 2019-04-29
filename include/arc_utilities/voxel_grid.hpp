@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <arc_utilities/arc_helpers.hpp>
 #include <arc_utilities/serialization_eigen.hpp>
-#include <arc_utilities/eigen_helpers.hpp>
+#include <arc_utilities/eigen_typedefs.hpp>
 
 #ifndef VOXEL_GRID_HPP
 #define VOXEL_GRID_HPP

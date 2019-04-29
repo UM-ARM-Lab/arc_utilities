@@ -9,6 +9,9 @@
 
 namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
 {
+    ////////////////////////////////////////////////////////////////////////////
+    // Misc
+    ////////////////////////////////////////////////////////////////////////////
 
     inline bool CloseEnough(const double p1, const double p2, const double threshold)
     {
@@ -42,8 +45,6 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         return CloseEnough(p1, p2, threshold);
     }
 
-
-
     ////////////////////////////////////////////////////////////////////////////
     // Interpolation functions
     ////////////////////////////////////////////////////////////////////////////
@@ -71,7 +72,6 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
             return value;
         }
     }
-
 
     inline double Interpolate(const double p1, const double p2, const double ratio)
     {
@@ -175,11 +175,10 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         return interped;
     }
 
-
-
     ////////////////////////////////////////////////////////////////////////////
     // Distance functions
     ////////////////////////////////////////////////////////////////////////////
+
     inline double SquaredDistance(const std::vector<double>& p1, const std::vector<double>& p2)
     {
         if (p1.size() == p2.size())
@@ -308,8 +307,7 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         return total_dist;
     }
 
-
-        ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     // Averaging functions
     // Numerically more stable averages taken from http://people.ds.cam.ac.uk/fanf2/hermes/doc/antiforgery/stats.pdf
     ////////////////////////////////////////////////////////////////////////////
@@ -384,10 +382,6 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
     {
         return AverageStdVectorDouble(angles, weights);
     }
-
 }
-
-
-
 
 #endif //ARC_UTILITIES_MATH_HELPERS_HPP

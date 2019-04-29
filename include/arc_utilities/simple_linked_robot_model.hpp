@@ -4,7 +4,8 @@
 #include <random>
 #include <Eigen/Geometry>
 #include <arc_utilities/arc_helpers.hpp>
-#include <arc_utilities/eigen_helpers.hpp>
+#include <arc_utilities/eigen_typedefs.hpp>
+#include <arc_utilities/math_helpers.hpp>
 #include <arc_utilities/pretty_print.hpp>
 #include <arc_utilities/simple_robot_model_interface.hpp>
 

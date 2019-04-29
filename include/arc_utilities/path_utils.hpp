@@ -1,6 +1,6 @@
 #include <functional>
 #include <arc_utilities/arc_helpers.hpp>
-#include <arc_utilities/eigen_helpers.hpp>
+#include <arc_utilities/eigen_typedefs.hpp>
 #include <arc_utilities/arc_exceptions.hpp>
 
 #ifndef PATH_UTILS_HPP

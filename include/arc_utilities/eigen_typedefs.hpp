@@ -1,6 +1,7 @@
 #ifndef EIGEN_TYPEDEFS_HPP
 #define EIGEN_TYPEDEFS_HPP
 
+#include <map>
 #include <Eigen/StdVector>
 #include <Eigen/Geometry>
 
