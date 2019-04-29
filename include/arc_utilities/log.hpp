@@ -3,7 +3,9 @@
 #include <iomanip>
 #include <string>
 #include <stdexcept>
+#include <mutex>
 #include <boost/filesystem.hpp>
+#include "arc_utilities/filesystem.hpp"
 
 #ifndef LOG_HPP
 #define LOG_HPP
@@ -39,32 +41,12 @@ namespace Log
     class Log
     {
         public:
-            Log(const std::string& filename, bool add_header = true)
+            Log(const std::string& filename, bool add_header = false)
                 : filename_(filename)
             {
-                // If it hasn't been opened, assume that it is because the
-                // directory doesn't exist.
+                // Create the parent folder if needed
                 boost::filesystem::path p(filename_);
-                boost::filesystem::path dir = p.parent_path();
-                if (!boost::filesystem::is_directory(dir))
-                {
-                    std::cerr << "\x1b[33;1m" << dir << " does not exist! Creating ... ";
-
-                    // NOTE: create_directories should be able to return true in this case
-                    // however due to a bug related to a trailing '/' this is not currently
-                    // the case in my version of boost
-                    // https://svn.boost.org/trac/boost/ticket/7258
-                    boost::filesystem::create_directories(dir);
-                    if (boost::filesystem::is_directory(dir))
-        //            if (boost::filesystem::create_directories(p))
-                    {
-                        std::cerr << "Succeeded!\x1b[37m\n";
-                    }
-                    else
-                    {
-                        std::cerr << "\x1b[31;1mFailed!\x1b[37m\n";
-                    }
-                }
+                arc_utilities::CreateDirectory(p.parent_path());
 
                 out_file_.open(filename, std::ios_base::out | std::ios_base::trunc);
                 // check if we've succesfully opened the file
@@ -139,10 +121,12 @@ namespace Log
 
             void logMessage(const std::string& message)
             {
+                std::lock_guard<std::mutex> lock(mtx_);
                 out_file_ << message << std::endl;
             }
 
         private:
+            std::mutex mtx_;
             std::string filename_;
             std::ofstream out_file_;
     };
