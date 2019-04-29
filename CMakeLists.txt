@@ -162,6 +162,8 @@ catkin_add_gtest(test_graph tests/test_graph.cpp)
 target_link_libraries(test_graph ${catkin_LIBRARIES})
 catkin_add_gtest(test_dijkstras tests/test_dijkstras.cpp)
 target_link_libraries(test_dijkstras ${catkin_LIBRARIES})
+catkin_add_gtest(test_math_helpers tests/test_math_helpers.cpp)
+target_link_libraries(test_math_helpers ${catkin_LIBRARIES})
 
 
 
