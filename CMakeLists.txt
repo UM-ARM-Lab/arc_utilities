@@ -169,6 +169,10 @@ target_link_libraries(test_timings ${PROJECT_NAME})
 catkin_add_gtest(test_eigen_serialization tests/test_eigen_serialization.cpp)
 target_link_libraries(test_eigen_serialization ${PROJECT_NAME})
 
+catkin_add_gtest(test_math_helpers tests/test_math_helpers.cpp)
+target_link_libraries(test_math_helpers ${catkin_LIBRARIES})
+
+
 #############
 ## Install ##
 #############
