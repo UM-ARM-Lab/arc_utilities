@@ -13,7 +13,7 @@
 #include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
 #include <Eigen/Cholesky>
-#include <arc_utilities/eigen_helpers.hpp>
+#include <arc_utilities/hash.hpp>
 #include <omp.h>
 #include <sys/stat.h>
 #include <string.h>
