@@ -157,7 +157,6 @@ namespace EigenHelpers
         return Eigen::Vector3d(res.x(), res.y(), res.z());
     }
 
-
     inline Eigen::VectorXd SafeNormal(const Eigen::VectorXd& vec)
     {
         const double norm = vec.norm();
