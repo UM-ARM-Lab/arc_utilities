@@ -67,7 +67,14 @@ TEST(TimerTest, startTimer_restarts_the_timer_from_zero)
     Profiler::startTimer("timer2");
     double t2_elapsed_restarted = Profiler::record("timer2");
     EXPECT_LT(t2_elapsed_restarted, sleep_s) << "Restarted timer 2, but long time measured";
+}
 
+TEST(TimerTest, recording_before_starting_throws_error)
+{
+    PROFILE_START("Started timer");
+    EXPECT_NO_THROW(PROFILE_RECORD("Started timer"));
+    EXPECT_THROW(PROFILE_RECORD("Unstarted timer"), std::logic_error) <<
+        "Attempting to record a timer before starting should throw an error";
 }
 
 TEST(TimerTest, PROFILE_COMMAND_macros_run)
