@@ -149,6 +149,16 @@ namespace arc_dijkstras
             return edge_validity_;
         }
 
+        bool isValid() const
+        {
+            return edge_validity_ == EDGE_VALIDITY::VALID;
+        }
+
+        bool isInvalid() const
+        {
+            return edge_validity_ == EDGE_VALIDITY::INVALID;
+        }
+
         void setValidity(const EDGE_VALIDITY new_validity)
         {
             edge_validity_ = new_validity;
