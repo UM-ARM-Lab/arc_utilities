@@ -70,6 +70,7 @@ add_custom_target(${PROJECT_NAME}_headers SOURCES
     include/${PROJECT_NAME}/voxel_grid.hpp
     include/${PROJECT_NAME}/dynamic_spatial_hashed_voxel_grid.hpp
     include/${PROJECT_NAME}/aligned_eigen_types.hpp
+    include/${PROJECT_NAME}/eigen_typedefs.hpp
     include/${PROJECT_NAME}/eigen_helpers.hpp
     include/${PROJECT_NAME}/eigen_helpers_conversions.hpp
     include/${PROJECT_NAME}/simple_rrt_planner.hpp
@@ -94,7 +95,10 @@ add_custom_target(${PROJECT_NAME}_headers SOURCES
     include/${PROJECT_NAME}/simple_robot_models.hpp
     include/${PROJECT_NAME}/simple_robot_model_interface.hpp
     include/${PROJECT_NAME}/time_optimal_trajectory_parametrization.hpp
-    include/${PROJECT_NAME}/thin_plate_spline.hpp)
+    include/${PROJECT_NAME}/thin_plate_spline.hpp
+    include/${PROJECT_NAME}/math_helpers.hpp
+    include/${PROJECT_NAME}/vector_math.hpp
+    include/${PROJECT_NAME}/hash.hpp)
 
 # Utility library
 add_library(${PROJECT_NAME}
@@ -168,6 +172,10 @@ target_link_libraries(test_timings ${PROJECT_NAME})
 
 catkin_add_gtest(test_eigen_serialization tests/test_eigen_serialization.cpp)
 target_link_libraries(test_eigen_serialization ${PROJECT_NAME})
+
+catkin_add_gtest(test_math_helpers tests/test_math_helpers.cpp)
+target_link_libraries(test_math_helpers ${catkin_LIBRARIES})
+
 
 #############
 ## Install ##

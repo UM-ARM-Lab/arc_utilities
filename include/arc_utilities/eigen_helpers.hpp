@@ -1,4 +1,8 @@
-﻿#include <Eigen/StdVector>
+﻿#ifndef EIGEN_HELPERS_HPP
+#define EIGEN_HELPERS_HPP
+
+
+#include <Eigen/StdVector>
 #include <Eigen/Geometry>
 #include <Eigen/Eigenvalues>
 #include <Eigen/Jacobi>
@@ -9,100 +13,17 @@
 #include <vector>
 #include <functional>
 #include <type_traits>
+#include "eigen_typedefs.hpp"
+#include "math_helpers.hpp"
+#include "vector_math.hpp"
 
-#ifndef EIGEN_HELPERS_HPP
-#define EIGEN_HELPERS_HPP
 
-namespace std
-{
-    // http://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
-    template <class T>
-    inline void hash_combine(std::size_t& seed, const T& v)
-    {
-        std::hash<T> hasher;
-        seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-    }
-
-    template <typename T>
-    struct hash<std::complex<T>>
-    {
-        std::size_t operator()(const std::complex<T>& val) const
-        {
-            return (std::hash<T>()(val.real()) ^ ((std::hash<T>()(val.imag()) << 1) >> 1));
-        }
-    };
-
-    template <>
-    struct hash<Eigen::Vector3d>
-    {
-        std::size_t operator()(const Eigen::Vector3d& vector) const
-        {
-            return (std::hash<double>()(vector.x()) ^ ((std::hash<double>()(vector.y()) << 1) >> 1) ^ (std::hash<double>()(vector.z()) << 1));
-        }
-    };
-
-    // Hash function for Eigen vector.
-    // Based on here: https://wjngkoh.wordpress.com/2015/03/04/c-hash-function-for-eigen-matrix-and-vector/
-    template<typename _Scalar, int _Rows>
-    struct hash<Eigen::Matrix<_Scalar, _Rows, 1>>
-    {
-        std::size_t operator() (const Eigen::Matrix<_Scalar, _Rows, 1>& vector) const
-        {
-            std::size_t hash_val = 0;
-            for (ssize_t idx = 0; idx < vector.size(); idx++)
-            {
-                std::hash_combine(hash_val, vector(idx));
-            }
-            return hash_val;
-        }
-    };
-
-    template <typename T1, typename T2>
-    struct hash<std::pair<T1, T2>>
-    {
-        std::size_t operator()(const std::pair<T1, T2>& val) const
-        {
-            std::size_t seed = 0;
-            std::hash_combine(seed, val.first);
-            std::hash_combine(seed, val.second);
-            return seed;
-        }
-    };
-
-}
 
 namespace EigenHelpers
 {
     ////////////////////////////////////////////////////////////////////////////
-    // Typedefs for aligned STL containers using Eigen types
+    // Misc
     ////////////////////////////////////////////////////////////////////////////
-
-    typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>> VectorVector2f;
-    typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VectorVector2d;
-    typedef std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> VectorVector3f;
-    typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VectorVector3d;
-    typedef std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f>> VectorVector4f;
-    typedef std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>> VectorVector4d;
-    typedef std::vector<Eigen::Quaternionf, Eigen::aligned_allocator<Eigen::Quaternionf>> VectorQuaternionf;
-    typedef std::vector<Eigen::Quaterniond, Eigen::aligned_allocator<Eigen::Quaterniond>> VectorQuaterniond;
-    typedef std::vector<Eigen::Isometry3f, Eigen::aligned_allocator<Eigen::Isometry3f>> VectorIsometry3f;
-    typedef std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>> VectorIsometry3d;
-    typedef std::vector<Eigen::Affine3f, Eigen::aligned_allocator<Eigen::Affine3f>> VectorAffine3f;
-    typedef std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> VectorAffine3d;
-    typedef std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> VectorMatrix4f;
-    typedef std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> VectorMatrix4d;
-    typedef std::map<std::string, Eigen::Vector2f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector2f>>> MapStringVector2f;
-    typedef std::map<std::string, Eigen::Vector2d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector2d>>> MapStringVector2d;
-    typedef std::map<std::string, Eigen::Vector3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3f>>> MapStringVector3f;
-    typedef std::map<std::string, Eigen::Vector3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3d>>> MapStringVector3d;
-    typedef std::map<std::string, Eigen::Vector4f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4f>>> MapStringVector4f;
-    typedef std::map<std::string, Eigen::Vector4d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector4d>>> MapStringVector4d;
-    typedef std::map<std::string, Eigen::Quaternionf, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Quaternionf>>> MapStringQuaternionf;
-    typedef std::map<std::string, Eigen::Quaterniond, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Quaterniond>>> MapStringQuaterniond;
-    typedef std::map<std::string, Eigen::Isometry3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Isometry3f>>> MapStringIsometry3f;
-    typedef std::map<std::string, Eigen::Isometry3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Isometry3d>>> MapStringIsometry3d;
-    typedef std::map<std::string, Eigen::Affine3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3f>>> MapStringAffine3f;
-    typedef std::map<std::string, Eigen::Affine3d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Affine3d>>> MapStringAffine3d;
 
     inline bool Equal3d(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
     {
@@ -128,18 +49,10 @@ namespace EigenHelpers
         }
     }
 
-    inline bool CloseEnough(const double p1, const double p2, const double threshold)
+    inline bool CloseEnough(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2, const double threshold)
     {
-        const double real_threshold = std::abs(threshold);
-        const double abs_delta = std::abs(p2 - p1);
-        if (abs_delta <= real_threshold)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return CloseEnough(v1.x(), v2.x(), threshold) &&
+            CloseEnough(v1.y(), v2.y(), threshold);
     }
 
     inline bool CloseEnough(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2, const double threshold)
@@ -177,13 +90,6 @@ namespace EigenHelpers
         return true;
     }
 
-    // Inspired by Eigen's "isApprox" function
-    inline bool IsApprox(const double p1, const double p2, const double precision)
-    {
-        const double smallest_element = std::min(std::abs(p1), std::abs(p2));
-        const double threshold = precision * smallest_element;
-        return CloseEnough(p1, p2, threshold);
-    }
 
     template <typename EigenType, typename Allocator=Eigen::aligned_allocator<EigenType>>
     inline bool IsApprox(const std::vector<EigenType, Allocator>& a, const std::vector<EigenType, Allocator>& b,
@@ -233,29 +139,6 @@ namespace EigenHelpers
         return Eigen::Vector3d(res.x(), res.y(), res.z());
     }
 
-    inline double EnforceContinuousRevoluteBounds(const double value)
-    {
-        if ((value <= -M_PI) || (value > M_PI))
-        {
-            const double remainder = fmod(value, 2.0 * M_PI);
-            if (remainder <= -M_PI)
-            {
-                return (remainder + (2.0 * M_PI));
-            }
-            else if (remainder > M_PI)
-            {
-                return (remainder - (2.0 * M_PI));
-            }
-            else
-            {
-                return remainder;
-            }
-        }
-        else
-        {
-            return value;
-        }
-    }
 
     inline Eigen::VectorXd SafeNormal(const Eigen::VectorXd& vec)
     {
@@ -398,110 +281,10 @@ namespace EigenHelpers
     // Interpolation functions
     ////////////////////////////////////////////////////////////////////////////
 
-    inline double Interpolate(const double p1, const double p2, const double ratio)
-    {
-        // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
-        // Interpolate
-        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
-        return ((p1 * (1.0 - real_ratio)) + (p2 * real_ratio));
-    }
-
-    inline double InterpolateContinuousRevolute(const double p1, const double p2, const double ratio)
-    {
-        // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
-        // Safety check args
-        const double real_p1 = EnforceContinuousRevoluteBounds(p1);
-        const double real_p2 = EnforceContinuousRevoluteBounds(p2);
-        // Interpolate
-        double interpolated = 0.0;
-        double diff = real_p2 - real_p1;
-        if (std::abs(diff) <= M_PI)
-        {
-            interpolated = real_p1 + diff * real_ratio;
-        }
-        else
-        {
-            if (diff > 0.0)
-            {
-                diff = 2.0 * M_PI - diff;
-            }
-            else
-            {
-                diff = -2.0 * M_PI - diff;
-            }
-            interpolated = real_p1 - diff * real_ratio;
-            // Input states are within bounds, so the following check is sufficient
-            if (interpolated > M_PI)
-            {
-                interpolated -= 2.0 * M_PI;
-            }
-            else
-            {
-                if (interpolated < -M_PI)
-                {
-                    interpolated += 2.0 * M_PI;
-                }
-            }
-        }
-        return interpolated;
-    }
-
-    template <typename T>
-    inline std::vector<T> Interpolate(const std::vector<T>& v1, const std::vector<T>& v2, const double ratio)
-    {
-        // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
-        // Safety check inputs
-        const size_t len = v1.size();
-        if (len != v2.size())
-        {
-            std::cerr << "Vectors to interpolate are different sizes (" << v1.size() << " versus " << v2.size() << ")" << std::endl;
-            return std::vector<T>();
-        }
-        // Interpolate
-        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
-        std::vector<T> interped(len, 0);
-        for (size_t idx = 0; idx < len; idx++)
-        {
-            interped[idx] = ((v1[idx] * (1.0 - real_ratio)) + (v2[idx] * real_ratio));
-        }
-        return interped;
-    }
 
     template <typename T, int ROWS>
-    inline Eigen::Matrix<T, ROWS, 1> Interpolate(const Eigen::Matrix<T, ROWS, 1>& v1, const Eigen::Matrix<T, ROWS, 1>& v2, const double ratio)
+    inline Eigen::Matrix<T, ROWS, 1> Interpolate(const Eigen::Matrix<T, ROWS, 1>& v1,
+                                                 const Eigen::Matrix<T, ROWS, 1>& v2, const double ratio)
     {
         // Safety check sizes
         if (v1.size() != v2.size())
@@ -525,7 +308,8 @@ namespace EigenHelpers
         return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
     }
 
-    inline Eigen::Quaterniond Interpolate(const Eigen::Quaterniond& q1, const Eigen::Quaterniond& q2, const double ratio)
+    inline Eigen::Quaterniond Interpolate(const Eigen::Quaterniond& q1,
+                                          const Eigen::Quaterniond& q2, const double ratio)
     {
         // Safety check ratio
         double real_ratio = ratio;
@@ -543,7 +327,8 @@ namespace EigenHelpers
         return q1.slerp(real_ratio, q2);
     }
 
-    inline Eigen::Isometry3d Interpolate(const Eigen::Isometry3d& t1, const Eigen::Isometry3d& t2, const double ratio)
+    inline Eigen::Isometry3d Interpolate(const Eigen::Isometry3d& t1,
+                                         const Eigen::Isometry3d& t2, const double ratio)
     {
         // Safety check ratio
         double real_ratio = ratio;
@@ -646,133 +431,6 @@ namespace EigenHelpers
         return vdist + qdist;
     }
 
-    inline double SquaredDistance(const std::vector<double>& p1, const std::vector<double>& p2)
-    {
-        if (p1.size() == p2.size())
-        {
-            double distance = 0.0;
-            for (size_t idx = 0; idx < p1.size(); idx++)
-            {
-                distance += (p2[idx] - p1[idx]) * (p2[idx] - p1[idx]);
-            }
-            return distance;
-        }
-        else
-        {
-            return INFINITY;
-        }
-    }
-
-    inline double Distance(const std::vector<double>& p1, const std::vector<double>& p2)
-    {
-        if (p1.size() == p2.size())
-        {
-            return sqrt(SquaredDistance(p1, p2));
-        }
-        else
-        {
-            return INFINITY;
-        }
-    }
-
-    inline double ContinuousRevoluteSignedDistance(const double p1, const double p2)
-    {
-        // Safety check args
-        const double real_p1 = EnforceContinuousRevoluteBounds(p1);
-        const double real_p2 = EnforceContinuousRevoluteBounds(p2);
-        const double raw_distance = real_p2 - real_p1;
-        if ((raw_distance <= -M_PI) || (raw_distance > M_PI))
-        {
-            if (raw_distance <= -M_PI)
-            {
-                return (-(2.0 * M_PI) - raw_distance);
-            }
-            else if (raw_distance > M_PI)
-            {
-                return ((2.0 * M_PI) - raw_distance);
-            }
-            else
-            {
-                return raw_distance;
-            }
-        }
-        else
-        {
-            return raw_distance;
-        }
-    }
-
-    inline double ContinuousRevoluteDistance(const double p1, const double p2)
-    {
-        return std::abs(ContinuousRevoluteSignedDistance(p1, p2));
-    }
-
-    inline double AddContinuousRevoluteValues(const double start, const double change)
-    {
-        return EnforceContinuousRevoluteBounds(start + change);
-    }
-
-    inline double GetContinuousRevoluteRange(const double start, const double end)
-    {
-        const double raw_range = ContinuousRevoluteSignedDistance(start, end);
-        if (raw_range >= 0.0)
-        {
-            return raw_range;
-        }
-        else
-        {
-            return (2.0 * M_PI) + raw_range;
-        }
-    }
-
-    inline bool CheckInContinuousRevoluteRange(const double start, const double range, const double val)
-    {
-        const double real_val = EnforceContinuousRevoluteBounds(val);
-        const double real_start = EnforceContinuousRevoluteBounds(start);
-        const double delta = ContinuousRevoluteSignedDistance(real_start, real_val);
-        if (delta >= 0.0)
-        {
-            if (delta <= range)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else
-        {
-            const double real_delta = (2.0 * M_PI) + delta;
-            if (real_delta <= range)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-    }
-
-    inline bool CheckInContinuousRevoluteBounds(const double start, const double end, const double val)
-    {
-        const double range = GetContinuousRevoluteRange(start, end);
-        return CheckInContinuousRevoluteRange(start, range, val);
-    }
-
-    // DistanceFn must match the following interface: std::function<double(const T&, const T&)>
-    template<typename T, class DistanceFn, typename Alloc = std::allocator<T>>
-    inline double CalculateTotalDistance(const std::vector<T, Alloc>& path, const DistanceFn& distance_fn)
-    {
-        double total_dist = 0;
-        for (size_t path_idx = 0; path_idx + 1 < path.size(); path_idx++)
-        {
-            const double delta = distance_fn(path[path_idx], path[path_idx + 1]);
-            total_dist += delta;
-        }
-        return total_dist;
-    }
 
     inline double CalculateTotalDistance(const EigenHelpers::VectorVector3d& points)
     {
@@ -1127,275 +785,12 @@ namespace EigenHelpers
         return std::vector<double>{quat.x(), quat.y(), quat.z(), quat.w()};
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    // Math functions on std::pair types
-    ////////////////////////////////////////////////////////////////////////////
 
-    template <typename First, typename Second>
-    inline std::pair<First, Second> Abs(const std::pair<First, Second>& pair)
-    {
-        return {std::abs(pair.first), std::abs(pair.second)};
-    }
-
-    template <typename First, typename Second, typename Scalar>
-    inline std::pair<First, Second> Multiply(const std::pair<First, Second>& pair, const Scalar scalar)
-    {
-        return {pair.first * scalar, pair.second * scalar};
-    }
-
-    template <typename First, typename Second>
-    inline std::pair<First, Second> Multiply(const std::pair<First, Second>& pair1, const std::pair<First, Second>& pair2)
-    {
-        return {pair1.first * pair2.first, pair1.second * pair2.second};
-    }
-
-    template <typename First, typename Second, typename Scalar>
-    inline std::pair<First, Second> Divide(const std::pair<First, Second>& pair, const Scalar scalar)
-    {
-        return {pair.first / scalar, pair.second / scalar};
-    }
-
-    template <typename First, typename Second>
-    inline std::pair<First, Second> Divide(const std::pair<First, Second>& pair1, const std::pair<First, Second>& pair2)
-    {
-        return {pair1.first / pair2.first, pair1.second / pair2.second};
-    }
-
-    template <typename First, typename Second>
-    inline std::pair<First, Second> Add(const std::pair<First, Second>& pair1, const std::pair<First, Second>& pair2)
-    {
-        return {pair1.first + pair2.first, pair1.second + pair2.second};
-    }
-
-    template <typename First, typename Second>
-    inline std::pair<First, Second> Sub(const std::pair<First, Second>& pair1, const std::pair<First, Second>& pair2)
-    {
-        return {pair1.first - pair2.first, pair1.second - pair2.second};
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    // Math functions on std::vector types
-    ////////////////////////////////////////////////////////////////////////////
-
-    template <typename T>
-    inline std::vector<T> Abs(const std::vector<T>& vec)
-    {
-        std::vector<T> absed(vec.size(), 0.0);
-        for (size_t idx = 0; idx < absed.size(); idx++)
-        {
-            absed[idx] = std::abs(vec[idx]);
-        }
-        return absed;
-    }
-
-    template <typename T1, typename T2>
-    inline std::vector<T1> Multiply(const std::vector<T1>& vec, const T2 scalar)
-    {
-        std::vector<T1> multiplied(vec.size(), 0.0);
-        for (size_t idx = 0; idx < multiplied.size(); idx++)
-        {
-            const double element = vec[idx];
-            multiplied[idx] = element * scalar;
-        }
-        return multiplied;
-    }
-
-    template <typename T>
-    inline std::vector<T> Multiply(const std::vector<T>& vec1, const std::vector<T>& vec2)
-    {
-        if (vec1.size() == vec2.size())
-        {
-            std::vector<T> multiplied(vec1.size(), 0.0);
-            for (size_t idx = 0; idx < multiplied.size(); idx++)
-            {
-                const double element1 = vec1[idx];
-                const double element2 = vec2[idx];
-                multiplied[idx] = element1 * element2;
-            }
-            return multiplied;
-        }
-        else
-        {
-            return std::vector<T>();
-        }
-    }
-
-    template <typename T1, typename T2>
-    inline std::vector<T1> Divide(const std::vector<T1>& vec, const T2 scalar)
-    {
-        const double inv_scalar = 1.0 / scalar;
-        return Multiply(vec, inv_scalar);
-    }
-
-    template <typename T>
-    inline std::vector<T> Divide(const std::vector<T>& vec1, const std::vector<T>& vec2)
-    {
-        if (vec1.size() == vec2.size())
-        {
-            std::vector<T> divided(vec1.size(), 0.0);
-            for (size_t idx = 0; idx < divided.size(); idx++)
-            {
-                const T element1 = vec1[idx];
-                const T element2 = vec2[idx];
-                divided[idx] = element1 / element2;
-            }
-            return divided;
-        }
-        else
-        {
-            return std::vector<T>();
-        }
-    }
-
-    template <typename T1, typename T2>
-    inline std::vector<T1> Add(const std::vector<T1>& vec, const T2 scalar)
-    {
-        std::vector<T1> added(vec.size(), 0.0);
-        for (size_t idx = 0; idx < added.size(); idx++)
-        {
-            added[idx] = vec[idx] + scalar;
-        }
-        return added;
-    }
-
-    template <typename T>
-    inline std::vector<double> Add(const std::vector<T>& vec1, const std::vector<T>& vec2)
-    {
-        if (vec1.size() == vec2.size())
-        {
-            std::vector<T> added(vec1.size(), 0.0);
-            for (size_t idx = 0; idx < added.size(); idx++)
-            {
-                const T element1 = vec1[idx];
-                const T element2 = vec2[idx];
-                added[idx] = element1 + element2;
-            }
-            return added;
-        }
-        else
-        {
-            return std::vector<T>();
-        }
-    }
-
-    template <typename T1, typename T2>
-    inline std::vector<T1> Sub(const std::vector<T1>& vec, const T2 scalar)
-    {
-        std::vector<T1> subed(vec.size(), 0.0);
-        for (size_t idx = 0; idx < subed.size(); idx++)
-        {
-            subed[idx] = vec[idx] - scalar;
-        }
-        return subed;
-    }
-
-    template <typename T>
-    inline std::vector<T> Sub(const std::vector<T>& vec1, const std::vector<T>& vec2)
-    {
-        if (vec1.size() == vec2.size())
-        {
-            std::vector<T> subed(vec1.size(), 0.0);
-            for (size_t idx = 0; idx < subed.size(); idx++)
-            {
-                const T element1 = vec1[idx];
-                const T element2 = vec2[idx];
-                subed[idx] = element1 - element2;
-            }
-            return subed;
-        }
-        else
-        {
-            return std::vector<T>();
-        }
-    }
-
-    template <typename T>
-    inline T Sum(const std::vector<T>& vec)
-    {
-        T sum = 0.0;
-        for (size_t idx = 0; idx < vec.size(); idx++)
-        {
-            const T element = vec[idx];
-            sum += element;
-        }
-        return sum;
-    }
 
     ////////////////////////////////////////////////////////////////////////////
     // Averaging functions
     // Numerically more stable averages taken from http://people.ds.cam.ac.uk/fanf2/hermes/doc/antiforgery/stats.pdf
     ////////////////////////////////////////////////////////////////////////////
-
-    inline double AverageStdVectorDouble(
-            const std::vector<double>& values,
-            const std::vector<double>& weights = std::vector<double>())
-    {
-        // Get the weights
-        assert(values.size() > 0);
-        assert((weights.size() == values.size()) || (weights.size() == 0));
-        const bool use_weights = (weights.size() != 0);
-        // Find the first element with non-zero weight
-        size_t starting_idx = 0;
-        while (starting_idx < weights.size() && weights[starting_idx] == 0.0)
-        {
-            starting_idx++;
-        }
-        // If all weights are zero, result is undefined
-        assert(starting_idx < values.size());
-        // Start the recursive definition with the base case
-        double average = values[starting_idx];
-        const double starting_weight = use_weights ? std::abs(weights[starting_idx]) : 1.0;
-        assert(starting_weight > 0.0);
-        double weights_running_sum = starting_weight;
-        // Do the weighted averaging on the rest of the vectors
-        for (size_t idx = starting_idx + 1; idx < values.size(); idx++)
-        {
-            const double weight = use_weights ? std::abs(weights[idx]) : 1.0;
-            weights_running_sum += weight;
-            const double effective_weight = weight / weights_running_sum;
-            const double prev_average = average;
-            const double current = values[idx];
-            average = prev_average + (effective_weight * (current - prev_average));
-        }
-        return average;
-    }
-
-    inline double ComputeStdDevStdVectorDouble(const std::vector<double>& values, const double mean)
-    {
-        assert(values.size() > 0);
-        if (values.size() == 1)
-        {
-            return 0.0;
-        }
-        else
-        {
-            const double inv_n_minus_1 = 1.0 / (double)(values.size() - 1);
-            double stddev_sum = 0.0;
-            for (size_t idx = 0; idx < values.size(); idx++)
-            {
-                const double delta = values[idx] - mean;
-                stddev_sum += (delta * delta);
-            }
-            return std::sqrt(stddev_sum * inv_n_minus_1);
-        }
-    }
-
-    inline double ComputeStdDevStdVectorDouble(const std::vector<double>& values)
-    {
-        const double mean = AverageStdVectorDouble(values);
-        return ComputeStdDevStdVectorDouble(values, mean);
-    }
-
-    /*
-     * This function does not actually deal with the continuous revolute space correctly,
-     * it just assumes a normal real Euclidean space
-     */
-    inline double AverageContinuousRevolute(
-            const std::vector<double>& angles,
-            const std::vector<double>& weights = std::vector<double>())
-    {
-        return AverageStdVectorDouble(angles, weights);
-    }
 
     /**
      * This function is really only going to work well for "approximately continuous"

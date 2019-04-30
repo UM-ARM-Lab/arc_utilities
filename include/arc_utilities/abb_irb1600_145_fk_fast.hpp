@@ -5,7 +5,7 @@
 #include <map>
 #include <Eigen/Geometry>
 #include <arc_utilities/arc_helpers.hpp>
-#include <arc_utilities/eigen_helpers.hpp>
+#include <arc_utilities/eigen_typedefs.hpp>
 
 #ifndef ABB_IRB1600_145_FK_FAST_HPP
 #define ABB_IRB1600_145_FK_FAST_HPP
@@ -30,8 +30,6 @@ namespace ABB_IRB1600_145_FK_FAST
     const std::string ABB_IRB1600_145_LINK_6_NAME = "link_5";
     const std::string ABB_IRB1600_145_LINK_7_NAME = "link_6";
     const std::string ABB_IRB1600_145_LINK_8_NAME = "link_7";
-
-    typedef std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d>> VectorIsometry3d;
 
     inline Eigen::Isometry3d Get_base_joint1_LinkJointTransform(const double joint_val)
     {
@@ -107,10 +105,10 @@ namespace ABB_IRB1600_145_FK_FAST
         return pre_joint_transform;
     }
 
-    inline VectorIsometry3d GetLinkTransforms(const std::vector<double>& configuration, const Eigen::Isometry3d& base_transform=Eigen::Isometry3d::Identity())
+    inline EigenHelpers::VectorIsometry3d GetLinkTransforms(const std::vector<double>& configuration, const Eigen::Isometry3d& base_transform=Eigen::Isometry3d::Identity())
     {
         assert(configuration.size() == ABB_IRB1600_145_NUM_ACTIVE_JOINTS);
-        VectorIsometry3d link_transforms(ABB_IRB1600_145_NUM_LINKS);
+        EigenHelpers::VectorIsometry3d link_transforms(ABB_IRB1600_145_NUM_LINKS);
         link_transforms[0] = base_transform;
         link_transforms[1] = link_transforms[0] * Get_base_joint1_LinkJointTransform(configuration[0]);
         link_transforms[2] = link_transforms[1] * Get_link_1_joint_2_LinkJointTransform(configuration[1]);
@@ -122,7 +120,7 @@ namespace ABB_IRB1600_145_FK_FAST
         return link_transforms;
     }
 
-    inline VectorIsometry3d GetLinkTransforms(std::map<std::string, double> configuration, const Eigen::Isometry3d& base_transform=Eigen::Isometry3d::Identity())
+    inline EigenHelpers::VectorIsometry3d GetLinkTransforms(std::map<std::string, double> configuration, const Eigen::Isometry3d& base_transform=Eigen::Isometry3d::Identity())
     {
         std::vector<double> configuration_vector(ABB_IRB1600_145_NUM_ACTIVE_JOINTS);
         configuration_vector[0] = configuration[ABB_IRB1600_145_ACTIVE_JOINT_1_NAME];

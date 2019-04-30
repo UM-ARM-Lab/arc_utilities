@@ -2,7 +2,7 @@
 #define SERIALIZATION_EIGEN_HPP
 
 #include "arc_utilities/serialization.hpp"
-#include "arc_utilities/eigen_helpers.hpp"
+#include "arc_utilities/eigen_typedefs.hpp"
 
 namespace arc_utilities
 {

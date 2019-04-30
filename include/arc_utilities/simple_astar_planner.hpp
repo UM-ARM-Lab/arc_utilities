@@ -10,7 +10,8 @@
 #include <algorithm>
 #include <chrono>
 
-#include <arc_utilities/eigen_helpers.hpp>
+#include <arc_utilities/eigen_typedefs.hpp>
+#include <arc_utilities/math_helpers.hpp>
 
 //#include <ros/ros.h>
 //#include <visualization_msgs/Marker.h>
