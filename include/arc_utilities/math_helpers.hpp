@@ -143,6 +143,18 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         return interpolated;
     }
 
+    template <typename T1, typename T2>
+    inline std::pair<T1, T2> Interpolate(const std::pair<T1, T2>& p1, const std::pair<T1, T2>& p2, const double ratio)
+    {
+        // Safety check ratio
+        const double real_ratio = SafetyCheckRatio(ratio);
+        // Interpolate
+        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
+        return std::make_pair<T1, T2>(
+                    (p1.first * (1.0 - real_ratio)) + (p2.first * real_ratio),
+                    (p1.second * (1.0 - real_ratio)) + (p2.second * real_ratio));
+    }
+
     template <typename T>
     inline std::vector<T> Interpolate(const std::vector<T>& v1, const std::vector<T>& v2, const double ratio)
     {
