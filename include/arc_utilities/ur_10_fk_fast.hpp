@@ -5,7 +5,7 @@
 #include <map>
 #include <Eigen/Geometry>
 #include <arc_utilities/arc_helpers.hpp>
-#include <arc_utilities/eigen_helpers.hpp>
+#include <arc_utilities/eigen_typedefs.hpp>
 
 #ifndef UR_10_FK_FAST_HPP
 #define UR_10_FK_FAST_HPP

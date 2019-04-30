@@ -11,7 +11,7 @@
 #include <geometry_msgs/Transform.h>
 #include <geometry_msgs/Wrench.h>
 #include <geometry_msgs/TransformStamped.h>
-#include <arc_utilities/eigen_helpers.hpp>
+#include "eigen_typedefs.hpp"
 
 #ifndef EIGEN_HELPERS_CONVERSIONS_HPP
 #define EIGEN_HELPERS_CONVERSIONS_HPP
