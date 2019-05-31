@@ -150,7 +150,15 @@ namespace ZlibHelpers
     {
         const auto compressed = CompressBytes(uncompressed);
         std::ofstream output_file(path, std::ios::out | std::ios::binary);
+        if (!output_file.is_open())
+        {
+            throw_arc_exception(std::runtime_error, "Couldn't open file " + path);
+        }
         output_file.write(reinterpret_cast<const char*>(compressed.data()), (std::streamsize)compressed.size());
         output_file.close();
+        if (output_file.bad())
+        {
+            throw_arc_exception(std::runtime_error, "Error writing to file");
+        }
     }
 }
