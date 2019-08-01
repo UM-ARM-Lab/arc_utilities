@@ -10,7 +10,7 @@
 #ifndef LOG_HPP
 #define LOG_HPP
 
-#define LOG(log, message)                   \
+#define ARC_LOG(log, message)                   \
     (log).logMessage(                       \
         static_cast<std::ostringstream&>(   \
             std::ostringstream().flush()    \
@@ -19,7 +19,7 @@
        ).str()                              \
    )
 
-#define LOG_STREAM(log, message)            \
+#define ARC_LOG_STREAM(log, message)            \
     (log).logMessage(                       \
         static_cast<std::ostringstream&>(   \
             std::ostringstream().flush()    \
@@ -28,12 +28,12 @@
        ).str()                              \
    )
 
-#define LOG_COND(log, cond, message)        \
-    if ((cond)) LOG(log, message)
+#define ARC_LOG_COND(log, cond, message)        \
+    if ((cond)) ARC_LOG(log, message)
 
 
-#define LOG_COND_STREAM(log, cond, message) \
-    if ((cond)) LOG_STREAM(log, message)
+#define ARC_LOG_COND_STREAM(log, cond, message) \
+    if ((cond)) ARC_LOG_STREAM(log, message)
 
 // TODO: confirm that I havn't made any mistakes in this file
 namespace Log
