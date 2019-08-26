@@ -16,6 +16,7 @@
 #include "eigen_typedefs.hpp"
 #include "math_helpers.hpp"
 #include "vector_math.hpp"
+#include "arc_exceptions.hpp"
 
 
 
@@ -948,6 +949,27 @@ namespace EigenHelpers
         return vector_to_reject - VectorProjection(base_vector, vector_to_reject);
     }
 
+    template <typename DerivedB1, typename DerivedB2, typename DerivedV>
+    inline Eigen::Vector3d VectorProjectionToPlane(
+            const Eigen::MatrixBase<DerivedB1>& plane_vector1,
+            const Eigen::MatrixBase<DerivedB2>& plane_vector2,
+            const Eigen::MatrixBase<DerivedV>& vector)
+    {
+        const Eigen::Vector3d unit_plane_vector1 = plane_vector1.normalized();
+        const Eigen::Vector3d unit_plane_vector2 = plane_vector2.normalized();
+
+        // Error/numerical problems check input
+        const double plane_vector_dot_product_mag = std::abs(unit_plane_vector1.dot(unit_plane_vector2));
+        if (IsApprox(plane_vector_dot_product_mag , 1.0, 1e-10))
+        {
+            throw_arc_exception(std::invalid_argument, "Plane vectors do not define a valid plane");
+        }
+
+        // Get the normal to the plane, then reject any component of the vector that is parallel
+        const Eigen::Vector3d normal = unit_plane_vector1.cross(unit_plane_vector2);
+        return VectorRejection(normal, vector);
+    }
+
     template <typename DerivedV>
     inline Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1> GetArbitraryOrthogonalVector(
             const Eigen::MatrixBase<DerivedV>& vector)
@@ -967,11 +989,11 @@ namespace EigenHelpers
                     return rejected_vector;
                 }
             }
-            throw std::runtime_error("Vector rejection failed to identify orthogonal vector, probably numerical error");
+            throw_arc_exception(std::runtime_error, "Vector rejection failed to identify orthogonal vector, probably numerical error");
         }
         else
         {
-            throw std::invalid_argument("Vector size is zero");
+            throw_arc_exception(std::invalid_argument, "Vector size is zero");
         }
     }
 
@@ -981,43 +1003,43 @@ namespace EigenHelpers
             const Eigen::MatrixBase<DerivedV>& plane_vector2,
             const Eigen::MatrixBase<DerivedV>& vector)
     {
+        assert(false && "This code is probably wrong");
+
         const ssize_t vector_size = vector.size();
         if ((vector_size > 0) && (vector_size == plane_vector1.size()) && (vector_size == plane_vector2.size()))
         {
-            const Eigen::MatrixBase<DerivedV> unit_plane_vector1 = plane_vector1 / plane_vector1.norm();
-            const Eigen::MatrixBase<DerivedV> unit_plane_vector2 = plane_vector2 / plane_vector2.norm();
+            const Eigen::MatrixBase<DerivedV> unit_plane_vector1 = plane_vector1.normalized();
+            const Eigen::MatrixBase<DerivedV> unit_plane_vector2 = plane_vector2.normalized();
             const typename DerivedV::Scalar plane_vector_dot_product_mag = std::abs(unit_plane_vector1.dot(unit_plane_vector2));
             if (plane_vector_dot_product_mag == 1.0)
             {
-                throw std::invalid_argument("Plane vectors do not define a valid plane");
+                throw_arc_exception(std::invalid_argument, "Plane vectors do not define a valid plane");
+            }
+
+            // Try both plane vectors (by definition, one of the two MUST have an orthogonal component!)
+            const auto rejected_vector1 = VectorRejection(vector, plane_vector1);
+            const typename DerivedV::Scalar rejected_vector1_squared_norm = rejected_vector1.squaredNorm();
+            if (rejected_vector1_squared_norm > 0)
+            {
+                return rejected_vector1;
             }
             else
             {
-                // Try both plane vectors (by definition, one of the two MUST have an orthogonal component!)
-                const auto rejected_vector1 = VectorRejection(vector, plane_vector1);
-                const typename DerivedV::Scalar rejected_vector1_squared_norm = rejected_vector1.squaredNorm();
-                if (rejected_vector1_squared_norm > 0)
+                const auto rejected_vector2 = VectorRejection(vector, plane_vector2);
+                const typename DerivedV::Scalar rejected_vector2_squared_norm = rejected_vector2.squaredNorm();
+                if (rejected_vector2_squared_norm > 0)
                 {
-                    return rejected_vector1;
+                    return rejected_vector2;
                 }
                 else
                 {
-                    const auto rejected_vector2 = VectorRejection(vector, plane_vector2);
-                    const typename DerivedV::Scalar rejected_vector2_squared_norm = rejected_vector2.squaredNorm();
-                    if (rejected_vector2_squared_norm > 0)
-                    {
-                        return rejected_vector2;
-                    }
-                    else
-                    {
-                        throw std::runtime_error("Vector rejection failed to identify orthogonal vector, probably numerical error");
-                    }
+                    throw_arc_exception(std::runtime_error, "Vector rejection failed to identify orthogonal vector, probably numerical error");
                 }
             }
         }
         else
         {
-            throw std::invalid_argument("Vector size is zero");
+            throw_arc_exception(std::invalid_argument, "Vector size is zero");
         }
     }
 
