@@ -45,6 +45,14 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         return CloseEnough(p1, p2, threshold);
     }
 
+    // https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
+    // Returns -1, 0, or 1 depending on the sign of val
+    template <typename T>
+    inline int Sign(const T val)
+    {
+        return (T(0) < val) - (val < T(0));
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Interpolation functions
     ////////////////////////////////////////////////////////////////////////////
