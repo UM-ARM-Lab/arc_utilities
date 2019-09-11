@@ -183,6 +183,27 @@ namespace arc_utilities
         return std::make_pair(temp_value, serialized_size);
     }
 
+    // Generic MatrixXf
+    template<>
+    inline std::pair<Eigen::MatrixXf, uint64_t> DeserializeEigen<Eigen::MatrixXf>(const std::vector<uint8_t>& buffer, const uint64_t current)
+    {
+        assert(current < buffer.size());
+        assert((current + 2 * sizeof(uint64_t)) <= buffer.size());
+        // Load the headers
+        uint64_t rows_header = 0u;
+        memcpy(&rows_header, &buffer[current], sizeof(uint64_t));
+        uint64_t cols_header = 0u;
+        memcpy(&cols_header, &buffer[current + sizeof(rows_header)], sizeof(uint64_t));
+        // Check buffer size
+        Eigen::MatrixXf temp_value = Eigen::MatrixXf::Zero((ssize_t)rows_header, (ssize_t)cols_header);
+        const uint64_t serialized_size = SerializedSizeEigen(temp_value);
+        assert((current + serialized_size) <= buffer.size());
+        // Load from the buffer
+        memcpy(temp_value.data(), &buffer[current + 2 * sizeof(rows_header)], (serialized_size - 2 * sizeof(rows_header)));
+        return std::make_pair(temp_value, serialized_size);
+    }
+
+
     // Isometry3d
     inline uint64_t SerializedSizeEigen(const Eigen::Isometry3d& value)
     {
