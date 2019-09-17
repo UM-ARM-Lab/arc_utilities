@@ -19,6 +19,12 @@ namespace arc_utilities
             const T& item_to_serialize,
             std::vector<uint8_t>& buffer);
 
+    /**
+     *  @brief DeserializeFixedSizePOD
+     *  @param buffer: vector of data
+     *  @param current: next index to read
+     *  @return std::pair<deserialized value, bytes read>
+     **/
     template<typename T>
     inline std::pair<T, uint64_t> DeserializeFixedSizePOD(
             const std::vector<uint8_t>& buffer,

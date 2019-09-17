@@ -1,6 +1,5 @@
 #include "arc_utilities/timing.hpp"
 #include <iostream>
-#include <cassert>
 #include <algorithm>
 #include <cstdio>
 
@@ -83,17 +82,16 @@ void Profiler::startTimer(std::string timer_name)
 bool Profiler::isTimerStarted(std::string timer_name)
 {
     Profiler* m = getInstance();
-    if (m->timers.find(timer_name) == m->timers.end())
-    {
-        return false;
-    }
-    return true;
+    return m->timers.count(timer_name) > 0;
 }
 
 double Profiler::record(std::string timer_name)
 {
     Profiler* m = getInstance();
-    assert(m->isTimerStarted(timer_name)); //too harsh?
+    if(!m->isTimerStarted(timer_name))
+    {
+        throw std::logic_error("Attempted to record timer " + timer_name + " before starting");
+    }
 
     double time_elapsed = m->timers[timer_name]();
     m->addData(timer_name, time_elapsed);

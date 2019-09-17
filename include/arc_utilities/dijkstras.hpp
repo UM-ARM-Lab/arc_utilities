@@ -15,6 +15,11 @@
 
 namespace arc_dijkstras
 {
+    enum EDGE_VALIDITY
+    {
+        VALID, INVALID, UNKNOWN
+    };
+
     class GraphEdge
     {
     protected:
@@ -22,6 +27,7 @@ namespace arc_dijkstras
         int64_t from_index_;
         int64_t to_index_;
         double weight_;
+        EDGE_VALIDITY edge_validity_;
 
     public:
 
@@ -38,11 +44,13 @@ namespace arc_dijkstras
         }
 
         GraphEdge(const int64_t from_index, const int64_t to_index, const double weight)
-            : from_index_(from_index), to_index_(to_index), weight_(weight)
+            : from_index_(from_index), to_index_(to_index), weight_(weight),
+              edge_validity_(EDGE_VALIDITY::UNKNOWN)
         {}
 
         GraphEdge()
-            : from_index_(-1), to_index_(-1), weight_(0.0)
+            : from_index_(-1), to_index_(-1), weight_(0.0),
+              edge_validity_(EDGE_VALIDITY::UNKNOWN)
         {}
 
         uint64_t SerializeSelf(std::vector<uint8_t>& buffer) const
@@ -51,6 +59,7 @@ namespace arc_dijkstras
             arc_utilities::SerializeFixedSizePOD<int64_t>(from_index_, buffer);
             arc_utilities::SerializeFixedSizePOD<int64_t>(to_index_, buffer);
             arc_utilities::SerializeFixedSizePOD<double>(weight_, buffer);
+            arc_utilities::SerializeFixedSizePOD<EDGE_VALIDITY>(edge_validity_, buffer);
             // Figure out how many bytes were written
             const uint64_t end_buffer_size = buffer.size();
             const uint64_t bytes_written = end_buffer_size - start_buffer_size;
@@ -69,6 +78,10 @@ namespace arc_dijkstras
             const std::pair<double, uint64_t> deserialized_weight = arc_utilities::DeserializeFixedSizePOD<double>(buffer, current_position);
             weight_ = deserialized_weight.first;
             current_position += deserialized_weight.second;
+            const std::pair<EDGE_VALIDITY, uint64_t> deserialized_validity = arc_utilities::DeserializeFixedSizePOD<EDGE_VALIDITY>(buffer, current_position);
+            edge_validity_ = deserialized_validity.first;
+            current_position += deserialized_validity.second;
+            
             // Figure out how many bytes were read
             const uint64_t bytes_read = current_position - current;
             return bytes_read;
@@ -112,6 +125,16 @@ namespace arc_dijkstras
         void SetWeight(const double new_weight)
         {
             weight_ = new_weight;
+        }
+
+        EDGE_VALIDITY GetValidity() const
+        {
+            return edge_validity_;
+        }
+
+        void SetValidity(const EDGE_VALIDITY new_validity)
+        {
+            edge_validity_ = new_validity;
         }
     };
 
@@ -279,6 +302,18 @@ namespace arc_dijkstras
             distance_ = distance;
         }
 
+        GraphEdge& GetEdgeMutable(const int64_t other_node_ind)
+        {
+            for(auto &e: out_edges_)
+            {
+                if(e.GetToIndex() == other_node_ind)
+                {
+                    return e;
+                }
+            }
+            throw std::invalid_argument("Invalid node index, no edge exists");
+        }
+
         const std::vector<GraphEdge>& GetInEdgesImmutable() const
         {
             return in_edges_;
@@ -388,9 +423,10 @@ namespace arc_dijkstras
         Graph()
         {}
 
+
         uint64_t SerializeSelf(
-                std::vector<uint8_t>& buffer,
-                const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer) const
+            std::vector<uint8_t>& buffer,
+            const std::function<uint64_t(const NodeValueType&, std::vector<uint8_t>&)>& value_serializer) const
         {
             const uint64_t start_buffer_size = buffer.size();
             const auto graph_state_serializer = std::bind(GraphNode<NodeValueType, Allocator>::Serialize, std::placeholders::_1, std::placeholders::_2, value_serializer);
@@ -402,9 +438,9 @@ namespace arc_dijkstras
         }
 
         uint64_t DeserializeSelf(
-                const std::vector<uint8_t>& buffer,
-                const uint64_t current,
-                const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
+            const std::vector<uint8_t>& buffer,
+            const uint64_t current,
+            const std::function<std::pair<NodeValueType, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& value_deserializer)
         {
             const auto graph_state_deserializer = std::bind(GraphNode<NodeValueType, Allocator>::Deserialize, std::placeholders::_1, std::placeholders::_2, value_deserializer);
             const auto deserialized_nodes = arc_utilities::DeserializeVector<GraphNode<NodeValueType, Allocator>>(buffer, current, graph_state_deserializer);
@@ -434,26 +470,22 @@ namespace arc_dijkstras
 
         bool IndexInRange(const int64_t index) const
         {
-            if (index >= 0)
-            {
-                if (index < (int64_t)(nodes_.size()))
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                return false;
-            }
+            return index >= 0 && index < (int64_t)(nodes_.size());
         }
 
         bool CheckGraphLinkage() const
         {
             return CheckGraphLinkage(GetNodesImmutable());
+        }
+
+        GraphEdge& GetEdgeMutable(const int64_t node_ind_1, const int64_t node_ind_2)
+        {
+            return GetNodeMutable(node_ind_1).GetEdgeMutable(node_ind_2);
+        }
+
+        GraphEdge& GetReverseEdgeMutable(const GraphEdge &e)
+        {
+            return GetNodeMutable(e.GetToIndex()).GetEdgeMutable(e.GetFromIndex());
         }
 
         static bool CheckGraphLinkage(const Graph<NodeValueType, Allocator>& graph)
@@ -583,7 +615,7 @@ namespace arc_dijkstras
             return (int64_t)(nodes_.size() - 1);
         }
 
-        void AddEdgeBetweenNodes(const int64_t from_index, const int64_t to_index, const double edge_weight)
+        GraphEdge& AddEdgeBetweenNodes(const int64_t from_index, const int64_t to_index, const double edge_weight)
         {
             // We retrieve the nodes first, since retrieval performs bounds checks first
             GraphNode<NodeValueType, Allocator>& from_node = GetNodeMutable(from_index);
@@ -595,23 +627,15 @@ namespace arc_dijkstras
             const GraphEdge new_edge(from_index, to_index, edge_weight);
             from_node.AddOutEdge(new_edge);
             to_node.AddInEdge(new_edge);
+            return from_node.GetEdgeMutable(to_index);
         }
 
-        void AddEdgesBetweenNodes(const int64_t first_index, const int64_t second_index, const double edge_weight)
+        std::pair<const GraphEdge, const GraphEdge>
+        AddEdgesBetweenNodes(const int64_t first_index, const int64_t second_index, const double edge_weight)
         {
-            // We retrieve the nodes first, since retrieval performs bounds checks first
-            GraphNode<NodeValueType, Allocator>& first_node = GetNodeMutable(first_index);
-            GraphNode<NodeValueType, Allocator>& second_node = GetNodeMutable(second_index);
-            if (first_index == second_index)
-            {
-                throw std::invalid_argument("Invalid circular edge first==second not allowed");
-            }
-            const GraphEdge first_edge(first_index, second_index, edge_weight);
-            first_node.AddOutEdge(first_edge);
-            second_node.AddInEdge(first_edge);
-            const GraphEdge second_edge(second_index, first_index, edge_weight);
-            second_node.AddOutEdge(second_edge);
-            first_node.AddInEdge(second_edge);
+            GraphEdge& e1 = AddEdgeBetweenNodes(first_index, second_index, edge_weight);
+            GraphEdge& e2 = AddEdgeBetweenNodes(second_index, first_index, edge_weight);
+            return std::make_pair(e1, e2);
         }
 
         /**
@@ -662,7 +686,7 @@ namespace arc_dijkstras
                 const Graph<NodeValueType, Allocator>& graph,
                 const int64_t start_index)
         {
-            if ((start_index < 0) && (start_index >= (int64_t)graph.GetNodesImmutable().size()))
+            if ((start_index < 0) || (start_index >= (int64_t)graph.GetNodesImmutable().size()))
             {
                 throw std::invalid_argument("Start index out of range");
             }
@@ -933,14 +957,12 @@ namespace arc_dijkstras
             const auto edge_validity_check_function = [&] (const Graph<NodeValueType, Allocator>& search_graph, const GraphEdge& edge)
             {
                 UNUSED(search_graph);
-                if (edge.GetWeight() < std::numeric_limits<double>::infinity())
-                {
-                    return true;
-                }
-                else
+                if(edge.GetValidity() == EDGE_VALIDITY::INVALID)
                 {
                     return false;
                 }
+
+                return edge.GetWeight() < std::numeric_limits<double>::infinity();
             };
             const auto distance_function = [&] (const Graph<NodeValueType, Allocator>& search_graph, const GraphEdge& edge)
             {
