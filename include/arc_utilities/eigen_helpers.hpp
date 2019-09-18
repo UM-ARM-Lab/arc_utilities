@@ -305,7 +305,7 @@ namespace EigenHelpers
         // Safety check sizes
         if (v1.size() != v2.size())
         {
-            throw std::invalid_argument("Vectors v1 and v2 must be the same size");
+            throw_arc_exception(std::invalid_argument, "Vectors v1 and v2 must be the same size");
         }
         // Safety check ratio
         const double real_ratio = SafetyCheckRatio(ratio);
@@ -1353,5 +1353,6 @@ namespace EigenHelpers
         return A.transpose() * damped.llt().solve(b);
     }
 }
+
 
 #endif // EIGEN_HELPERS_HPP
