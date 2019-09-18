@@ -946,12 +946,19 @@ namespace EigenHelpers
         return vector_to_reject - VectorProjection(base_vector, vector_to_reject);
     }
 
+    // Intended only for planes in 3-D, not hyperplanes (see Hyperplane class)
     template <typename DerivedB1, typename DerivedB2, typename DerivedV>
     inline Eigen::Vector3d VectorProjectionToPlane(
             const Eigen::MatrixBase<DerivedB1>& plane_vector1,
             const Eigen::MatrixBase<DerivedB2>& plane_vector2,
             const Eigen::MatrixBase<DerivedV>& vector)
     {
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedB1);
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedB2);
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedV);
+        EIGEN_STATIC_ASSERT_SAME_VECTOR_SIZE(DerivedB1, DerivedV);
+        EIGEN_STATIC_ASSERT_SAME_VECTOR_SIZE(DerivedB2, DerivedV);
+
         const Eigen::Vector3d unit_plane_vector1 = plane_vector1.normalized();
         const Eigen::Vector3d unit_plane_vector2 = plane_vector2.normalized();
 
@@ -971,6 +978,7 @@ namespace EigenHelpers
     inline Eigen::Matrix<typename DerivedV::Scalar, Eigen::MatrixBase<DerivedV>::RowsAtCompileTime, 1> GetArbitraryOrthogonalVector(
             const Eigen::MatrixBase<DerivedV>& vector)
     {
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedV);
         using Vector = Eigen::Matrix<typename DerivedV::Scalar, Eigen::MatrixBase<DerivedV>::RowsAtCompileTime, 1>;
         // We're going to try arbitrary possibilities until one of them works
         const ssize_t vector_size = vector.size();
