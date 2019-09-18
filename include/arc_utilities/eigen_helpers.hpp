@@ -19,7 +19,6 @@
 #include "arc_exceptions.hpp"
 
 
-
 namespace EigenHelpers
 {
     ////////////////////////////////////////////////////////////////////////////
@@ -113,7 +112,7 @@ namespace EigenHelpers
     template <typename Derived>
     inline Eigen::MatrixXd ClampNorm(const Eigen::MatrixBase<Derived>& item_to_clamp, const double max_norm)
     {
-        assert(max_norm >= 0 && "You must pass a maximum norm that is positive");
+        assert(max_norm > 0 && "You must pass a maximum norm that is positive");
         const double current_norm = item_to_clamp.norm();
         if (current_norm > max_norm)
         {
@@ -772,8 +771,6 @@ namespace EigenHelpers
         return std::vector<double>{quat.x(), quat.y(), quat.z(), quat.w()};
     }
 
-
-
     ////////////////////////////////////////////////////////////////////////////
     // Averaging functions
     // Numerically more stable averages taken from http://people.ds.cam.ac.uk/fanf2/hermes/doc/antiforgery/stats.pdf
@@ -971,71 +968,26 @@ namespace EigenHelpers
     }
 
     template <typename DerivedV>
-    inline Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1> GetArbitraryOrthogonalVector(
+    inline Eigen::Matrix<typename DerivedV::Scalar, Eigen::MatrixBase<DerivedV>::RowsAtCompileTime, 1> GetArbitraryOrthogonalVector(
             const Eigen::MatrixBase<DerivedV>& vector)
     {
+        using Vector = Eigen::Matrix<typename DerivedV::Scalar, Eigen::MatrixBase<DerivedV>::RowsAtCompileTime, 1>;
         // We're going to try arbitrary possibilities until one of them works
         const ssize_t vector_size = vector.size();
         if (vector_size > 0)
         {
             for (ssize_t idx = 0; idx < vector_size; idx++)
             {
-                Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1> example_unit_vector = Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1>::Zero(vector_size);
+                Vector example_unit_vector = Vector::Zero(vector_size);
                 example_unit_vector(idx) = (typename DerivedV::Scalar)1.0;
                 const auto rejected_vector = VectorRejection(vector, example_unit_vector);
                 const typename DerivedV::Scalar rejected_vector_squared_norm = rejected_vector.squaredNorm();
-                if (rejected_vector_squared_norm > 0)
+                if (rejected_vector_squared_norm > 1e-10)
                 {
-                    return rejected_vector;
+                    return rejected_vector.normalized();
                 }
             }
             throw_arc_exception(std::runtime_error, "Vector rejection failed to identify orthogonal vector, probably numerical error");
-        }
-        else
-        {
-            throw_arc_exception(std::invalid_argument, "Vector size is zero");
-        }
-    }
-
-    template <typename DerivedV>
-    inline Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1> GetArbitraryOrthogonalVectorToPlane(
-            const Eigen::MatrixBase<DerivedV>& plane_vector1,
-            const Eigen::MatrixBase<DerivedV>& plane_vector2,
-            const Eigen::MatrixBase<DerivedV>& vector)
-    {
-        assert(false && "This code is probably wrong");
-
-        const ssize_t vector_size = vector.size();
-        if ((vector_size > 0) && (vector_size == plane_vector1.size()) && (vector_size == plane_vector2.size()))
-        {
-            const Eigen::MatrixBase<DerivedV> unit_plane_vector1 = plane_vector1.normalized();
-            const Eigen::MatrixBase<DerivedV> unit_plane_vector2 = plane_vector2.normalized();
-            const typename DerivedV::Scalar plane_vector_dot_product_mag = std::abs(unit_plane_vector1.dot(unit_plane_vector2));
-            if (plane_vector_dot_product_mag == 1.0)
-            {
-                throw_arc_exception(std::invalid_argument, "Plane vectors do not define a valid plane");
-            }
-
-            // Try both plane vectors (by definition, one of the two MUST have an orthogonal component!)
-            const auto rejected_vector1 = VectorRejection(vector, plane_vector1);
-            const typename DerivedV::Scalar rejected_vector1_squared_norm = rejected_vector1.squaredNorm();
-            if (rejected_vector1_squared_norm > 0)
-            {
-                return rejected_vector1;
-            }
-            else
-            {
-                const auto rejected_vector2 = VectorRejection(vector, plane_vector2);
-                const typename DerivedV::Scalar rejected_vector2_squared_norm = rejected_vector2.squaredNorm();
-                if (rejected_vector2_squared_norm > 0)
-                {
-                    return rejected_vector2;
-                }
-                else
-                {
-                    throw_arc_exception(std::runtime_error, "Vector rejection failed to identify orthogonal vector, probably numerical error");
-                }
-            }
         }
         else
         {
