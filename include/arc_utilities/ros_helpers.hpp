@@ -6,10 +6,10 @@
 #ifndef ROS_HELPERS_HPP
 #define ROS_HELPERS_HPP
 
-#define PARAM_NAME_WIDTH (50)
-
 namespace ROSHelpers
 {
+    static auto constexpr PARAM_NAME_WIDTH = 50;
+
     inline void Spin(const double loop_period)
     {
         while (ros::ok())

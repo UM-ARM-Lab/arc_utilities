@@ -573,10 +573,10 @@ namespace arc_helpers
 
     ////////////////////////////////////////////////////////////////////////////
 
-    inline size_t GetNumOMPThreads()
+    inline int GetNumOMPThreads()
     {
         #if defined(_OPENMP)
-        size_t num_threads = 0;
+        int num_threads = 0;
         #pragma omp parallel
         {
             num_threads = (size_t)omp_get_num_threads();
