@@ -579,7 +579,7 @@ namespace arc_helpers
         int num_threads = 0;
         #pragma omp parallel
         {
-            num_threads = (size_t)omp_get_num_threads();
+            num_threads = omp_get_num_threads();
         }
         return num_threads;
         #else
