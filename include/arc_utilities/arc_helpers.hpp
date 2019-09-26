@@ -549,6 +549,7 @@ namespace arc_helpers
     inline ColorType InterpolateColor(const ColorType& c1, const ColorType& c2, const float& ratio)
     {
         // Safety check ratio
+        // TODO: use SafetyCheckRatio from eigen_helpers.hpp (or move that function to this file)
         float real_ratio = ratio;
         if (real_ratio < 0.0)
         {
@@ -572,13 +573,13 @@ namespace arc_helpers
 
     ////////////////////////////////////////////////////////////////////////////
 
-    inline size_t GetNumOMPThreads()
+    inline int GetNumOMPThreads()
     {
         #if defined(_OPENMP)
-        size_t num_threads = 0;
+        int num_threads = 0;
         #pragma omp parallel
         {
-            num_threads = (size_t)omp_get_num_threads();
+            num_threads = omp_get_num_threads();
         }
         return num_threads;
         #else

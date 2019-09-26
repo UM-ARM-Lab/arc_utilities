@@ -1,4 +1,5 @@
 #include <assert.h>
+#include "arc_exceptions.hpp"
 
 #ifndef MAYBE_HPP
 #define MAYBE_HPP
@@ -40,13 +41,19 @@ namespace Maybe
 
         T& Get()
         {
-            assert(maybe_);
+            if (!maybe_)
+            {
+                throw_arc_exception(std::invalid_argument, "Maybe has not been initialized");
+            }
             return value_;
         }
 
         const T& GetImmutable() const
         {
-            assert(maybe_);
+            if (!maybe_)
+            {
+                throw_arc_exception(std::invalid_argument, "Maybe has not been initialized");
+            }
             return value_;
         }
 
