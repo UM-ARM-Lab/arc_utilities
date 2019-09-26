@@ -154,6 +154,10 @@ namespace ZlibHelpers
                 while (boost::filesystem::is_regular_file(slice_path));
                 return decompressed;
             }
+            else
+            {
+                throw_arc_exception(std::runtime_error, "Couldn't find regular file " + path + " nor individual slices");
+            }
         }
 
         std::ifstream input_file(path, std::ios::binary | std::ios::in | std::ios::ate);
