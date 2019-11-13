@@ -20,7 +20,7 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         return abs_delta <= real_threshold;
     }
 
-    inline bool CloseEnough(const std::vector<double> &v1, const std::vector<double> &v2,
+    inline bool CloseEnough(const std::vector<double>& v1, const std::vector<double>& v2,
                             const double threshold)
     {
         if(v1.size() != v2.size())
