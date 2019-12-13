@@ -522,6 +522,28 @@ namespace arc_helpers
     }
 
     /**
+     * @brief UniqueColorGenerator Calls to `next` return a sequence of unique colors
+     *
+     */
+    template<typename ColorType>
+    class UniqueColorGenerator
+    {
+        uint32_t i=1;
+        float alpha;
+        
+    public:
+        UniqueColorGenerator(float alpha_=1.0f) :
+            alpha(alpha_)
+        {}
+        
+        ColorType next()
+        {
+            return GenerateUniqueColor<ColorType>(i++, alpha);
+        }
+    };
+    
+
+    /**
      * @brief Multiply Multiples the color channels (r, g, b) of @color by
      *        @factor, ensuring the result stays in the range [0, 1]
      */
