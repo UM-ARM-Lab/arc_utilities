@@ -81,7 +81,7 @@ namespace arc_dijkstras
             const std::pair<EDGE_VALIDITY, uint64_t> deserialized_validity = arc_utilities::DeserializeFixedSizePOD<EDGE_VALIDITY>(buffer, current_position);
             edge_validity_ = deserialized_validity.first;
             current_position += deserialized_validity.second;
-            
+
             // Figure out how many bytes were read
             const uint64_t bytes_read = current_position - current;
             return bytes_read;
@@ -919,6 +919,10 @@ namespace arc_dijkstras
                                 // Compute the child value
                                 const double child_value = child_cost_to_come + child_heuristic;
                                 queue.push(arc_helpers::AstarPQueueElement(child_node_index, top_node.NodeID(), child_cost_to_come, child_value));
+                                if (limit_pqueue_duplicates)
+                                {
+                                    queue_members_map[child_node_index] = child_cost_to_come;
+                                }
                             }
                         }
                     }
