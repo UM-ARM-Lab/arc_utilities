@@ -1,7 +1,6 @@
 #ifndef DIJKSTRAS_HPP
 #define DIJKSTRAS_HPP
 
-
 #include <arc_utilities/graph.hpp>
 #include <arc_utilities/arc_helpers.hpp>
 #include <random>
@@ -10,10 +9,6 @@
 #include <queue>
 #include <stdexcept>
 #include <unordered_map>
-
-
-
-
 
 namespace arc_dijkstras
 {
@@ -37,18 +32,18 @@ namespace arc_dijkstras
 
     public:
 
-        typedef std::pair<Graph<NodeValueType, Allocator>, std::pair<std::vector<int64_t>,
-                                                                     std::vector<double>>> DijkstrasResult;
+        typedef Graph<NodeValueType, Allocator> GraphType;
+        typedef std::pair<GraphType, std::pair<std::vector<int64_t>, std::vector<double>>> DijkstrasResult;
 
         static DijkstrasResult PerformDijkstrasAlgorithm(
-                const Graph<NodeValueType, Allocator>& graph,
+                const GraphType& graph,
                 const int64_t start_index)
         {
             if ((start_index < 0) || (start_index >= (int64_t)graph.getNodes().size()))
             {
                 throw std::invalid_argument("Start index out of range");
             }
-            Graph<NodeValueType, Allocator> working_copy = graph;
+            GraphType working_copy = graph;
             // Setup
             std::vector<int64_t> previous_index_map(working_copy.getNodes().size(), -1);
             std::vector<double> distances(working_copy.getNodes().size(),
@@ -156,7 +151,7 @@ namespace arc_dijkstras
             // Deserialize the graph itself
             std::pair<DijkstrasResult, uint64_t> deserialized;
             const auto graph_deserialized =
-                Graph<NodeValueType, Allocator>::Deserialize(buffer, current_position, value_deserializer);
+                GraphType::Deserialize(buffer, current_position, value_deserializer);
             deserialized.first.first = graph_deserialized.first;
             current_position += graph_deserialized.second;
             // Deserialize the previous index
@@ -187,15 +182,14 @@ namespace arc_dijkstras
         SimpleGraphAstar() {}
 
     public:
+        typedef Graph<NodeValueType, Allocator> GraphType;
 
         static arc_helpers::AstarResult PerformLazyAstar(
-                const Graph<NodeValueType, Allocator>& graph,
+                const GraphType& graph,
                 const int64_t start_index,
                 const int64_t goal_index,
-                const std::function<bool(const Graph<NodeValueType, Allocator>&,
-                                         const GraphEdge&)>& edge_validity_check_fn,
-                const std::function<double(const Graph<NodeValueType, Allocator>&,
-                                           const GraphEdge&)>& distance_fn,
+                const std::function<bool(const GraphType&, const GraphEdge&)>& edge_validity_check_fn,
+                const std::function<double(const GraphType&, const GraphEdge&)>& distance_fn,
                 const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn,
                 const bool limit_pqueue_duplicates)
         {
@@ -222,24 +216,24 @@ namespace arc_dijkstras
             std::priority_queue<AstarPQueueElement,
                                 std::vector<AstarPQueueElement>,
                                 CompareAstarPQueueElementFn> queue;
-            
+
             // Optional map to reduce the number of duplicate items added to the pqueue
             // Key is the node index in the provided graph
             // Value is cost-to-come
             std::unordered_map<int64_t, double> queue_members_map;
-            
+
             // Key is the node index in the provided graph
             // Value is a pair<backpointer, cost-to-come>
             // backpointer is the parent index in the provided graph
             std::unordered_map<int64_t, std::pair<int64_t, double>> explored;
-            
+
             // Initialize
             queue.push(AstarPQueueElement(start_index, -1, 0.0, heuristic_function(start_index)));
             if (limit_pqueue_duplicates)
             {
                 queue_members_map[start_index] = 0.0;
             }
-            
+
             // Search
             while (queue.size() > 0)
             {
@@ -258,18 +252,18 @@ namespace arc_dijkstras
                 {
                     queue_members_map.erase(n.id());
                 }
-                
+
                 if (explored.count(n.id()) && n.costToCome() >= explored[n.id()].second)
                 {
                     continue;
                 }
-                
+
                 // Add to the explored list
                 explored[n.id()] = std::make_pair(n.backpointer(), n.costToCome());
-                
-                
+
+
                 // Explore and add the children
-                for(const GraphEdge& current_out_edge: graph.getNode(n.id()).getOutEdges())
+                for (const GraphEdge& current_out_edge: graph.getNode(n.id()).getOutEdges())
                 {
                     // Get the next potential child node
                     const int64_t child_id = current_out_edge.getToIndex();
@@ -278,11 +272,11 @@ namespace arc_dijkstras
                     {
                         continue;
                     }
-                    
+
                     // Compute the cost-to-come for the new child
                     const double child_cost_to_come = n.costToCome() + distance_fn(graph, current_out_edge);
 
-                    if(explored.count(child_id) &&
+                    if (explored.count(child_id) &&
                        child_cost_to_come >= explored[child_id].second)
                     {
                         continue;
@@ -293,7 +287,7 @@ namespace arc_dijkstras
                     {
                         continue;
                     }
-                    
+
                     const double child_value = child_cost_to_come + heuristic_function(child_id);
                     queue.push(AstarPQueueElement(child_id, n.id(), child_cost_to_come, child_value));
                 }
@@ -302,7 +296,7 @@ namespace arc_dijkstras
         }
 
         static arc_helpers::AstarResult PerformLazyAstar(
-                const Graph<NodeValueType, Allocator>& graph,
+                const GraphType& graph,
                 const int64_t start_index,
                 const int64_t goal_index,
                 const std::function<bool(const NodeValueType&, const NodeValueType&)>& edge_validity_check_fn,
@@ -310,14 +304,12 @@ namespace arc_dijkstras
                 const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn,
                 const bool limit_pqueue_duplicates)
         {
-            const auto edge_validity_check_function = [&] (const Graph<NodeValueType,
-                                                           Allocator>& search_graph, const GraphEdge& edge)
+            const auto edge_validity_check_function = [&] (const GraphType& search_graph, const GraphEdge& edge)
             {
                 return edge_validity_check_fn(search_graph.getNode(edge.getFromIndex()).getValue(),
                                               search_graph.getNode(edge.getToIndex()).getValue());
             };
-            const auto distance_function = [&] (const Graph<NodeValueType, Allocator>& search_graph,
-                                                const GraphEdge& edge)
+            const auto distance_function = [&] (const GraphType& search_graph, const GraphEdge& edge)
             {
                 return distance_fn(search_graph.getNode(edge.getFromIndex()).getValue(),
                                    search_graph.getNode(edge.getToIndex()).getValue());
@@ -327,14 +319,13 @@ namespace arc_dijkstras
         }
 
         static arc_helpers::AstarResult PerformAstar(
-                const Graph<NodeValueType, Allocator>& graph,
+                const GraphType& graph,
                 const int64_t start_index,
                 const int64_t goal_index,
                 const std::function<double(const NodeValueType&, const NodeValueType&)>& heuristic_fn,
                 const bool limit_pqueue_duplicates)
         {
-            const auto edge_validity_check_function = [&] (const Graph<NodeValueType,
-                                                           Allocator>& search_graph, const GraphEdge& edge)
+            const auto edge_validity_check_function = [&] (const GraphType& search_graph, const GraphEdge& edge)
             {
                 UNUSED(search_graph);
                 if(edge.getValidity() == EDGE_VALIDITY::INVALID)
@@ -344,8 +335,7 @@ namespace arc_dijkstras
 
                 return edge.getWeight() < std::numeric_limits<double>::infinity();
             };
-            const auto distance_function = [&] (const Graph<NodeValueType, Allocator>& search_graph, 
-                                                const GraphEdge& edge)
+            const auto distance_function = [&] (const GraphType& search_graph, const GraphEdge& edge)
             {
                 UNUSED(search_graph);
                 return edge.getWeight();
@@ -363,9 +353,10 @@ namespace arc_dijkstras
 
     public:
 
+        typedef Graph<NodeValueType, Allocator> GraphType;
         template <typename Generator>
         static std::vector<int64_t> PerformRandomWalk(
-                const Graph<NodeValueType, Allocator>& graph,
+                const GraphType& graph,
                 const int64_t start_index,
                 const int64_t goal_index,
                 Generator& generator)
