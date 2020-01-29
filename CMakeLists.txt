@@ -98,7 +98,8 @@ add_custom_target(${PROJECT_NAME}_headers SOURCES
     include/${PROJECT_NAME}/thin_plate_spline.hpp
     include/${PROJECT_NAME}/math_helpers.hpp
     include/${PROJECT_NAME}/vector_math.hpp
-    include/${PROJECT_NAME}/hash.hpp)
+    include/${PROJECT_NAME}/hash.hpp
+    include/${PROJECT_NAME}/geometry_msgs_builders.hpp)
 
 # Utility library
 add_library(${PROJECT_NAME}

@@ -522,6 +522,28 @@ namespace arc_helpers
     }
 
     /**
+     * @brief UniqueColorGenerator Calls to `next` return a sequence of unique colors
+     *
+     */
+    template<typename ColorType>
+    class UniqueColorGenerator
+    {
+        uint32_t i=1;
+        float alpha;
+        
+    public:
+        UniqueColorGenerator(float alpha_=1.0f) :
+            alpha(alpha_)
+        {}
+        
+        ColorType next()
+        {
+            return GenerateUniqueColor<ColorType>(i++, alpha);
+        }
+    };
+    
+
+    /**
      * @brief Multiply Multiples the color channels (r, g, b) of @color by
      *        @factor, ensuring the result stays in the range [0, 1]
      */
@@ -549,6 +571,7 @@ namespace arc_helpers
     inline ColorType InterpolateColor(const ColorType& c1, const ColorType& c2, const float& ratio)
     {
         // Safety check ratio
+        // TODO: use SafetyCheckRatio from eigen_helpers.hpp (or move that function to this file)
         float real_ratio = ratio;
         if (real_ratio < 0.0)
         {
@@ -572,13 +595,13 @@ namespace arc_helpers
 
     ////////////////////////////////////////////////////////////////////////////
 
-    inline size_t GetNumOMPThreads()
+    inline int GetNumOMPThreads()
     {
         #if defined(_OPENMP)
-        size_t num_threads = 0;
+        int num_threads = 0;
         #pragma omp parallel
         {
-            num_threads = (size_t)omp_get_num_threads();
+            num_threads = omp_get_num_threads();
         }
         return num_threads;
         #else
