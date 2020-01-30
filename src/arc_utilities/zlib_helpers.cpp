@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <zlib.h>
 #include <limits>
+#include <cmath>
+#include <boost/filesystem.hpp>
 #include "arc_utilities/arc_exceptions.hpp"
 #include "arc_utilities/zlib_helpers.hpp"
 
@@ -130,6 +132,34 @@ namespace ZlibHelpers
 
     std::vector<uint8_t> LoadFromFileAndDecompress(const std::string& path)
     {
+        if (!boost::filesystem::is_regular_file(path))
+        {
+            if (boost::filesystem::is_regular_file(path + "." + std::to_string(0)))
+            {
+                std::cerr << "ZLibHelpers::LoadFromFileAndDecompress(): " << path << " is not a regular file. Loading from individual slices." << std::endl;
+
+                std::vector<uint8_t> decompressed;
+                int file_idx = 0;
+                std::string slice_path = path + "." + std::to_string(file_idx);
+                do
+                {
+                    const auto slice_bytes = LoadFromFileAndDecompress(slice_path);
+                    std::cerr << "Reading bytes [" << decompressed.size() << ", " << decompressed.size() + slice_bytes.size() << ") from " << slice_path << std::endl;
+                    decompressed.reserve(decompressed.size() + slice_bytes.size());
+                    decompressed.insert(decompressed.end(), slice_bytes.cbegin(), slice_bytes.cend());
+
+                    ++file_idx;
+                    slice_path = path + "." + std::to_string(file_idx);
+                }
+                while (boost::filesystem::is_regular_file(slice_path));
+                return decompressed;
+            }
+            else
+            {
+                throw_arc_exception(std::runtime_error, "Couldn't find regular file " + path + " nor individual slices");
+            }
+        }
+
         std::ifstream input_file(path, std::ios::binary | std::ios::in | std::ios::ate);
         if (!input_file.is_open())
         {
@@ -148,9 +178,41 @@ namespace ZlibHelpers
 
     void CompressAndWriteToFile(const std::vector<uint8_t>& uncompressed, const std::string& path)
     {
+        constexpr size_t max_bytes = std::numeric_limits<decltype(z_stream_s::avail_in)>::max();
+        if (uncompressed.size() > max_bytes)
+        {
+            std::cerr << "ZLibHelpers::CompressAndWriteToFile(): Input buffer too large for single compression. Splitting into multiple files" << std::endl;
+            int file_idx = 0;
+            do
+            {
+                const size_t start_idx = file_idx * max_bytes;
+                const size_t end_idx = std::min<size_t>((file_idx + 1) * max_bytes, uncompressed.size());
+                const auto first = uncompressed.cbegin() + start_idx;
+                const auto last = uncompressed.cbegin() + end_idx;
+
+                const std::vector<uint8_t> slice(first, last);
+                const std::string slice_path = path + "." + std::to_string(file_idx);
+
+                std::cerr << "Writing bytes [" << start_idx << ", " << end_idx << ") to " << slice_path << std::endl;
+                CompressAndWriteToFile(slice, slice_path);
+
+                ++file_idx;
+            }
+            while (file_idx * max_bytes < uncompressed.size());
+            return;
+        }
+
         const auto compressed = CompressBytes(uncompressed);
         std::ofstream output_file(path, std::ios::out | std::ios::binary);
+        if (!output_file.is_open())
+        {
+            throw_arc_exception(std::runtime_error, "Couldn't open file " + path);
+        }
         output_file.write(reinterpret_cast<const char*>(compressed.data()), (std::streamsize)compressed.size());
         output_file.close();
+        if (output_file.bad())
+        {
+            throw_arc_exception(std::runtime_error, "Error writing to file");
+        }
     }
 }

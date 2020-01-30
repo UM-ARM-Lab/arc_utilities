@@ -20,7 +20,7 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         return abs_delta <= real_threshold;
     }
 
-    inline bool CloseEnough(const std::vector<double> &v1, const std::vector<double> &v2,
+    inline bool CloseEnough(const std::vector<double>& v1, const std::vector<double>& v2,
                             const double threshold)
     {
         if(v1.size() != v2.size())
@@ -43,6 +43,14 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         const double smallest_element = std::min(std::abs(p1), std::abs(p2));
         const double threshold = precision * smallest_element;
         return CloseEnough(p1, p2, threshold);
+    }
+
+    // https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
+    // Returns -1, 0, or 1 depending on the sign of val
+    template <typename T>
+    inline int Sign(const T val)
+    {
+        return (T(0) < val) - (val < T(0));
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -73,20 +81,30 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         }
     }
 
-    inline double Interpolate(const double p1, const double p2, const double ratio)
+    // TODO: this is almost the same as arc_helpers.hpp:ClampValueAndWarn(...)
+    //       we should resolve this redundency, pick one place for this function
+    template <typename FloatType>
+    inline FloatType SafetyCheckUnitInterval(const FloatType ratio)
     {
-        // Safety check ratio
-        double real_ratio = ratio;
+        static_assert(std::is_floating_point<FloatType>::value, "Type must be a float type");
+        FloatType real_ratio = ratio;
         if (real_ratio < 0.0)
         {
             real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
+            std::cerr << "Interpolation ratio < 0.0, set to 0.0 " << std::endl;
         }
         else if (real_ratio > 1.0)
         {
             real_ratio = 1.0;
             std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
         }
+        return real_ratio;
+    }
+
+    inline double Interpolate(const double p1, const double p2, const double ratio)
+    {
+        // Safety check ratio
+        const double real_ratio = SafetyCheckUnitInterval(ratio);
         // Interpolate
         // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
         return ((p1 * (1.0 - real_ratio)) + (p2 * real_ratio));
@@ -95,17 +113,7 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
     inline double InterpolateContinuousRevolute(const double p1, const double p2, const double ratio)
     {
         // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
+        const double real_ratio = SafetyCheckUnitInterval(ratio);
         // Safety check args
         const double real_p1 = EnforceContinuousRevoluteBounds(p1);
         const double real_p2 = EnforceContinuousRevoluteBounds(p2);
@@ -143,21 +151,23 @@ namespace EigenHelpers //TODO: Change namespace to ArcMath, breaking change
         return interpolated;
     }
 
+    template <typename T1, typename T2>
+    inline std::pair<T1, T2> Interpolate(const std::pair<T1, T2>& p1, const std::pair<T1, T2>& p2, const double ratio)
+    {
+        // Safety check ratio
+        const double real_ratio = SafetyCheckUnitInterval(ratio);
+        // Interpolate
+        // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
+        return std::make_pair<T1, T2>(
+                    (p1.first * (1.0 - real_ratio)) + (p2.first * real_ratio),
+                    (p1.second * (1.0 - real_ratio)) + (p2.second * real_ratio));
+    }
+
     template <typename T>
     inline std::vector<T> Interpolate(const std::vector<T>& v1, const std::vector<T>& v2, const double ratio)
     {
         // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
+        const double real_ratio = SafetyCheckUnitInterval(ratio);
         // Safety check inputs
         const size_t len = v1.size();
         if (len != v2.size())

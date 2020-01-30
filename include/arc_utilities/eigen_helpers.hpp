@@ -16,7 +16,7 @@
 #include "eigen_typedefs.hpp"
 #include "math_helpers.hpp"
 #include "vector_math.hpp"
-
+#include "arc_exceptions.hpp"
 
 
 namespace EigenHelpers
@@ -112,13 +112,31 @@ namespace EigenHelpers
     template <typename Derived>
     inline Eigen::MatrixXd ClampNorm(const Eigen::MatrixBase<Derived>& item_to_clamp, const double max_norm)
     {
-        assert(max_norm >= 0 && "You must pass a maximum norm that is positive");
+        assert(max_norm > 0 && "You must pass a maximum norm that is positive");
         const double current_norm = item_to_clamp.norm();
         if (current_norm > max_norm)
         {
             return item_to_clamp * (max_norm / current_norm);
         }
         return item_to_clamp;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Vectors of Eigen data transformations
+    ////////////////////////////////////////////////////////////////////////////
+
+    template <typename _Scalar, int _Dim, int _Mode, int _Options, typename EigenType, typename Allocator>
+    inline std::vector<EigenType, Allocator> TransformData(
+            const Eigen::Transform<_Scalar, _Dim, _Mode, _Options>& transform,
+            const std::vector<EigenType, Allocator>& data)
+    {
+        std::vector<EigenType, Allocator> retval;
+        retval.reserve(data.size());
+        for (const auto& item : data)
+        {
+            retval.push_back(transform * item);
+        }
+        return retval;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -138,7 +156,6 @@ namespace EigenHelpers
         const Eigen::Quaterniond res = quat.inverse() * (temp * quat);
         return Eigen::Vector3d(res.x(), res.y(), res.z());
     }
-
 
     inline Eigen::VectorXd SafeNormal(const Eigen::VectorXd& vec)
     {
@@ -281,7 +298,6 @@ namespace EigenHelpers
     // Interpolation functions
     ////////////////////////////////////////////////////////////////////////////
 
-
     template <typename T, int ROWS>
     inline Eigen::Matrix<T, ROWS, 1> Interpolate(const Eigen::Matrix<T, ROWS, 1>& v1,
                                                  const Eigen::Matrix<T, ROWS, 1>& v2, const double ratio)
@@ -289,20 +305,10 @@ namespace EigenHelpers
         // Safety check sizes
         if (v1.size() != v2.size())
         {
-            throw std::invalid_argument("Vectors v1 and v2 must be the same size");
+            throw_arc_exception(std::invalid_argument, "Vectors v1 and v2 must be the same size");
         }
         // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
+        const double real_ratio = SafetyCheckUnitInterval(ratio);
         // Interpolate
         // This is the numerically stable version, rather than  (p1 + (p2 - p1) * real_ratio)
         return ((v1 * (1.0 - real_ratio)) + (v2 * real_ratio));
@@ -312,17 +318,7 @@ namespace EigenHelpers
                                           const Eigen::Quaterniond& q2, const double ratio)
     {
         // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
+        const double real_ratio = SafetyCheckUnitInterval(ratio);
         // Interpolate
         return q1.slerp(real_ratio, q2);
     }
@@ -331,17 +327,7 @@ namespace EigenHelpers
                                          const Eigen::Isometry3d& t2, const double ratio)
     {
         // Safety check ratio
-        double real_ratio = ratio;
-        if (real_ratio < 0.0)
-        {
-            real_ratio = 0.0;
-            std::cerr << "Interpolation ratio < 0.0, set to 0.0" << std::endl;
-        }
-        else if (real_ratio > 1.0)
-        {
-            real_ratio = 1.0;
-            std::cerr << "Interpolation ratio > 1.0, set to 1.0" << std::endl;
-        }
+        const double real_ratio = SafetyCheckUnitInterval(ratio);
         // Interpolate
         const Eigen::Vector3d v1 = t1.translation();
         const Eigen::Quaterniond q1(t1.rotation());
@@ -785,8 +771,6 @@ namespace EigenHelpers
         return std::vector<double>{quat.x(), quat.y(), quat.z(), quat.w()};
     }
 
-
-
     ////////////////////////////////////////////////////////////////////////////
     // Averaging functions
     // Numerically more stable averages taken from http://people.ds.cam.ac.uk/fanf2/hermes/doc/antiforgery/stats.pdf
@@ -962,77 +946,32 @@ namespace EigenHelpers
         return vector_to_reject - VectorProjection(base_vector, vector_to_reject);
     }
 
-    template <typename DerivedV>
-    inline Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1> GetArbitraryOrthogonalVector(
+    // Intended only for planes in 3-D, not hyperplanes (see Hyperplane class)
+    template <typename DerivedB1, typename DerivedB2, typename DerivedV>
+    inline Eigen::Vector3d VectorProjectionToPlane(
+            const Eigen::MatrixBase<DerivedB1>& plane_vector1,
+            const Eigen::MatrixBase<DerivedB2>& plane_vector2,
             const Eigen::MatrixBase<DerivedV>& vector)
     {
-        // We're going to try arbitrary possibilities until one of them works
-        const ssize_t vector_size = vector.size();
-        if (vector_size > 0)
-        {
-            for (ssize_t idx = 0; idx < vector_size; idx++)
-            {
-                Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1> example_unit_vector = Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1>::Zero(vector_size);
-                example_unit_vector(idx) = (typename DerivedV::Scalar)1.0;
-                const auto rejected_vector = VectorRejection(vector, example_unit_vector);
-                const typename DerivedV::Scalar rejected_vector_squared_norm = rejected_vector.squaredNorm();
-                if (rejected_vector_squared_norm > 0)
-                {
-                    return rejected_vector;
-                }
-            }
-            throw std::runtime_error("Vector rejection failed to identify orthogonal vector, probably numerical error");
-        }
-        else
-        {
-            throw std::invalid_argument("Vector size is zero");
-        }
-    }
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedB1);
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedB2);
+        EIGEN_STATIC_ASSERT_VECTOR_ONLY(DerivedV);
+        EIGEN_STATIC_ASSERT_SAME_VECTOR_SIZE(DerivedB1, DerivedV);
+        EIGEN_STATIC_ASSERT_SAME_VECTOR_SIZE(DerivedB2, DerivedV);
 
-    template <typename DerivedV>
-    inline Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, 1> GetArbitraryOrthogonalVectorToPlane(
-            const Eigen::MatrixBase<DerivedV>& plane_vector1,
-            const Eigen::MatrixBase<DerivedV>& plane_vector2,
-            const Eigen::MatrixBase<DerivedV>& vector)
-    {
-        const ssize_t vector_size = vector.size();
-        if ((vector_size > 0) && (vector_size == plane_vector1.size()) && (vector_size == plane_vector2.size()))
+        const Eigen::Vector3d unit_plane_vector1 = plane_vector1.normalized();
+        const Eigen::Vector3d unit_plane_vector2 = plane_vector2.normalized();
+
+        // Error/numerical problems check input
+        const double plane_vector_dot_product_mag = std::abs(unit_plane_vector1.dot(unit_plane_vector2));
+        if (IsApprox(plane_vector_dot_product_mag , 1.0, 1e-10))
         {
-            const Eigen::MatrixBase<DerivedV> unit_plane_vector1 = plane_vector1 / plane_vector1.norm();
-            const Eigen::MatrixBase<DerivedV> unit_plane_vector2 = plane_vector2 / plane_vector2.norm();
-            const typename DerivedV::Scalar plane_vector_dot_product_mag = std::abs(unit_plane_vector1.dot(unit_plane_vector2));
-            if (plane_vector_dot_product_mag == 1.0)
-            {
-                throw std::invalid_argument("Plane vectors do not define a valid plane");
-            }
-            else
-            {
-                // Try both plane vectors (by definition, one of the two MUST have an orthogonal component!)
-                const auto rejected_vector1 = VectorRejection(vector, plane_vector1);
-                const typename DerivedV::Scalar rejected_vector1_squared_norm = rejected_vector1.squaredNorm();
-                if (rejected_vector1_squared_norm > 0)
-                {
-                    return rejected_vector1;
-                }
-                else
-                {
-                    const auto rejected_vector2 = VectorRejection(vector, plane_vector2);
-                    const typename DerivedV::Scalar rejected_vector2_squared_norm = rejected_vector2.squaredNorm();
-                    if (rejected_vector2_squared_norm > 0)
-                    {
-                        return rejected_vector2;
-                    }
-                    else
-                    {
-                        throw std::runtime_error("Vector rejection failed to identify orthogonal vector, probably numerical error");
-                    }
-                }
-            }
+            throw_arc_exception(std::invalid_argument, "Plane vectors do not define a valid plane");
         }
-        else
-        {
-            throw std::invalid_argument("Vector size is zero");
-        }
+
+        // Get the normal to the plane, then reject any component of the vector that is parallel
+        const Eigen::Vector3d normal = unit_plane_vector1.cross(unit_plane_vector2);
+        return VectorRejection(normal, vector);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1393,5 +1332,6 @@ namespace EigenHelpers
         return A.transpose() * damped.llt().solve(b);
     }
 }
+
 
 #endif // EIGEN_HELPERS_HPP

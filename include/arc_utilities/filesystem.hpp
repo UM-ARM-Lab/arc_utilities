@@ -19,7 +19,7 @@ namespace arc_utilities
             // https://svn.boost.org/trac/boost/ticket/7258
             boost::filesystem::create_directories(p);
             if (boost::filesystem::is_directory(p))
-    //            if (boost::filesystem::create_directories(p))
+//            if (boost::filesystem::create_directories(p))
             {
                 std::cout << "Succeeded!\x1b[37m\n";
             }
