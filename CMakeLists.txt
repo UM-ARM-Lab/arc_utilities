@@ -135,11 +135,6 @@ add_executable(test_averaging src/test_averaging.cpp)
 add_dependencies(test_averaging ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_averaging ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test node for Dijkstras
-add_executable(test_dijkstras src/test_dijkstras.cpp)
-add_dependencies(test_dijkstras ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_dijkstras ${PROJECT_NAME} ${catkin_LIBRARIES})
-
 # Simple test node for DistanceToLine function
 add_executable(test_closest_point src/test_closest_point.cpp)
 add_dependencies(test_closest_point ${catkin_EXPORTED_TARGETS})
@@ -164,16 +159,14 @@ target_link_libraries(test_thin_plate_spline ${PROJECT_NAME} ${catkin_LIBRARIES}
 # https://github.com/google/googletest/
 
 
-#############
-##  Tests  ##
-#############
-
 catkin_add_gtest(test_timings tests/timings_tests.cpp)
 target_link_libraries(test_timings ${PROJECT_NAME})
-
 catkin_add_gtest(test_eigen_serialization tests/test_eigen_serialization.cpp)
 target_link_libraries(test_eigen_serialization ${PROJECT_NAME})
-
+catkin_add_gtest(test_graph tests/test_graph.cpp)
+target_link_libraries(test_graph ${catkin_LIBRARIES})
+catkin_add_gtest(test_dijkstras tests/test_dijkstras.cpp)
+target_link_libraries(test_dijkstras ${catkin_LIBRARIES})
 catkin_add_gtest(test_math_helpers tests/test_math_helpers.cpp)
 target_link_libraries(test_math_helpers ${catkin_LIBRARIES})
 

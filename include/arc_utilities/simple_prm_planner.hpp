@@ -37,23 +37,23 @@ namespace simple_prm_planner
             {
                 graph_distance_fn = [&] (const arc_dijkstras::GraphNode<T, Allocator>& node, const T& query_state)
                 {
-                    return distance_fn(node.GetValueImmutable(), query_state);
+                    return distance_fn(node.getValue(), query_state);
                 };
             }
             else
             {
                 graph_distance_fn = [&] (const arc_dijkstras::GraphNode<T, Allocator>& node, const T& query_state)
                 {
-                    return distance_fn(query_state, node.GetValueImmutable());
+                    return distance_fn(query_state, node.getValue());
                 };
             }
 
 #ifdef ENABLE_PARALLEL_ROADMAP
             const std::vector<std::pair<int64_t, double>> nearest_neighbors =
-                    arc_helpers::GetKNearestNeighborsParallel(roadmap.GetNodesImmutable(), state, graph_distance_fn, K);
+                    arc_helpers::GetKNearestNeighborsParallel(roadmap.getNodes(), state, graph_distance_fn, K);
 #else
             const std::vector<std::pair<int64_t, double>> nearest_neighbors =
-                    arc_helpers::GetKNearestNeighborsSerial(roadmap.GetNodesImmutable(), state, graph_distance_fn, K);
+                    arc_helpers::GetKNearestNeighborsSerial(roadmap.getNodes(), state, graph_distance_fn, K);
 #endif
             // Check if we already have this state in the roadmap (and we don't want to add duplicates)
             if (add_duplicate_states == false)
@@ -68,7 +68,7 @@ namespace simple_prm_planner
                 }
             }
             // Add the new node AFTER KNN is performed
-            const int64_t new_node_index = roadmap.AddNode(state);
+            const int64_t new_node_index = roadmap.addNode(state);
             // Parallelize the collision-checking and distance computation
             std::vector<std::pair<double, double>> nearest_neighbors_distances(nearest_neighbors.size());
 #ifdef ENABLE_PARALLEL_ROADMAP
@@ -79,7 +79,7 @@ namespace simple_prm_planner
                 const std::pair<int64_t, double>& nearest_neighbor = nearest_neighbors[idx];
                 const int64_t nearest_neighbor_index = nearest_neighbor.first;
                 const double nearest_neighbor_distance = nearest_neighbor.second;
-                const T& nearest_neighbor_state = roadmap.GetNodeImmutable(nearest_neighbor_index).GetValueImmutable();
+                const T& nearest_neighbor_state = roadmap.getNode(nearest_neighbor_index).getValue();
                 if (edge_validity_check_fn(nearest_neighbor_state, state))
                 {
                     if (distance_is_symmetric)
@@ -88,7 +88,7 @@ namespace simple_prm_planner
                     }
                     else
                     {
-                        const double reverse_graph_distance = distance_fn(state, roadmap.GetNodeImmutable(nearest_neighbor_index).GetValueImmutable());
+                        const double reverse_graph_distance = distance_fn(state, roadmap.getNode(nearest_neighbor_index).getValue());
                         if (nn_distance_direction == ROADMAP_TO_NEW_STATE)
                         {
                             nearest_neighbors_distances[idx] = std::make_pair(nearest_neighbor_distance, reverse_graph_distance);
@@ -117,8 +117,8 @@ namespace simple_prm_planner
                 if (nearest_neighbor_distances.first >= 0.0 && nearest_neighbor_distances.second >= 0.0)
                 {
                     // Add the edges individually to allow for different distances in each direction
-                    roadmap.AddEdgeBetweenNodes(nearest_neighbor_index, new_node_index, nearest_neighbor_distances.first);
-                    roadmap.AddEdgeBetweenNodes(new_node_index, nearest_neighbor_index, nearest_neighbor_distances.second);
+                    roadmap.addEdgeBetweenNodes(nearest_neighbor_index, new_node_index, nearest_neighbor_distances.first);
+                    roadmap.addEdgeBetweenNodes(new_node_index, nearest_neighbor_index, nearest_neighbor_distances.second);
                 }
             }
             return new_node_index;
@@ -134,7 +134,7 @@ namespace simple_prm_planner
             for (size_t idx = 0; idx < solution_path_indices.size(); idx++)
             {
                 const int64_t path_index = solution_path_indices[idx];
-                solution_path.push_back(roadmap.GetNodeImmutable(path_index).GetValueImmutable());
+                solution_path.push_back(roadmap.getNode(path_index).getValue());
             }
             solution_path.shrink_to_fit();
             return solution_path;
@@ -193,31 +193,31 @@ namespace simple_prm_planner
 #ifdef ENABLE_PARALLEL_ROADMAP
             #pragma omp parallel for
 #endif
-            for (size_t current_node_index = 0; current_node_index < roadmap.GetNodesImmutable().size(); current_node_index++)
+            for (size_t current_node_index = 0; current_node_index < roadmap.getNodes().size(); current_node_index++)
             {
-                arc_dijkstras::GraphNode<T, Allocator>& current_node = roadmap.GetNodeMutable(current_node_index);
-                std::vector<arc_dijkstras::GraphEdge>& current_node_out_edges = current_node.GetOutEdgesMutable();
+                arc_dijkstras::GraphNode<T, Allocator>& current_node = roadmap.getNode(current_node_index);
+                std::vector<arc_dijkstras::GraphEdge>& current_node_out_edges = current_node.getOutEdges();
                 for (size_t out_edge_idx = 0; out_edge_idx < current_node_out_edges.size(); out_edge_idx++)
                 {
                     arc_dijkstras::GraphEdge& current_out_edge = current_node_out_edges[out_edge_idx];
-                    const int64_t other_node_idx = current_out_edge.GetToIndex();
-                    arc_dijkstras::GraphNode<T, Allocator>& other_node = roadmap.GetNodeMutable(other_node_idx);
-                    std::vector<arc_dijkstras::GraphEdge>& other_node_in_edges = other_node.GetInEdgesMutable();
+                    const int64_t other_node_idx = current_out_edge.getToIndex();
+                    arc_dijkstras::GraphNode<T, Allocator>& other_node = roadmap.getNode(other_node_idx);
+                    std::vector<arc_dijkstras::GraphEdge>& other_node_in_edges = other_node.getInEdges();
                     // If the edge is not valid, set the weight to infinity, otherwise use the distance function
                     double updated_weight = std::numeric_limits<double>::infinity();
-                    if (edge_validity_check_fn(current_node.GetValueImmutable(), other_node.GetValueImmutable()))
+                    if (edge_validity_check_fn(current_node.getValue(), other_node.getValue()))
                     {
-                        updated_weight = distance_fn(current_node.GetValueImmutable(), other_node.GetValueImmutable());
+                        updated_weight = distance_fn(current_node.getValue(), other_node.getValue());
                     }
                     // Update our out edge
-                    current_out_edge.SetWeight(updated_weight);
+                    current_out_edge.setWeight(updated_weight);
                     // Update the other node's in edges
                     for (size_t in_edge_idx = 0; in_edge_idx < other_node_in_edges.size(); in_edge_idx++)
                     {
                         arc_dijkstras::GraphEdge& other_in_edge = other_node_in_edges[in_edge_idx];
-                        if (other_in_edge.GetFromIndex() == (int64_t)current_node_index)
+                        if (other_in_edge.getFromIndex() == (int64_t)current_node_index)
                         {
-                            other_in_edge.SetWeight(updated_weight);
+                            other_in_edge.setWeight(updated_weight);
                         }
                     }
                 }
@@ -316,7 +316,7 @@ namespace simple_prm_planner
             for (size_t idx = 0; idx < solution_path_indices.size(); idx++)
             {
                 const int64_t path_index = solution_path_indices[idx];
-                solution_path.push_back(roadmap.GetNodeImmutable(path_index).GetValueImmutable());
+                solution_path.push_back(roadmap.getNode(path_index).getValue());
             }
             solution_path.shrink_to_fit();
             return std::make_pair(solution_path, astar_result.second);
