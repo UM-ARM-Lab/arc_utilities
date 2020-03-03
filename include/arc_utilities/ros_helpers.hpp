@@ -137,12 +137,28 @@ namespace ROSHelpers
     }
 
     template <typename T>
+    inline std::vector<T> GetVector(const ros::NodeHandle& nh, const std::string& param_name, const std::vector<T>& default_val)
+    {
+        std::vector<T> vec;
+        if (nh.getParam(param_name, vec))
+        {
+            ROS_INFO_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << "as vector of length " << vec.size());
+            return vec;
+        }
+        else
+        {
+            ROS_WARN_STREAM_NAMED("params", "Defaulting " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " as vector of length " << default_val.size());
+            return default_val;
+        }
+    }
+
+    template <typename T>
     inline Maybe::Maybe<std::vector<T>> GetVectorOptional(const ros::NodeHandle& nh, const std::string& param_name, const std::string& calling_fn_name)
     {
         std::vector<T> vec;
         if (nh.getParam(param_name, vec))
         {
-            ROS_INFO_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " of length " << vec.size());
+            ROS_INFO_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " as vector of length " << vec.size());
             return Maybe::Maybe<std::vector<T>>(vec);
         }
         else
@@ -159,7 +175,7 @@ namespace ROSHelpers
         std::vector<T> vec;
         if (nh.getParam(param_name, vec))
         {
-            ROS_INFO_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " of length " << vec.size());
+            ROS_INFO_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " as vector of length " << vec.size());
             return vec;
         }
         else
@@ -178,7 +194,7 @@ namespace ROSHelpers
         std::vector<T> vec;
         if (nh.getParam(param_name, vec))
         {
-            ROS_DEBUG_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " of length " << vec.size());
+            ROS_DEBUG_STREAM_NAMED("params", "Retrieving " << std::left << std::setw(PARAM_NAME_WIDTH) << param_name << " as vector of length " << vec.size());
             return vec;
         }
         else
