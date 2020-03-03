@@ -222,10 +222,13 @@ namespace EigenHelpers
          return twist;
     }
 
-    inline Eigen::Matrix<double, 6, 6> AdjointFromTransform(const Eigen::Isometry3d& transform)
+    template <int _Mode>
+    inline Eigen::Matrix<double, 6, 6> AdjointFromTransform(const Eigen::Transform<double, 3, _Mode>& transform)
     {
-        const Eigen::Matrix3d rotation = transform.matrix().block<3, 3>(0, 0);
-        const Eigen::Vector3d translation = transform.matrix().block<3, 1>(0, 3);
+        EIGEN_STATIC_ASSERT(_Mode == Eigen::Affine || _Mode == Eigen::Isometry,
+                            "THIS FUNCTION IS ONLY INTENDED FOR HOMOGENEOUS TRANSFORMS!!!");
+        const Eigen::Matrix3d rotation = transform.rotation();
+        const Eigen::Vector3d translation = transform.translation();
         const Eigen::Matrix3d translation_hat = Skew(translation);
         // Assemble the adjoint matrix
         Eigen::Matrix<double, 6, 6> adjoint;
@@ -236,21 +239,31 @@ namespace EigenHelpers
         return adjoint;
     }
 
-    inline Eigen::Matrix<double, 6, 1> TransformTwist(const Eigen::Isometry3d& transform, const Eigen::Matrix<double, 6, 1>& initial_twist)
+    template <int _Mode>
+    inline Eigen::Matrix<double, 6, 1> TransformTwist(const Eigen::Transform<double, 3, _Mode>& transform,
+                                                       const Eigen::Matrix<double, 6, 1>& initial_twist)
     {
+        EIGEN_STATIC_ASSERT(_Mode == Eigen::Affine || _Mode == Eigen::Isometry,
+                            "THIS FUNCTION IS ONLY INTENDED FOR HOMOGENEOUS TRANSFORMS!!!");
         return (Eigen::Matrix<double, 6, 1>)(EigenHelpers::AdjointFromTransform(transform) * initial_twist);
     }
 
-    inline Eigen::Matrix<double, 6, 1> TwistBetweenTransforms(const Eigen::Isometry3d& start, const Eigen::Isometry3d& end)
+    template <int _Mode>
+    inline Eigen::Matrix<double, 6, 1> TwistBetweenTransforms(const Eigen::Transform<double, 3, _Mode>& start,
+                                                               const Eigen::Transform<double, 3, _Mode>& end)
     {
-        const Eigen::Isometry3d t_diff = start.inverse() * end;
+        EIGEN_STATIC_ASSERT(_Mode == Eigen::Affine || _Mode == Eigen::Isometry,
+                            "THIS FUNCTION IS ONLY INTENDED FOR HOMOGENEOUS TRANSFORMS!!!");
+        const Eigen::Transform<double, 3, _Mode> t_diff = start.inverse() * end;
         return TwistUnhat(t_diff.matrix().log());
     }
 
     inline Eigen::Matrix3d ExpMatrixExact(const Eigen::Matrix3d& hatted_rot_velocity, const double delta_t)
     {
         assert(std::abs(Unskew(hatted_rot_velocity).norm() - 1.0) < 1e-10);
-        const Eigen::Matrix3d exp_matrix = Eigen::Matrix3d::Identity() + (hatted_rot_velocity * sin(delta_t)) + (hatted_rot_velocity * hatted_rot_velocity * (1.0 - cos(delta_t)));
+        const Eigen::Matrix3d exp_matrix = Eigen::Matrix3d::Identity()
+            + (hatted_rot_velocity * sin(delta_t))
+            + (hatted_rot_velocity * hatted_rot_velocity * (1.0 - cos(delta_t)));
         return exp_matrix;
     }
 
@@ -267,7 +280,9 @@ namespace EigenHelpers
             const Eigen::Vector3d scaled_trans_velocity = trans_velocity / rot_velocity_norm;
             const Eigen::Vector3d scaled_rot_velocity = rot_velocity / rot_velocity_norm;
             const Eigen::Matrix3d rotation_displacement = ExpMatrixExact(Skew(scaled_rot_velocity), scaled_delta_t);
-            const Eigen::Vector3d translation_displacement = ((Eigen::Matrix3d::Identity() - rotation_displacement) * scaled_rot_velocity.cross(scaled_trans_velocity)) + (scaled_rot_velocity * scaled_rot_velocity.transpose() * scaled_trans_velocity * scaled_delta_t);
+            const Eigen::Vector3d translation_displacement =
+                ((Eigen::Matrix3d::Identity() - rotation_displacement) * scaled_rot_velocity.cross(scaled_trans_velocity))
+                + (scaled_rot_velocity * scaled_rot_velocity.transpose() * scaled_trans_velocity * scaled_delta_t);
             raw_transform.block<3, 3>(0, 0) = rotation_displacement;
             raw_transform.block<3, 1>(0, 3) = translation_displacement;
         }
@@ -284,7 +299,9 @@ namespace EigenHelpers
                 const Eigen::Vector3d scaled_trans_velocity = trans_velocity / rot_velocity_norm;
                 const Eigen::Vector3d scaled_rot_velocity = rot_velocity / rot_velocity_norm;
                 const Eigen::Matrix3d rotation_displacement = ExpMatrixExact(Skew(scaled_rot_velocity), scaled_delta_t);
-                const Eigen::Vector3d translation_displacement = ((Eigen::Matrix3d::Identity() - rotation_displacement) * scaled_rot_velocity.cross(scaled_trans_velocity)) + (scaled_rot_velocity * scaled_rot_velocity.transpose() * scaled_trans_velocity * scaled_delta_t);
+                const Eigen::Vector3d translation_displacement =
+                    ((Eigen::Matrix3d::Identity() - rotation_displacement) * scaled_rot_velocity.cross(scaled_trans_velocity))
+                    + (scaled_rot_velocity * scaled_rot_velocity.transpose() * scaled_trans_velocity * scaled_delta_t);
                 raw_transform.block<3, 3>(0, 0) = rotation_displacement;
                 raw_transform.block<3, 1>(0, 3) = translation_displacement;
             }
