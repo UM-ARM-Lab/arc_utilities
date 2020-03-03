@@ -225,8 +225,6 @@ namespace EigenHelpers
     template <int _Mode>
     inline Eigen::Matrix<double, 6, 6> AdjointFromTransform(const Eigen::Transform<double, 3, _Mode>& transform)
     {
-        EIGEN_STATIC_ASSERT(std::is_floating_point<double>::value,
-                            "THIS FUNCTIONIS ONLY INTENDED FOR FLOATING POINT TYPES!!!");
         EIGEN_STATIC_ASSERT(_Mode == Eigen::Affine || _Mode == Eigen::Isometry,
                             "THIS FUNCTION IS ONLY INTENDED FOR HOMOGENEOUS TRANSFORMS!!!");
         const Eigen::Matrix3d rotation = transform.rotation();
