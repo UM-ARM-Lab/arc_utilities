@@ -222,45 +222,41 @@ namespace EigenHelpers
          return twist;
     }
 
-    template <typename _Scalar, int _Mode>
-    inline Eigen::Matrix<_Scalar, 6, 6> AdjointFromTransform(const Eigen::Transform<_Scalar, 3, _Mode>& transform)
+    template <int _Mode>
+    inline Eigen::Matrix<double, 6, 6> AdjointFromTransform(const Eigen::Transform<double, 3, _Mode>& transform)
     {
-        EIGEN_STATIC_ASSERT(std::is_floating_point<_Scalar>::value,
+        EIGEN_STATIC_ASSERT(std::is_floating_point<double>::value,
                             "THIS FUNCTIONIS ONLY INTENDED FOR FLOATING POINT TYPES!!!");
         EIGEN_STATIC_ASSERT(_Mode == Eigen::Affine || _Mode == Eigen::Isometry,
                             "THIS FUNCTION IS ONLY INTENDED FOR HOMOGENEOUS TRANSFORMS!!!");
-        const Eigen::Matrix<_Scalar, 3, 3> rotation = transform.rotation();
-        const Eigen::Matrix<_Scalar, 3, 1> translation = transform.translation();
-        const Eigen::Matrix<_Scalar, 3, 3> translation_hat = Skew(translation);
+        const Eigen::Matrix3d rotation = transform.rotation();
+        const Eigen::Vector3d translation = transform.translation();
+        const Eigen::Matrix3d translation_hat = Skew(translation);
         // Assemble the adjoint matrix
-        Eigen::Matrix<_Scalar, 6, 6> adjoint;
+        Eigen::Matrix<double, 6, 6> adjoint;
         adjoint.block<3, 3>(0, 0) = rotation;
         adjoint.block<3, 3>(0, 3) = translation_hat * rotation;
-        adjoint.block<3, 3>(3, 0) = Eigen::Matrix<_Scalar, 3, 3>::Zero();
+        adjoint.block<3, 3>(3, 0) = Eigen::Matrix3d::Zero();
         adjoint.block<3, 3>(3, 3) = rotation;
         return adjoint;
     }
 
-    template <typename _Scalar, int _Mode>
-    inline Eigen::Matrix<_Scalar, 6, 1> TransformTwist(const Eigen::Transform<_Scalar, 3, _Mode>& transform,
-                                                       const Eigen::Matrix<_Scalar, 6, 1>& initial_twist)
+    template <int _Mode>
+    inline Eigen::Matrix<double, 6, 1> TransformTwist(const Eigen::Transform<double, 3, _Mode>& transform,
+                                                       const Eigen::Matrix<double, 6, 1>& initial_twist)
     {
-        EIGEN_STATIC_ASSERT(std::is_floating_point<_Scalar>::value,
-                            "THIS FUNCTIONIS ONLY INTENDED FOR FLOATING POINT TYPES!!!");
         EIGEN_STATIC_ASSERT(_Mode == Eigen::Affine || _Mode == Eigen::Isometry,
                             "THIS FUNCTION IS ONLY INTENDED FOR HOMOGENEOUS TRANSFORMS!!!");
-        return (Eigen::Matrix<_Scalar, 6, 1>)(EigenHelpers::AdjointFromTransform(transform) * initial_twist);
+        return (Eigen::Matrix<double, 6, 1>)(EigenHelpers::AdjointFromTransform(transform) * initial_twist);
     }
 
-    template <typename _Scalar, int _Mode>
-    inline Eigen::Matrix<_Scalar, 6, 1> TwistBetweenTransforms(const Eigen::Transform<_Scalar, 3, _Mode>& start,
-                                                               const Eigen::Transform<_Scalar, 3, _Mode>& end)
+    template <int _Mode>
+    inline Eigen::Matrix<double, 6, 1> TwistBetweenTransforms(const Eigen::Transform<double, 3, _Mode>& start,
+                                                               const Eigen::Transform<double, 3, _Mode>& end)
     {
-        EIGEN_STATIC_ASSERT(std::is_floating_point<_Scalar>::value,
-                            "THIS FUNCTIONIS ONLY INTENDED FOR FLOATING POINT TYPES!!!");
         EIGEN_STATIC_ASSERT(_Mode == Eigen::Affine || _Mode == Eigen::Isometry,
                             "THIS FUNCTION IS ONLY INTENDED FOR HOMOGENEOUS TRANSFORMS!!!");
-        const Eigen::Transform<_Scalar, 3, _Mode> t_diff = start.inverse() * end;
+        const Eigen::Transform<double, 3, _Mode> t_diff = start.inverse() * end;
         return TwistUnhat(t_diff.matrix().log());
     }
 
