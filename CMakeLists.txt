@@ -14,8 +14,6 @@ set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 
 find_package(Boost REQUIRED COMPONENTS filesystem)
 
-find_package(GTest)
-
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/groovy/api/catkin/html/user_guide/setup_dot_py.html
@@ -116,6 +114,8 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
 ###########
 
 if (${CATKIN_ENABLE_TESTING})
+  find_package(GTest)
+
   # Simple test node for simple_hierarchical_clustering
   add_executable(test_hierarchical_clustering src/test_hierarchical_clustering.cpp)
   add_dependencies(test_hierarchical_clustering ${catkin_EXPORTED_TARGETS})
