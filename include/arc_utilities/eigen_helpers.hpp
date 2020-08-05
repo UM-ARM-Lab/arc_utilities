@@ -241,7 +241,7 @@ namespace EigenHelpers
 
     template <int _Mode>
     inline Eigen::Matrix<double, 6, 1> TransformTwist(const Eigen::Transform<double, 3, _Mode>& transform,
-                                                       const Eigen::Matrix<double, 6, 1>& initial_twist)
+                                                      const Eigen::Matrix<double, 6, 1>& initial_twist)
     {
         EIGEN_STATIC_ASSERT(_Mode == Eigen::Affine || _Mode == Eigen::Isometry,
                             "THIS FUNCTION IS ONLY INTENDED FOR HOMOGENEOUS TRANSFORMS!!!");
@@ -250,11 +250,11 @@ namespace EigenHelpers
 
     template <int _Mode>
     inline Eigen::Matrix<double, 6, 1> TwistBetweenTransforms(const Eigen::Transform<double, 3, _Mode>& start,
-                                                               const Eigen::Transform<double, 3, _Mode>& end)
+                                                              const Eigen::Transform<double, 3, _Mode>& end)
     {
         EIGEN_STATIC_ASSERT(_Mode == Eigen::Affine || _Mode == Eigen::Isometry,
                             "THIS FUNCTION IS ONLY INTENDED FOR HOMOGENEOUS TRANSFORMS!!!");
-        const Eigen::Transform<double, 3, _Mode> t_diff = start.inverse() * end;
+        const Eigen::Transform<double, 3, _Mode> t_diff = start.inverse(_Mode) * end;
         return TwistUnhat(t_diff.matrix().log());
     }
 
