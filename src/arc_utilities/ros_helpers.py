@@ -127,6 +127,29 @@ class Xbox():
 
         wait_for(lambda: not self.get_button(button) == 0)
 
+    def wait_for_buttons(self, buttons, message=True):
+        """
+        Waits for any button in `buttons` to be pressed.
+        Returns the first pressed button
+        """
+        if message:
+            rospy.loginfo("Waiting for xbox button: " + ", ".join(buttons))
+        pressed_button = None
+
+        def check_buttons():
+            nonlocal pressed_button
+            for b in buttons:
+                if self.get_button(b):
+                    pressed_button = b
+                    return True
+            return False
+
+        wait_for(check_buttons)
+        return pressed_button
+
+
+
+
 
 class TF2Wrapper:
     def __init__(self):
