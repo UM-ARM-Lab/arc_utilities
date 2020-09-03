@@ -1,15 +1,16 @@
 #ifndef ARC_UTILITIES_HASH_HPP
 #define ARC_UTILITIES_HASH_HPP
 
+// http://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
+template <class T>
+inline void hash_combine(std::size_t& seed, const T& v)
+{
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
+
 namespace std
 {
-    // http://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
-    template <class T>
-    inline void hash_combine(std::size_t& seed, const T& v)
-    {
-        std::hash<T> hasher;
-        seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-    }
 
     template <typename T>
     struct hash<std::complex<T>>
@@ -39,7 +40,7 @@ namespace std
             std::size_t hash_val = 0;
             for (ssize_t idx = 0; idx < vector.size(); idx++)
             {
-                std::hash_combine(hash_val, vector(idx));
+                hash_combine(hash_val, vector(idx));
             }
             return hash_val;
         }
@@ -51,8 +52,8 @@ namespace std
         std::size_t operator()(const std::pair<T1, T2>& val) const
         {
             std::size_t seed = 0;
-            std::hash_combine(seed, val.first);
-            std::hash_combine(seed, val.second);
+            hash_combine(seed, val.first);
+            hash_combine(seed, val.second);
             return seed;
         }
     };
