@@ -12,7 +12,7 @@ namespace arc_std{
     template<typename T>
     inline int find(const std::vector<T>& v, const T& element)
     {
-        auto it = std::find(v.begin(), v.end(), element);
+        const auto it = std::find(v.begin(), v.end(), element);
         if(it == v.end())
         {
             return -1;
