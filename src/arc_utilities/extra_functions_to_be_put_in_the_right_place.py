@@ -1,9 +1,13 @@
-from std_msgs.msg import *
-from geometry_msgs.msg import *
-from color_mapping import *
+import math
+
+from arc_utilities.color_mapping import interpolate_hot_to_cold
+from geometry_msgs.msg import Pose, Vector3, Point
+from std_msgs.msg import ColorRGBA
 
 
-def make_pose((px, py, pz), (rx, ry, rz, rw)):
+def make_pose(position, rotation):
+    px, py, pz = position
+    rx, ry, rz, rw = rotation
     new_pose = Pose()
     new_pose.position.x = px
     new_pose.position.y = py
@@ -31,16 +35,9 @@ def make_point(x, y, z):
     return new_point
 
 
-def make_plane((px, py, pz), (nx, ny, nz)):
-    new_plane = CollisionPlane()
-    new_plane.point = make_point(px, py, pz)
-    new_plane.normal = make_vector(nx, ny, nz)
-    return new_plane
-
-
 def make_unit_point(x, y, z):
     mag = math.sqrt(x ** 2 + y ** 2 + z ** 2)
-    assert(mag > 0.0)
+    assert (mag > 0.0)
     unit_point = Point()
     unit_point.x = x / mag
     unit_point.y = y / mag
@@ -50,13 +47,6 @@ def make_unit_point(x, y, z):
 
 def normalize_point(raw_point):
     return make_unit_point(raw_point.x, raw_point.y, raw_point.z)
-
-
-def make_plane_from_points(point, normal):
-    new_plane = CollisionPlane()
-    new_plane.point = point
-    new_plane.normal = normal
-    return new_plane
 
 
 def safe_color_val(val):
