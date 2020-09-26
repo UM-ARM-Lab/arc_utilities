@@ -14,8 +14,6 @@ set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 
 find_package(Boost REQUIRED COMPONENTS filesystem)
 
-find_package(GTest)
-
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/groovy/api/catkin/html/user_guide/setup_dot_py.html
@@ -115,60 +113,64 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
 ## Tests ##
 ###########
 
-# Simple test node for simple_hierarchical_clustering
-add_executable(test_hierarchical_clustering src/test_hierarchical_clustering.cpp)
-add_dependencies(test_hierarchical_clustering ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_hierarchical_clustering ${PROJECT_NAME} ${catkin_LIBRARIES})
+if (${CATKIN_ENABLE_TESTING})
+  find_package(GTest)
 
-# Simple test node for utility functions
-add_executable(test_arc_utilities src/test_arc_utilities.cpp)
-add_dependencies(test_arc_utilities ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_arc_utilities ${PROJECT_NAME} ${catkin_LIBRARIES})
+  # Simple test node for simple_hierarchical_clustering
+  add_executable(test_hierarchical_clustering src/test_hierarchical_clustering.cpp)
+  add_dependencies(test_hierarchical_clustering ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(test_hierarchical_clustering ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test node for Eigen3 math
-add_executable(test_eigen_math src/test_eigen_math.cpp)
-add_dependencies(test_eigen_math ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_eigen_math ${PROJECT_NAME} ${catkin_LIBRARIES})
+  # Simple test node for utility functions
+  add_executable(test_arc_utilities src/test_arc_utilities.cpp)
+  add_dependencies(test_arc_utilities ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(test_arc_utilities ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test node for averaging math
-add_executable(test_averaging src/test_averaging.cpp)
-add_dependencies(test_averaging ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_averaging ${PROJECT_NAME} ${catkin_LIBRARIES})
+  # Simple test node for Eigen3 math
+  add_executable(test_eigen_math src/test_eigen_math.cpp)
+  add_dependencies(test_eigen_math ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(test_eigen_math ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test node for DistanceToLine function
-add_executable(test_closest_point src/test_closest_point.cpp)
-add_dependencies(test_closest_point ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_closest_point ${PROJECT_NAME} ${catkin_LIBRARIES})
+  # Simple test node for averaging math
+  add_executable(test_averaging src/test_averaging.cpp)
+  add_dependencies(test_averaging ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(test_averaging ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test for SO(3) distance functions (to be expanded to all distance functions later)
-add_executable(test_distance_functions src/test_distance_functions.cpp)
-add_dependencies(test_distance_functions ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_distance_functions ${PROJECT_NAME} ${catkin_LIBRARIES})
+  # Simple test node for DistanceToLine function
+  add_executable(test_closest_point src/test_closest_point.cpp)
+  add_dependencies(test_closest_point ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(test_closest_point ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple test ROS (de)Serialization functions
-add_executable(test_ros_serialization src/test_ros_serialization.cpp)
-add_dependencies(test_ros_serialization ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_ros_serialization ${PROJECT_NAME} ${catkin_LIBRARIES})
+  # Simple test for SO(3) distance functions (to be expanded to all distance functions later)
+  add_executable(test_distance_functions src/test_distance_functions.cpp)
+  add_dependencies(test_distance_functions ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(test_distance_functions ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Simple thin plate sline tests in 2D and 3D
-add_executable(test_thin_plate_spline src/test_thin_plate_spline.cpp)
-add_dependencies(test_thin_plate_spline ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_thin_plate_spline ${PROJECT_NAME} ${catkin_LIBRARIES})
+  # Simple test ROS (de)Serialization functions
+  add_executable(test_ros_serialization src/test_ros_serialization.cpp)
+  add_dependencies(test_ros_serialization ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(test_ros_serialization ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# To build tests, install google's testing framework
-# https://github.com/google/googletest/
+  # Simple thin plate sline tests in 2D and 3D
+  add_executable(test_thin_plate_spline src/test_thin_plate_spline.cpp)
+  add_dependencies(test_thin_plate_spline ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(test_thin_plate_spline ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+  # To build tests, install google's testing framework
+  # https://github.com/google/googletest/
 
 
-catkin_add_gtest(test_timings tests/timings_tests.cpp)
-target_link_libraries(test_timings ${PROJECT_NAME})
-catkin_add_gtest(test_eigen_serialization tests/test_eigen_serialization.cpp)
-target_link_libraries(test_eigen_serialization ${PROJECT_NAME})
-catkin_add_gtest(test_graph tests/test_graph.cpp)
-target_link_libraries(test_graph ${catkin_LIBRARIES})
-catkin_add_gtest(test_dijkstras tests/test_dijkstras.cpp)
-target_link_libraries(test_dijkstras ${catkin_LIBRARIES})
-catkin_add_gtest(test_math_helpers tests/test_math_helpers.cpp)
-target_link_libraries(test_math_helpers ${catkin_LIBRARIES})
+  catkin_add_gtest(test_timings tests/timings_tests.cpp)
+  target_link_libraries(test_timings ${PROJECT_NAME})
+  catkin_add_gtest(test_eigen_serialization tests/test_eigen_serialization.cpp)
+  target_link_libraries(test_eigen_serialization ${PROJECT_NAME})
+  catkin_add_gtest(test_graph tests/test_graph.cpp)
+  target_link_libraries(test_graph ${catkin_LIBRARIES})
+  catkin_add_gtest(test_dijkstras tests/test_dijkstras.cpp)
+  target_link_libraries(test_dijkstras ${catkin_LIBRARIES})
+  catkin_add_gtest(test_math_helpers tests/test_math_helpers.cpp)
+  target_link_libraries(test_math_helpers ${catkin_LIBRARIES})
+endif()
 
 
 #############

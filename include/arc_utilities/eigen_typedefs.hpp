@@ -25,6 +25,8 @@ namespace EigenHelpers
     typedef std::vector<Eigen::Affine3d, Eigen::aligned_allocator<Eigen::Affine3d>> VectorAffine3d;
     typedef std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> VectorMatrix4f;
     typedef std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> VectorMatrix4d;
+    typedef std::vector<Eigen::Translation3f, Eigen::aligned_allocator<Eigen::Translation3f>> VectorTranslation3f;
+    typedef std::vector<Eigen::Translation3d, Eigen::aligned_allocator<Eigen::Translation3d>> VectorTranslation3d;
     typedef std::map<std::string, Eigen::Vector2f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector2f>>> MapStringVector2f;
     typedef std::map<std::string, Eigen::Vector2d, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector2d>>> MapStringVector2d;
     typedef std::map<std::string, Eigen::Vector3f, std::less<std::string>, Eigen::aligned_allocator<std::pair<const std::string, Eigen::Vector3f>>> MapStringVector3f;

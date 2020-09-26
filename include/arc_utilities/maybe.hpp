@@ -4,7 +4,10 @@
 #ifndef MAYBE_HPP
 #define MAYBE_HPP
 
-/* Simple implementation of a Maybe/Option type (or monad, if you're into that sort of thing).
+/*
+ * NOTE: prefer std::optional
+ *
+ * Simple implementation of a Maybe/Option type (or monad, if you're into that sort of thing).
  * Allows the safe passing of a value (or lack of a value!) without the need for null values.
  *
  * For example, Maybe<double> stores a double value OR the lack of such value.
