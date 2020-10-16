@@ -59,7 +59,7 @@ def convert_lab_to_xyz(l, a, b):
 def convert_lab_to_msh(l, a, b):
     m = math.sqrt(l ** 2 + a ** 2 + b ** 2)
     s = math.acos(l / m)
-    #h = math.atan2(b, a)
+    # h = math.atan2(b, a)
     h = math.atan(b / a)
     return [m, s, h]
 
@@ -93,19 +93,23 @@ def rad_diff(x, y):
         return diff
 
 
-def adjust_hue((m_saturated, s_saturated, h_saturated), m_unsaturated):
+def adjust_hue(msh, m_unsaturated):
+    m_saturated, s_saturated, h_saturated = msh
     if m_saturated >= m_unsaturated:
         return h_saturated
     else:
-        h_spin = (s_saturated * math.sqrt(m_unsaturated ** 2 - m_saturated ** 2)) / (m_saturated * math.sin(s_saturated))
+        h_spin = (s_saturated * math.sqrt(m_unsaturated ** 2 - m_saturated ** 2)) / (
+                m_saturated * math.sin(s_saturated))
         if h_saturated > -(math.pi / 3.0):
             return h_saturated + h_spin
         else:
             return h_saturated - h_spin
 
 
-def interpolate_coolwarm((r1, g1, b1), (r2, g2, b2), interpolation):
-    assert(0.0 <= interpolation <= 1.0)
+def interpolate_coolwarm(rgb1, rgb2, interpolation):
+    r1, g1, b1 = rgb1
+    r2, g2, b2 = rgb2
+    assert (0.0 <= interpolation <= 1.0)
     [m1, s1, h1] = rgb_to_msh(r1, g1, b1)
     [m2, s2, h2] = rgb_to_msh(r2, g2, b2)
     # If points saturated and distinct, place white in middle
@@ -152,13 +156,13 @@ def jet_base(value):
 
 def interpolate_jet(value, use_negative_range=False):
     if use_negative_range:
-        assert(-1.0 <= value <= 1.0)
+        assert (-1.0 <= value <= 1.0)
         r = jet_base(value - 0.5)
         g = jet_base(value)
         b = jet_base(value + 0.5)
         return [r, g, b]
     else:
-        assert(0.0 <= value <= 1.0)
+        assert (0.0 <= value <= 1.0)
         if value > 0.5:
             value = (value - 0.5) * 2.0
         elif value < 0.5:
@@ -173,7 +177,7 @@ def interpolate_jet(value, use_negative_range=False):
 
 def interpolate_hot_to_cold(value, min_value=0.0, max_value=1.0):
     # Safety checks
-    assert(min_value < max_value)
+    assert (min_value < max_value)
     if value < min_value:
         value = min_value
     elif value > max_value:
