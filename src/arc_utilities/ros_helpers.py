@@ -1,16 +1,18 @@
 #! /usr/bin/env python
 
-import rospy
 import time
 from copy import deepcopy
 from threading import Lock
-from sensor_msgs.msg import Joy
-import tf2_ros
+
 import geometry_msgs.msg
+import rospy
+import tf2_ros
 from arc_utilities import transformation_helper
+from sensor_msgs.msg import Joy
+
 
 class Listener:
-    def __init__(self, topic_name, topic_type, wait_for_data=False):
+    def __init__(self, topic_name, topic_type, wait_for_data=False) -> object:
         """
         Listener is a wrapper around a subscriber where the callback simply records the latest msg.
 
@@ -70,21 +72,23 @@ def joy_to_xbox(joy, xpad=True):
     Returns:
     xbox struct where fields are the button names
     """
+
     class Xbox_msg():
         def __str__(self):
             items = vars(self).items()
             return "\n".join("%s: %s" % item for item in items)
+
     x = Xbox_msg()
     if xpad:
         x.A, x.B, x.X, x.Y, x.LB, x.RB, \
-            x.back, x.start, x.power,\
-            x.stick_button_left, x.stick_button_right, \
-            x.DL, x.DR, x.DU, x.DD = joy.buttons
+        x.back, x.start, x.power, \
+        x.stick_button_left, x.stick_button_right, \
+        x.DL, x.DR, x.DU, x.DD = joy.buttons
         x.LH, x.LV, x.RH, x.RV, x.RT, x.LT, x.DH, x.DV = joy.axes
     else:
         x.A, x.B, x.X, x.Y, x.LB, x.RB, \
-            x.back, x.start, x.power,\
-            x.stick_button_left, x.stick_button_right = joy.buttons
+        x.back, x.start, x.power, \
+        x.stick_button_left, x.stick_button_right = joy.buttons
         x.LH, x.LV, x.RH, x.RV, x.RT, x.LT, x.DH, x.DV = joy.axes
     return x
 
@@ -195,7 +199,7 @@ class TF2Wrapper:
 
         return transformation_helper.BuildMatrixRos(transform.transform.translation, transform.transform.rotation)
 
-    def send_transform(self, transform, parent, child, is_static=False, time=None):
+    def send_transform_matrix(self, transform, parent, child, is_static=False, time=None):
         """
         :param parent: frame name for the parent (see below)
         :param child: frame name for the child (see below)
@@ -207,10 +211,25 @@ class TF2Wrapper:
         p_measured_in_parent = transform * p_measured_in_child
         p_measured_in_target = transform * p_measured_in_source
         """
+        [translation, quaternion] = transformation_helper.ExtractFromMatrix(transform)
+        self.send_transform(translation, quaternion, parent, child, is_static, time)
+
+    def send_transform(self, translation, quaternion, parent, child, is_static=False, time=None):
+        """
+        :param parent: frame name for the parent (see below)
+        :param child: frame name for the child (see below)
+        :param translation: [x, y, z]
+        :param quaternion: [x, y, z, w]
+        :param time: The timestamp for the transform, defaults to now()
+
+        The notation here follows the following convention:
+
+        p_measured_in_parent = transform * p_measured_in_child
+        p_measured_in_target = transform * p_measured_in_source
+        """
         if time is None:
             time = rospy.Time.now()
 
-        [translation, quaternion] = transformation_helper.ExtractFromMatrix(transform)
         t = geometry_msgs.msg.TransformStamped()
         t.header.stamp = time
         t.header.frame_id = parent
@@ -254,3 +273,8 @@ class TF2Wrapper:
         :return: The transformed, timestamped output, possibly converted to a new type.
         """
         return self.tf_buffer.transform(object_stamped, target_frame, timeout, new_type)
+
+
+def logfatal(exception_class, msg):
+    rospy.logfatal(msg)
+    raise exception_class(msg)

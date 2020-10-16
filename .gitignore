@@ -8,3 +8,6 @@ tags
 
 # Compiled python files
 *.pyc
+
+*.idea
+cmake-build-*
