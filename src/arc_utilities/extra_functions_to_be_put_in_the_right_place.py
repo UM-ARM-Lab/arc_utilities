@@ -1,38 +1,8 @@
 import math
 
 from arc_utilities.color_mapping import interpolate_hot_to_cold
-from geometry_msgs.msg import Pose, Vector3, Point
+from geometry_msgs.msg import Point
 from std_msgs.msg import ColorRGBA
-
-
-def make_pose(position, rotation):
-    px, py, pz = position
-    rx, ry, rz, rw = rotation
-    new_pose = Pose()
-    new_pose.position.x = px
-    new_pose.position.y = py
-    new_pose.position.z = pz
-    new_pose.orientation.x = rx
-    new_pose.orientation.y = ry
-    new_pose.orientation.z = rz
-    new_pose.orientation.w = rw
-    return new_pose
-
-
-def make_vector(x, y, z):
-    new_vector = Vector3()
-    new_vector.x = x
-    new_vector.y = y
-    new_vector.z = z
-    return new_vector
-
-
-def make_point(x, y, z):
-    new_point = Point()
-    new_point.x = x
-    new_point.y = y
-    new_point.z = z
-    return new_point
 
 
 def make_unit_point(x, y, z):
