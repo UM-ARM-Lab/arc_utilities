@@ -3,6 +3,8 @@
 import math
 import numpy
 
+from std_msgs.msg import ColorRGBA
+
 
 def convert_rgb_to_xyz(r, g, b):
     rgb_np = numpy.array([r, g, b])
@@ -201,3 +203,26 @@ def interpolate_hot_to_cold(value, min_value=0.0, max_value=1.0):
         g = 1.0 + 4.0 * (min_value + 0.75 * val_range - min_value) / val_range
         b = 0.0
     return [r, g, b]
+
+
+def safe_color_val(val):
+    if val >= 1.0:
+        return 1.0
+    elif val <= 0.0:
+        return 0.0
+    else:
+        return val
+
+
+def make_color(r, g, b, a):
+    new_color = ColorRGBA()
+    new_color.r = safe_color_val(r)
+    new_color.g = safe_color_val(g)
+    new_color.b = safe_color_val(b)
+    new_color.a = safe_color_val(a)
+    return new_color
+
+
+def map_color(value):
+    [r, g, b] = interpolate_hot_to_cold(value)
+    return make_color(r, g, b, 1.0)
