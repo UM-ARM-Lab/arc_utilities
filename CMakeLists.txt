@@ -4,8 +4,8 @@ project(arc_utilities)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs geometry_msgs)
-find_package(catkin COMPONENTS pybind11_catkin rosconsole)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs geometry_msgs
+    OPTIONAL_COMPONENTS pybind11_catkin rosconsole)
 
 ## System dependencies are found with CMake's conventions
 find_package(cmake_modules REQUIRED)
