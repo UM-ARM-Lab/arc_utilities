@@ -5,6 +5,7 @@ project(arc_utilities)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs geometry_msgs)
+find_package(catkin COMPONENTS pybind11_catkin rosconsole)
 
 ## System dependencies are found with CMake's conventions
 find_package(cmake_modules REQUIRED)
@@ -112,6 +113,12 @@ add_library(${PROJECT_NAME}
     )
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} z)
+
+if(pybind11_catkin_FOUND)
+    pybind_add_module(roscpp_initializer src/roscpp_initializer.cpp)
+    target_include_directories(roscpp_initializer SYSTEM PUBLIC ${catkin_INCLUDE_DIRS})
+    target_link_libraries(roscpp_initializer PUBLIC ${catkin_LIBRARIES})
+endif()
 
 ###########
 ## Tests ##
