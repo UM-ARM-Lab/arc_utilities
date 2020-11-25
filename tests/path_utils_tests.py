@@ -1,10 +1,14 @@
 #! /usr/bin/env python
 
 import unittest
-
 import numpy as np
 
+import rospy
 from arc_utilities import path_utils as pu
+import IPython
+
+from arc_utilities.path_utils import reverse_trajectory
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
 class TestPathUtils(unittest.TestCase):
@@ -125,6 +129,23 @@ class TestPathUtils(unittest.TestCase):
         for i in range(len(expected)):
             for j in range(2):
                 self.assertApprox(dense[i][j], expected[i][j])
+
+    def test_reverse(self):
+        traj = JointTrajectory()
+        traj.points.append(JointTrajectoryPoint(positions=[0.1], time_from_start=rospy.Duration(0)))
+        traj.points.append(JointTrajectoryPoint(positions=[0.2], time_from_start=rospy.Duration(0.1)))
+        traj.points.append(JointTrajectoryPoint(positions=[0.4], time_from_start=rospy.Duration(0.3)))
+        traj.points.append(JointTrajectoryPoint(positions=[0.5], time_from_start=rospy.Duration(0.4)))
+        rev_traj = reverse_trajectory(traj)
+        self.assertEqual(rev_traj.points[0].time_from_start.to_sec(), 0)
+        self.assertEqual(rev_traj.points[1].time_from_start.to_sec(), 0.1)
+        self.assertEqual(rev_traj.points[2].time_from_start.to_sec(), 0.3)
+        self.assertEqual(rev_traj.points[3].time_from_start.to_sec(), 0.4)
+
+        self.assertEqual(rev_traj.points[0].positions[0], 0.5)
+        self.assertEqual(rev_traj.points[1].positions[0], 0.4)
+        self.assertEqual(rev_traj.points[2].positions[0], 0.2)
+        self.assertEqual(rev_traj.points[3].positions[0], 0.1)
 
 
 if __name__ == '__main__':
