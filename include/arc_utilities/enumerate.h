@@ -6,10 +6,10 @@
 template <class Itr>
 struct enumerate {
 
-  enumerate(Itr v) {
+  explicit enumerate(Itr v) {
     auto first = std::cbegin(v);
     auto last = std::cend(v);
-    auto i = 0lu;
+    auto i = 0;
     auto make_pair = [&i] (auto const item) {
       return std::make_pair(i++, item);
     };
