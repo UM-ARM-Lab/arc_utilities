@@ -5,7 +5,6 @@
 #include <Eigen/Dense>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Transform.h>
-#include <victor_hardware_interface_msgs/JointValueQuantity.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -177,23 +176,6 @@ inline Eigen::Affine3d ConvertTo<Eigen::Affine3d>(geometry_msgs::Transform const
     Eigen::Translation3d const trans(transform.translation.x, transform.translation.y, transform.translation.z);
     Eigen::Quaterniond const quat(transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z);
     return trans * quat;
-}
-
-template<typename Output>
-Output ConvertTo(victor_hardware_interface_msgs::JointValueQuantity const& jvq);
-
-template<>
-inline Eigen::VectorXd ConvertTo<Eigen::VectorXd>(victor_hardware_interface_msgs::JointValueQuantity const& jvq)
-{
-    Eigen::VectorXd eig(7);
-    eig[0] = jvq.joint_1;
-    eig[1] = jvq.joint_2;
-    eig[2] = jvq.joint_3;
-    eig[3] = jvq.joint_4;
-    eig[4] = jvq.joint_5;
-    eig[5] = jvq.joint_6;
-    eig[6] = jvq.joint_7;
-    return eig;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
