@@ -4,12 +4,12 @@
 Useful functions for dealing with paths
 Unless otherwise noted, paths are a list of waypoints. Often it is useful to store these in a numpy array
 """
-from more_itertools import pairwise
 import pathlib
 import sys
 from copy import deepcopy
 
 import numpy as np
+from more_itertools import pairwise
 
 import rospy
 from trajectory_msgs.msg import JointTrajectory
@@ -49,7 +49,7 @@ def closest_point(path, query_point):
     Returns:
     point, ind, alpha
     point: closest point on path to query point
-    ind: index of the preceeding point of the path to point
+    ind: index of the proceeding point of the path to point
     alpha: The fraction from path[ind] to path[ind+1] where path is
     """
     d_close = dist(path[0], query_point)
