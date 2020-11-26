@@ -2,6 +2,7 @@
 
 #include <ostream>
 #include <typeinfo>
+#include <vector>
 
 template <typename T>
 static std::ostream &operator<<(std::ostream &out, std::vector<T> const &vec) {
