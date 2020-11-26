@@ -2,6 +2,7 @@
 #define ARC_STL_WRAPPERS
 
 #include <algorithm>
+#include <vector>
 
 namespace arc_std {
 

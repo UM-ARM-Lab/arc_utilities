@@ -6,6 +6,7 @@
 
 #include <moveit/version.h>
 #include <Eigen/Geometry>
+#include <vector>
 
 #define MOVEIT_VERSION_AT_LEAST(x, y, z) \
   (MOVEIT_VERSION_MAJOR > x ||           \
