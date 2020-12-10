@@ -29,21 +29,21 @@
 // Figure out which compiler we have
 #if defined(__clang__)
 /* Clang/LLVM */
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
+#define arc_likely(x) __builtin_expect(!!(x), 1)
+#define arc_unlikely(x) __builtin_expect(!!(x), 0)
 #elif defined(__ICC) || defined(__INTEL_COMPILER)
 /* Intel ICC/ICPC */
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
+#define arc_likely(x) __builtin_expect(!!(x), 1)
+#define arc_unlikely(x) __builtin_expect(!!(x), 0)
 #elif defined(__GNUC__) || defined(__GNUG__)
 /* GNU GCC/G++ */
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
+#define arc_likely(x) __builtin_expect(!!(x), 1)
+#define arc_unlikely(x) __builtin_expect(!!(x), 0)
 #elif defined(_MSC_VER)
 /* Microsoft Visual Studio */
 /* MSVC doesn't support branch prediction hints. Use PGO instead. */
-#define likely(x) (x)
-#define unlikely(x) (x)
+#define arc_likely(x) (x)
+#define arc_unlikely(x) (x)
 #endif
 
 // Macro to disable unused parameter compiler warnings
@@ -129,7 +129,7 @@ inline std::string WaitForInput(const std::string& message = "Press ENTER to con
 
 inline void ConditionalPrintWaitForInteractiveInput(const std::string& msg, const int32_t msg_level,
                                                     const int32_t print_level) {
-  if (unlikely(msg_level <= print_level)) {
+  if (arc_unlikely(msg_level <= print_level)) {
     const std::string printstr =
         "[" + std::to_string(msg_level) + "/" + std::to_string(print_level) + "] " + msg + "\n";
     std::cout << printstr << std::flush;
@@ -1265,7 +1265,7 @@ class RandomRotationGenerator {
 };
 
 inline void ConditionalPrint(const std::string& msg, const int32_t msg_level, const int32_t print_level) {
-  if (unlikely(msg_level <= print_level)) {
+  if (arc_unlikely(msg_level <= print_level)) {
     const std::string printstr =
         "[" + std::to_string(msg_level) + "/" + std::to_string(print_level) + "] " + msg + "\n";
     std::cout << printstr << std::flush;
@@ -1273,7 +1273,7 @@ inline void ConditionalPrint(const std::string& msg, const int32_t msg_level, co
 }
 
 inline void ConditionalError(const std::string& msg, const int32_t msg_level, const int32_t print_level) {
-  if (unlikely(msg_level <= print_level)) {
+  if (arc_unlikely(msg_level <= print_level)) {
     const std::string printstr =
         "[" + std::to_string(msg_level) + "/" + std::to_string(print_level) + "] " + msg + "\n";
     std::cerr << printstr << std::flush;
