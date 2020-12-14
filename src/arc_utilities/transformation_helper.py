@@ -415,17 +415,26 @@ def PoseFromDH(d, a, theta, alpha):
     return PoseFromMatrix(tfmatrix)
 
 
-def spherical_to_vector3(r, phi, theta):
+def spherical_to_vector3(r_phi_theta):
+    """
+    @param r_phi_theta: list-like object [r, phi, theta]
+    @return: list of x, y, z
+    """
     # https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates
+    r, phi, theta = r_phi_theta
     x = r * np.sin(theta) * np.cos(phi)
     y = r * np.sin(theta) * np.sin(phi)
     z = r * np.cos(theta)
     return [x, y, z]
 
 
-def vector3_to_spherical(v):
+def vector3_to_spherical(xyz):
+    """
+    @param xyz: list-like object [x, y, z]
+    @return: list of r, phi, theta
+    """
     # https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates
-    x, y, z = v
+    x, y, z = xyz
     r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
     # phi is the angle about the z axis, where 0 is +x and pi/2 is +y
     phi = np.arctan2(y, x)
