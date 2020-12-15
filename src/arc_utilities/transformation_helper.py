@@ -439,5 +439,8 @@ def vector3_to_spherical(xyz):
     # phi is the angle about the z axis, where 0 is +x and pi/2 is +y
     phi = np.arctan2(y, x)
     # theta is inclination from z direction
-    theta = np.arccos(z / r)
+    if r > 1e-6:
+        theta = np.arccos(z / r)
+    else:
+        theta = 0
     return [r, phi, theta]

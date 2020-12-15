@@ -7,6 +7,12 @@ from arc_utilities.transformation_helper import vector3_to_spherical, spherical_
 
 class TestTransformationHelper(unittest.TestCase):
 
+    def test_vector3_to_spherical_zero(self):
+        xyz = [0, 0, 0]
+        r_phi_theta = vector3_to_spherical(xyz)
+        xyz_out = spherical_to_vector3(r_phi_theta)
+        np.testing.assert_allclose(xyz, xyz_out, rtol=1)
+
     def test_vector3_to_spherical_case1(self):
         xyz = [1, 0, 0]
         r_phi_theta = vector3_to_spherical(xyz)
