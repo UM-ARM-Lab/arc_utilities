@@ -4,6 +4,7 @@ import geometry_msgs.msg
 import rospy
 import tf2_ros
 from arc_utilities import transformation_helper
+from geometry_msgs.msg import Pose
 
 
 class TF2Wrapper:
@@ -37,7 +38,8 @@ class TF2Wrapper:
         """
 
         try:
-            transform = self.get_transform_msg(parent=parent, child=child, verbose=verbose, spin_delay=spin_delay, time=time)
+            transform = self.get_transform_msg(parent=parent, child=child, verbose=verbose, spin_delay=spin_delay,
+                                               time=time)
 
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logerr("No transform available: %s to %s", parent, child)
@@ -76,6 +78,25 @@ class TF2Wrapper:
         """
         [translation, quaternion] = transformation_helper.ExtractFromMatrix(transform)
         self.send_transform(translation, quaternion, parent, child, is_static, time)
+
+    def send_transform_from_pose_msg(self, pose: Pose, parent, child, is_static=False, time=None):
+        if time is None:
+            time = rospy.Time.now()
+
+        t = geometry_msgs.msg.TransformStamped()
+        t.header.stamp = time
+        t.header.frame_id = parent
+        t.child_frame_id = child
+        t.transform.translation.x = pose.position.x
+        t.transform.translation.y = pose.position.y
+        t.transform.translation.z = pose.position.z
+        t.transform.rotation = pose.orientation
+
+        if is_static:
+            self.tf_static_broadcasters.append(tf2_ros.StaticTransformBroadcaster())
+            self.tf_static_broadcasters[-1].sendTransform(t)
+        else:
+            self.tf_broadcaster.sendTransform(t)
 
     def send_transform(self, translation, quaternion, parent, child, is_static=False, time=None):
         """
