@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import math
+
 import numpy
+from matplotlib import colors
 
 from std_msgs.msg import ColorRGBA
 
@@ -226,3 +228,16 @@ def make_color(r, g, b, a):
 def map_color(value):
     [r, g, b] = interpolate_hot_to_cold(value)
     return make_color(r, g, b, 1.0)
+
+
+def to_color_msg(color):
+    """
+
+    Args:
+        color: anything matplotlib can handle, for example '#00ffee', (10,255,255), 'white', ...
+
+    Returns:
+
+    """
+    r, g, b, a = colors.to_rgba(color)
+    return ColorRGBA(r=r, g=g, b=b, a=a)
