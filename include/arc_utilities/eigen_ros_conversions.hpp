@@ -18,6 +18,37 @@ Output ConvertTo(geometry_msgs::Vector3 const& eig);
 template <typename Output>
 Output ConvertTo(Eigen::Vector3d const& eig);
 
+template <typename Output>
+Output ConvertTo(Eigen::Vector3f const& eig);
+
+template <>
+inline Eigen::Vector3f ConvertTo<Eigen::Vector3f>(geometry_msgs::Point const& geo) {
+  return Eigen::Vector3f(geo.x, geo.y, geo.z);
+}
+
+template <>
+inline Eigen::Vector3f ConvertTo<Eigen::Vector3f>(geometry_msgs::Vector3 const& eig) {
+  return Eigen::Vector3f(eig.x, eig.y, eig.z);
+}
+
+template <>
+inline geometry_msgs::Point ConvertTo<geometry_msgs::Point>(Eigen::Vector3f const& eig) {
+  geometry_msgs::Point geo;
+  geo.x = eig.x();
+  geo.y = eig.y();
+  geo.z = eig.z();
+  return geo;
+}
+
+template <>
+inline geometry_msgs::Vector3 ConvertTo<geometry_msgs::Vector3>(Eigen::Vector3f const& eig) {
+  geometry_msgs::Vector3 geo;
+  geo.x = eig.x();
+  geo.y = eig.y();
+  geo.z = eig.z();
+  return geo;
+}
+
 template <>
 inline Eigen::Vector3d ConvertTo<Eigen::Vector3d>(geometry_msgs::Point const& geo) {
   return Eigen::Vector3d(geo.x, geo.y, geo.z);
@@ -56,6 +87,33 @@ Output ConvertTo(Eigen::Quaterniond const& quat);
 
 template <typename Output>
 Output ConvertTo(Eigen::Matrix3d const& rot);
+
+template <typename Output>
+Output ConvertTo(Eigen::Quaternionf const& quat);
+
+template <typename Output>
+Output ConvertTo(Eigen::Matrix3f const& rot);
+
+template <>
+inline Eigen::Quaternionf ConvertTo<Eigen::Quaternionf>(geometry_msgs::Quaternion const& quat) {
+  return Eigen::Quaternionf(quat.w, quat.x, quat.y, quat.z);
+}
+
+template <>
+inline geometry_msgs::Quaternion ConvertTo<geometry_msgs::Quaternion>(Eigen::Quaternionf const& quat) {
+  geometry_msgs::Quaternion geo_quat;
+  geo_quat.x = quat.x();
+  geo_quat.y = quat.y();
+  geo_quat.z = quat.z();
+  geo_quat.w = quat.w();
+  return geo_quat;
+}
+
+template <>
+inline geometry_msgs::Quaternion ConvertTo<geometry_msgs::Quaternion>(Eigen::Matrix3f const& rot) {
+  return ConvertTo<geometry_msgs::Quaternion>(Eigen::Quaternionf(rot));
+}
+
 
 template <>
 inline Eigen::Quaterniond ConvertTo<Eigen::Quaterniond>(geometry_msgs::Quaternion const& quat) {
