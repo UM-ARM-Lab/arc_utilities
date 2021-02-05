@@ -23,6 +23,7 @@ class Listener:
         self.data = None
         self.lock = Lock()
 
+        self.topic_name = topic_name
         self.subscriber = rospy.Subscriber(topic_name, topic_type, self.callback)
         self.get(wait_for_data)
 
@@ -38,7 +39,7 @@ class Listener:
             block_until_data (bool): block if no message has been received yet.
                                      Guarantees a msg is returned (not None)
         """
-        wait_for(lambda: not (block_until_data and self.data is None))
+        wait_for(lambda: not (block_until_data and self.data is None), 10, f"Listener({self.topic_name})")
 
         with self.lock:
             return deepcopy(self.data)
