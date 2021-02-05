@@ -14,10 +14,9 @@ def wait_for(func, warn_after: Optional[int] = 10, name: Optional[str] = ""):
     """
 
     start_t = rospy.Time.now()
-    has_warned = False
 
     while not func() and not rospy.is_shutdown():
-        if warn_after is not None and rospy.Time.now() - start_t > rospy.Duration(secs=warn_after) and not has_warned:
+        if warn_after is not None and rospy.Time.now() - start_t > rospy.Duration(secs=warn_after):
             warning = f"still waiting after {warn_after}s"
             if name:
                 warning += f" for {name}"
