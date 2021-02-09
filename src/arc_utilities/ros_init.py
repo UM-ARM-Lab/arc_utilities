@@ -59,7 +59,7 @@ def with_ros(name: str):
 
     Returns:
         This function returns a function which takes a function and returns a function that calls a function.
-        Don't think too hard about it
+         Don't think too hard about it
 
     """
 
