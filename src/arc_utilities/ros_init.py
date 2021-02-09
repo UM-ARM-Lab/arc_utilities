@@ -38,7 +38,7 @@ def with_ros(name: str):
     """
     A decorator for managing allocation an de-allocation of ROS resources. EXAMPLE:
 
-    @with_ros
+    @ros_init.with_ros("node_name")
     def main():
       rospy.Publisher(...)
 
