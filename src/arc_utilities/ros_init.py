@@ -8,8 +8,17 @@ import rospy
 
 
 def rospy_and_cpp_init(name):
-    """ Use this function any time you want to call into C++ ROS code.
-      You can use this in place of the moveit roscpp_initializer, and """
+    """
+    Use this function any time you want to call into C++ ROS code.
+    The C++ node will be named "cpp_" + name
+    You can use this in place of the moveit roscpp_initializer
+
+    Args:
+        name: the name of the python node, and the C++ node will be named "cpp_" + name
+
+    Returns:
+
+    """
     roscpp_initializer.init_node("cpp_" + name, [], disable_signals=True)
     rospy.init_node(name)
 
@@ -41,6 +50,8 @@ def with_ros(name: str):
     @ros_init.with_ros("node_name")
     def main():
       rospy.Publisher(...)
+
+    The C++ node will be named "cpp_" + name
 
     Args:
         func: the function that gets wrapped with this decorator. It can be arbitrary , but it's usually "main"
