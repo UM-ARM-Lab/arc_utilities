@@ -62,7 +62,7 @@ def logfatal(exception_class, msg):
     raise exception_class(msg)
 
 
-def get_oneshot_publisher(topic_path: str, *args, **kwargs):
+def get_connected_publisher(topic_path: str, *args, **kwargs):
     pub = rospy.Publisher(topic_path, *args, **kwargs)
     num_subs = len(_get_subscribers(topic_path))
     for i in range(10):
