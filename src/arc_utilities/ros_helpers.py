@@ -70,7 +70,7 @@ def get_connected_publisher(topic_path: str, *args, **kwargs):
         if num_cons == num_subs:
             return pub
         time.sleep(0.1)
-    raise RuntimeError("failed to get publisher")
+    raise RuntimeError(f"failed to get publisher for {topic_path}")
 
 
 def _get_subscribers(topic_path: str):
