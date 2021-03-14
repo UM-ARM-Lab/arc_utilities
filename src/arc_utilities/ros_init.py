@@ -1,4 +1,3 @@
-import traceback
 from types import TracebackType
 from typing import Callable
 
@@ -37,10 +36,7 @@ class RosContext:
         pass
 
     def __exit__(self, type, value, tb: TracebackType):
-        if type:
-            traceback.print_exception(type, value, tb)
         shutdown()
-        return True
 
 
 def with_ros(name: str):
