@@ -1,5 +1,9 @@
 import pathlib
-from typing import Optional
+from typing import Optional, List
+
+from colorama import Fore
+
+from arc_utilities.path_utils import rm_tree
 
 
 def mkdir_and_ask(path, parents: bool, yes: Optional[bool] = False):
@@ -35,3 +39,28 @@ def directory_size(dir: pathlib.Path):
 
 def append_str_to_path(p: pathlib.Path, s: str):
     return p.parent / (p.name + s)
+
+
+def ask_to_remove_directories(directories_to_remove: List[pathlib.Path]):
+    print("Ok to delete these directories?")
+    for d in directories_to_remove:
+        print(d.as_posix())
+    k = input("[Y/n]")
+    if k == 'n' or k == 'N':
+        print(Fore.RED + "Aborting.")
+        return
+
+    print(Fore.GREEN + "Deleting.")
+    for d in directories_to_remove:
+        rm_tree(d)
+
+
+def count_files_recursive(path):
+    count = 0
+    path = pathlib.Path(path)
+    for child in path.iterdir():
+        if child.is_dir():
+            count += count_files_recursive(child)
+        else:
+            count += 1
+    return count
