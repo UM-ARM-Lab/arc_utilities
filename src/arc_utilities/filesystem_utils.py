@@ -1,5 +1,5 @@
 import pathlib
-from typing import Optional, List
+from typing import Optional, Iterable
 
 from colorama import Fore
 
@@ -41,18 +41,19 @@ def append_str_to_path(p: pathlib.Path, s: str):
     return p.parent / (p.name + s)
 
 
-def ask_to_remove_directories(directories_to_remove: List[pathlib.Path]):
+def ask_to_remove_directories(directories_to_remove: Iterable[pathlib.Path]):
     print("Ok to delete these directories?")
     for d in directories_to_remove:
         print(d.as_posix())
     k = input("[Y/n]")
-    if k == 'n' or k == 'N':
-        print(Fore.RED + "Aborting.")
-        return
+    if k == '' or k == 'y' or k == 'Y':
+        print(Fore.GREEN + "Deleting.")
+        for d in directories_to_remove:
+            rm_tree(d)
 
-    print(Fore.GREEN + "Deleting.")
-    for d in directories_to_remove:
-        rm_tree(d)
+    print(Fore.RED + "Aborting.")
+    return
+
 
 
 def count_files_recursive(path):
