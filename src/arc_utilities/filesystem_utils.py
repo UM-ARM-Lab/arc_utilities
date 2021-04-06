@@ -51,6 +51,8 @@ def ask_to_remove_directories(directories_to_remove: Iterable[pathlib.Path]):
         for d in directories_to_remove:
             rm_tree(d)
 
+        return
+
     print(Fore.RED + "Aborting.")
     return
 
