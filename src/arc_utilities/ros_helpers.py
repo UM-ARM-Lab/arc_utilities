@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import time
-from typing import Optional
+from typing import Optional, Type
 
 import rosgraph
 import rospy
@@ -62,18 +62,16 @@ def logfatal(exception_class, msg):
     raise exception_class(msg)
 
 
-def get_connected_publisher(topic_path: str, *args, raise_on_failure: bool, **kwargs):
-    pub = rospy.Publisher(topic_path, *args, **kwargs)
+def get_connected_publisher(topic_path: str, data_class: Type, *args, **kwargs):
+    pub = rospy.Publisher(topic_path, data_class, *args, **kwargs)
     num_subs = len(_get_subscribers(topic_path))
     for i in range(10):
         num_cons = pub.get_num_connections()
         if num_cons == num_subs:
             return pub
         time.sleep(0.1)
-    if raise_on_failure:
-        raise RuntimeError(f"failed to get publisher for {topic_path}")
 
-    return None
+    raise RuntimeError(f"failed to get publisher for {topic_path}")
 
 
 def _get_subscribers(topic_path: str):
@@ -85,3 +83,20 @@ def _get_subscribers(topic_path: str):
         if sub[0] == topic_path:
             subs.extend(sub[1])
     return subs
+
+
+def try_to_connect(*publishers, raise_on_fail: bool = False):
+    connected = [p.get_num_connections() > 0 for p in publishers]
+    for i in range(10):
+        if all(connected):
+            return
+        time.sleep(0.1)
+
+        connected = [p.get_num_connections() > 0 for p in publishers]
+
+    for is_p_connected, p in zip(connected, publishers):
+        if not is_p_connected:
+            if raise_on_fail:
+                raise RuntimeError(f"failed to get publisher {p.name}")
+            else:
+                rospy.logwarn(f"failed to get publisher {p.name}")
