@@ -86,17 +86,15 @@ def _get_subscribers(topic_path: str):
 
 
 def try_to_connect(*publishers, raise_on_fail: bool = False):
-    connected = [p.get_num_connections() > 0 for p in publishers]
     for i in range(10):
+        connected = [p.get_num_connections() > 0 for p in publishers]
         if all(connected):
             return
         time.sleep(0.1)
 
-        connected = [p.get_num_connections() > 0 for p in publishers]
-
-    for is_p_connected, p in zip(connected, publishers):
-        if not is_p_connected:
-            if raise_on_fail:
-                raise RuntimeError(f"failed to get publisher {p.name}")
-            else:
-                rospy.logwarn(f"failed to get publisher {p.name}")
+    unconnected_pubs = [p.name for p in publishers if p.get_num_connections() == 0]
+    if len(unconnected_pubs) > 0:
+        msg = f"failed to connect publishers {','.join(unconnected_pubs)}"
+        if raise_on_fail:
+            raise RuntimeError(msg)
+        rospy.logwarn(msg)
