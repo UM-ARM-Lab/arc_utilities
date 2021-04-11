@@ -23,9 +23,9 @@ def mkdir_and_ask(path, parents: bool, yes: Optional[bool] = False):
     return True
 
 
-def get_all_subfolders(args):
+def get_all_subdirs(directories: Iterable[pathlib.Path]):
     all_subfolders = []
-    for results_dir in args.results_dirs:
+    for results_dir in directories:
         subfolders = results_dir.iterdir()
         for subfolder in subfolders:
             if subfolder.is_dir():
@@ -55,7 +55,6 @@ def ask_to_remove_directories(directories_to_remove: Iterable[pathlib.Path]):
 
     print(Fore.RED + "Aborting.")
     return
-
 
 
 def count_files_recursive(path):
