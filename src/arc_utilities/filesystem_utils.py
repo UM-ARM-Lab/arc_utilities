@@ -24,13 +24,13 @@ def mkdir_and_ask(path, parents: bool, yes: Optional[bool] = False):
 
 
 def get_all_subdirs(directories: Iterable[pathlib.Path]):
-    all_subfolders = []
+    all_subdirs = []
     for results_dir in directories:
-        subfolders = results_dir.iterdir()
-        for subfolder in subfolders:
-            if subfolder.is_dir():
-                all_subfolders.append(subfolder)
-    return all_subfolders
+        subdirs = results_dir.iterdir()
+        for subdir in subdirs:
+            if subdir.is_dir():
+                all_subdirs.append(subdir)
+    return all_subdirs
 
 
 def directory_size(dir: pathlib.Path):
