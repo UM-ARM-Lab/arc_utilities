@@ -1,4 +1,5 @@
 import collections.abc
+from typing import List
 
 
 def nested_dict_update(base_dict, update_dict):
@@ -18,3 +19,20 @@ def nested_dict_update(base_dict, update_dict):
 def is_list_unique(x):
     """ all elements must be hashable """
     return len(x) == len(set(x))
+
+
+def repeat_last(x: List):
+    if len(x) == 0:
+        raise RuntimeError("Cannot repeat the last element of an empty list")
+    x_i = None
+    for x_i in x:
+        yield x_i
+    while True:
+        yield x_i
+
+
+def zip_repeat_shorter(*args):
+    longest_len = max(*[len(x) for x in args])
+    zipped = zip(*[repeat_last(x) for x in args])
+    for i in range(longest_len):
+        yield next(zipped)
