@@ -55,11 +55,15 @@ class TestAlgorithms(unittest.TestCase):
         self.assertEqual(next(i), (1, 'a'))
         self.assertEqual(next(i), (2, 'b'))
         self.assertEqual(next(i), (2, 'c'))
+        with self.assertRaises(StopIteration):
+            next(i)
 
         i = zip_repeat_shorter([1, 2, 3], ['a', 'b'])
         self.assertEqual(next(i), (1, 'a'))
         self.assertEqual(next(i), (2, 'b'))
         self.assertEqual(next(i), (3, 'b'))
+        with self.assertRaises(StopIteration):
+            next(i)
 
 
 if __name__ == '__main__':
