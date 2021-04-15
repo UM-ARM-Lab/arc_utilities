@@ -24,12 +24,18 @@ def mkdir_and_ask(path, parents: bool, yes: Optional[bool] = False):
 
 
 def get_all_subdirs(directories: Iterable[pathlib.Path]):
+    """
+    Returns all direct subdirectories of the given input directories. Not recursive
+    Args:
+        directories:
+
+    Returns:
+
+    """
+
     all_subdirs = []
     for results_dir in directories:
-        subdirs = results_dir.iterdir()
-        for subdir in subdirs:
-            if subdir.is_dir():
-                all_subdirs.append(subdir)
+        all_subdirs += [file for file in results_dir.iterdir() if file.is_dir()]
     return all_subdirs
 
 
