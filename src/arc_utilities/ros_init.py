@@ -25,6 +25,7 @@ def rospy_and_cpp_init(name):
 def shutdown():
     """ ensures the C++ node handle is shut down cleanly. It's good to call this a the end of any program
       where you called rospy_and_cpp_init """
+    rospy.signal_shutdown('ros_init shutdown')
     roscpp_initializer.shutdown()
 
 
