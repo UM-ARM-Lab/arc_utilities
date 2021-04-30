@@ -23,14 +23,20 @@ def mkdir_and_ask(path, parents: bool, yes: Optional[bool] = False):
     return True
 
 
-def get_all_subfolders(args):
-    all_subfolders = []
-    for results_dir in args.results_dirs:
-        subfolders = results_dir.iterdir()
-        for subfolder in subfolders:
-            if subfolder.is_dir():
-                all_subfolders.append(subfolder)
-    return all_subfolders
+def get_all_subdirs(directories: Iterable[pathlib.Path]):
+    """
+    Returns all direct subdirectories of the given input directories. Not recursive
+    Args:
+        directories:
+
+    Returns:
+
+    """
+
+    all_subdirs = []
+    for results_dir in directories:
+        all_subdirs += [file for file in results_dir.iterdir() if file.is_dir()]
+    return all_subdirs
 
 
 def directory_size(dir: pathlib.Path):
@@ -55,7 +61,6 @@ def ask_to_remove_directories(directories_to_remove: Iterable[pathlib.Path]):
 
     print(Fore.RED + "Aborting.")
     return
-
 
 
 def count_files_recursive(path):
