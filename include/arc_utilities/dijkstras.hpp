@@ -187,7 +187,7 @@ class SimpleGraphAstar {
     }
 
     // Search
-    while (queue.size() > 0) {
+    while (!queue.empty()) {
       // Get the top of the priority queue
       const arc_helpers::AstarPQueueElement n = queue.top();
       queue.pop();

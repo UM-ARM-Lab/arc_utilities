@@ -5,7 +5,6 @@ import numpy as np
 
 import rospy
 from arc_utilities import path_utils as pu
-import IPython
 
 from arc_utilities.path_utils import reverse_trajectory
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
