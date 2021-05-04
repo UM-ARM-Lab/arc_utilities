@@ -138,6 +138,8 @@ endif ()
 if (${CATKIN_ENABLE_TESTING})
   find_package(GTest)
 
+  add_executable(test_text_color tests/test_text_color.cpp)
+
   # Simple test node for simple_hierarchical_clustering
   add_executable(test_hierarchical_clustering src/test_hierarchical_clustering.cpp)
   add_dependencies(test_hierarchical_clustering ${catkin_EXPORTED_TARGETS})
