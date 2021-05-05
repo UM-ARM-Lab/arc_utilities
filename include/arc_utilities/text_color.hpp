@@ -1,8 +1,6 @@
 #ifndef ARC_UTILITIES_TEXT_COLOR_HPP
 #define ARC_UTILITIES_TEXT_COLOR_HPP
 
-#include <string>
-
 namespace arc_color {
 
 constexpr auto RESET = "\x1B[0m";
