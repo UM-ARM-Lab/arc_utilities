@@ -44,6 +44,10 @@ class TestAlgorithms(unittest.TestCase):
         self.assertEqual(updated_dict['e'], None)
         self.assertEqual(updated_dict['f'], 1)
 
+        updated_dict = nested_dict_update(base_dict, None)
+
+        self.assertEqual(updated_dict, base_dict)
+
     def test_repeat_last(self):
         i = repeat_last([1, 2])
         self.assertEqual(next(i), 1)
