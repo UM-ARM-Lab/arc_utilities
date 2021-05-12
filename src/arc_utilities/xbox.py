@@ -33,7 +33,7 @@ class Xbox():
     def get_button(self, button):
         """
         Return value of button or axis of the controller
-        0 or 1 for buttons
+        0 or 1 for button
         -1.0 to 1.0 (at most) for axes
         """
         return getattr(self.get_buttons_state(), button)
@@ -71,7 +71,9 @@ class Xbox():
 
     def get_3d_delta(self):
         """
-        We use the dpad for x,y and the left joystick to do z
+        We use the dpad for x,y and the left joystick to do z.
+        NOTE: this is hardcoded for one of the several xbox linux drivers that exist,
+        so if you change drivers this might not work.
 
         Returns:
             the [x, y, z], in the interval [-1.0, 1.0]
