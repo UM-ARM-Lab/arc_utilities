@@ -65,11 +65,11 @@ def logfatal(exception_class, msg):
 def get_connected_publisher(topic_path: str, data_class: Type, *args, **kwargs):
     pub = rospy.Publisher(topic_path, data_class, *args, **kwargs)
     num_subs = len(_get_subscribers(topic_path))
-    for i in range(10):
+    for i in range(5):
         num_cons = pub.get_num_connections()
         if num_cons == num_subs:
             return pub
-        time.sleep(0.1)
+        time.sleep(0.05)
 
     raise RuntimeError(f"failed to get publisher for {topic_path}")
 
@@ -86,11 +86,11 @@ def _get_subscribers(topic_path: str):
 
 
 def try_to_connect(*publishers, raise_on_fail: bool = False):
-    for i in range(10):
+    for i in range(5):
         connected = [p.get_num_connections() > 0 for p in publishers]
         if all(connected):
             return
-        time.sleep(0.1)
+        time.sleep(0.05)
 
     unconnected_pubs = [p.name for p in publishers if p.get_num_connections() == 0]
     if len(unconnected_pubs) > 0:

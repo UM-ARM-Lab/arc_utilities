@@ -63,7 +63,7 @@ def with_ros(name: str):
     def _with_ros(func: Callable):
         def wrapper(*args, **kwargs):
             with RosContext(name):
-                func(*args, **kwargs)
+                return func(*args, **kwargs)
 
         return wrapper
 
