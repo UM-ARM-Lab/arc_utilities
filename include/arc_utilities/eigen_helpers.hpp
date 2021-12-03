@@ -7,6 +7,7 @@
 #include <Eigen/SVD>
 #include <Eigen/StdVector>
 #include <functional>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <type_traits>
@@ -22,6 +23,12 @@ namespace EigenHelpers {
 ////////////////////////////////////////////////////////////////////////////
 // Misc
 ////////////////////////////////////////////////////////////////////////////
+inline void mat_to_file(const std::string &fname, const Eigen::MatrixXf &mat) {
+  /** Useful utility for outputting an Eigen matrix to a file **/
+  Eigen::IOFormat np_fmt(Eigen::FullPrecision, 0, " ", "\n", "", "", "");
+  std::ofstream(fname, std::ofstream::app) << mat.format(np_fmt) << "\n\n";
+}
+
 
 inline bool Equal3d(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2) {
   if ((v1.x() == v2.x()) && (v1.y() == v2.y()) && (v1.z() == v2.z())) {
