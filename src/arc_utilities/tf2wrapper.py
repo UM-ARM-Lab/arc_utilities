@@ -1,21 +1,20 @@
 #! /usr/bin/env python
 
-import geometry_msgs.msg
 import rospy
-from ros_numpy import msgify
-from tf import transformations
 import tf
-from arc_utilities import transformation_helper
-from geometry_msgs.msg import Pose, Transform, TransformStamped, Quaternion, Point
 # noinspection PyUnresolvedReferences
 import tf2_geometry_msgs
+import tf2_ros
+from arc_utilities import transformation_helper
+from geometry_msgs.msg import Pose, TransformStamped
 
 
 class TF2Wrapper:
     def __init__(self):
+        self.tf2_buffer = tf2_ros.Buffer()
+        self.tf2_listener = tf2_ros.TransformListener(self.tf2_buffer)
         self.tf_listener = tf.TransformListener()
         self.tf_broadcaster = tf.TransformBroadcaster()
-        self.tf_static_broadcasters = []
 
     def get_transform(self,
                       parent,
@@ -56,12 +55,12 @@ class TF2Wrapper:
                           verbose=True,
                           spin_delay=rospy.Duration(secs=10, nsecs=0),
                           time=rospy.Time()):
-        self.tf_listener.waitForTransform(parent, child, rospy.Time(), rospy.Duration(4.0))
+        self.tf_listener.waitForTransform(parent, child, rospy.Time(), rospy.Duration(4))
         while not rospy.is_shutdown():
             rospy.sleep(spin_delay)
             try:
                 now = rospy.Time.now()
-                self.tf_listener.waitForTransform(parent, child, now, rospy.Duration(4.0))
+                self.tf_listener.waitForTransform(parent, child, now, rospy.Duration(4))
                 translate, quat = self.tf_listener.lookupTransform(parent, child, now)
                 msg = TransformStamped()
                 msg.transform.translation.x = translate[0]
@@ -140,4 +139,4 @@ class TF2Wrapper:
         :param new_type: (Optional) Type to convert the object to.
         :return: The transformed, timestamped output, possibly converted to a new type.
         """
-        return self.tf_buffer.transform(object_stamped, target_frame, timeout, new_type)
+        return self.tf2_buffer.transform(object_stamped, target_frame, timeout, new_type)
