@@ -53,7 +53,7 @@ class TF2Wrapper:
                           parent,
                           child,
                           verbose=True,
-                          spin_delay=rospy.Duration(secs=10, nsecs=0),
+                          spin_delay=rospy.Duration(secs=0, nsecs=1 * 1000 * 1000),
                           time=rospy.Time()):
         self.tf_listener.waitForTransform(parent, child, rospy.Time(), rospy.Duration(4))
         while not rospy.is_shutdown():
