@@ -2,18 +2,19 @@
 
 import geometry_msgs.msg
 import rospy
-import tf2_ros
+from ros_numpy import msgify
+from tf import transformations
+import tf
 from arc_utilities import transformation_helper
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, Transform, TransformStamped, Quaternion, Point
 # noinspection PyUnresolvedReferences
 import tf2_geometry_msgs
 
 
 class TF2Wrapper:
     def __init__(self):
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+        self.tf_listener = tf.TransformListener()
+        self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_static_broadcasters = []
 
     def get_transform(self,
@@ -43,7 +44,7 @@ class TF2Wrapper:
             transform = self.get_transform_msg(parent=parent, child=child, verbose=verbose, spin_delay=spin_delay,
                                                time=time)
 
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             rospy.logerr("No transform available: %s to %s", parent, child)
             return None
 
@@ -53,18 +54,28 @@ class TF2Wrapper:
                           parent,
                           child,
                           verbose=True,
-                          spin_delay=rospy.Duration(secs=0, nsecs=5 * 1000 * 1000),
+                          spin_delay=rospy.Duration(secs=10, nsecs=0),
                           time=rospy.Time()):
-        while not self.tf_buffer.can_transform(target_frame=parent, source_frame=child,
-                                               time=time, timeout=spin_delay):
-            if rospy.is_shutdown():
-                raise KeyboardInterrupt("ROS has shutdown")
-            if verbose:
-                rospy.loginfo("Waiting for TF frames %s and %s", parent, child)
-            else:
-                rospy.logdebug("Waiting for TF frames %s and %s", parent, child)
-        transform = self.tf_buffer.lookup_transform(target_frame=parent, source_frame=child, time=time)
-        return transform
+        self.tf_listener.waitForTransform(parent, child, rospy.Time(), rospy.Duration(4.0))
+        while not rospy.is_shutdown():
+            rospy.sleep(spin_delay)
+            try:
+                now = rospy.Time.now()
+                self.tf_listener.waitForTransform(parent, child, now, rospy.Duration(4.0))
+                translate, quat = self.tf_listener.lookupTransform(parent, child, now)
+                msg = TransformStamped()
+                msg.transform.translation.x = translate[0]
+                msg.transform.translation.y = translate[1]
+                msg.transform.translation.z = translate[2]
+                msg.transform.rotation.x = quat[0]
+                msg.transform.rotation.y = quat[1]
+                msg.transform.rotation.z = quat[2]
+                msg.transform.rotation.w = quat[3]
+                msg.header.stamp = now
+                return msg
+            except (tf.LookupException, tf.ExtrapolationException, tf.ConnectivityException) as e:
+                if verbose:
+                    print(e)
 
     def send_transform_matrix(self, transform, parent, child, is_static=False, time=None):
         """
@@ -85,20 +96,7 @@ class TF2Wrapper:
         if time is None:
             time = rospy.Time.now()
 
-        t = geometry_msgs.msg.TransformStamped()
-        t.header.stamp = time
-        t.header.frame_id = parent
-        t.child_frame_id = child
-        t.transform.translation.x = pose.position.x
-        t.transform.translation.y = pose.position.y
-        t.transform.translation.z = pose.position.z
-        t.transform.rotation = pose.orientation
-
-        if is_static:
-            self.tf_static_broadcasters.append(tf2_ros.StaticTransformBroadcaster())
-            self.tf_static_broadcasters[-1].sendTransform(t)
-        else:
-            self.tf_broadcaster.sendTransform(t)
+        self.tf_broadcaster.sendTransform(pose.position, pose.orientation, time, child, parent)
 
     def send_transform(self, translation, quaternion, parent, child, is_static=False, time=None):
         """
@@ -116,23 +114,7 @@ class TF2Wrapper:
         if time is None:
             time = rospy.Time.now()
 
-        t = geometry_msgs.msg.TransformStamped()
-        t.header.stamp = time
-        t.header.frame_id = parent
-        t.child_frame_id = child
-        t.transform.translation.x = translation[0]
-        t.transform.translation.y = translation[1]
-        t.transform.translation.z = translation[2]
-        t.transform.rotation.x = quaternion[0]
-        t.transform.rotation.y = quaternion[1]
-        t.transform.rotation.z = quaternion[2]
-        t.transform.rotation.w = quaternion[3]
-
-        if is_static:
-            self.tf_static_broadcasters.append(tf2_ros.StaticTransformBroadcaster())
-            self.tf_static_broadcasters[-1].sendTransform(t)
-        else:
-            self.tf_broadcaster.sendTransform(t)
+        self.tf_broadcaster.sendTransform(translation, quaternion, time, child, parent)
 
     def transform_to_frame(self, object_stamped, target_frame, timeout=rospy.Duration(0), new_type=None):
         """
