@@ -55,26 +55,38 @@ class TF2Wrapper:
                           verbose=True,
                           spin_delay=rospy.Duration(secs=0, nsecs=1 * 1000 * 1000),
                           time=rospy.Time()):
-        self.tf_listener.waitForTransform(parent, child, rospy.Time(), rospy.Duration(4))
-        while not rospy.is_shutdown():
-            rospy.sleep(spin_delay)
-            try:
-                now = rospy.Time.now()
-                self.tf_listener.waitForTransform(parent, child, now, rospy.Duration(4))
-                translate, quat = self.tf_listener.lookupTransform(parent, child, now)
-                msg = TransformStamped()
-                msg.transform.translation.x = translate[0]
-                msg.transform.translation.y = translate[1]
-                msg.transform.translation.z = translate[2]
-                msg.transform.rotation.x = quat[0]
-                msg.transform.rotation.y = quat[1]
-                msg.transform.rotation.z = quat[2]
-                msg.transform.rotation.w = quat[3]
-                msg.header.stamp = now
-                return msg
-            except (tf.LookupException, tf.ExtrapolationException, tf.ConnectivityException) as e:
-                if verbose:
-                    print(e)
+        try:
+            self.tf_listener.waitForTransform(parent, child, rospy.Time(), rospy.Duration(4))
+            while not rospy.is_shutdown():
+                rospy.sleep(spin_delay)
+                try:
+                    now = rospy.Time.now()
+                    self.tf_listener.waitForTransform(parent, child, now, rospy.Duration(4))
+                    translate, quat = self.tf_listener.lookupTransform(parent, child, now)
+                    msg = TransformStamped()
+                    msg.transform.translation.x = translate[0]
+                    msg.transform.translation.y = translate[1]
+                    msg.transform.translation.z = translate[2]
+                    msg.transform.rotation.x = quat[0]
+                    msg.transform.rotation.y = quat[1]
+                    msg.transform.rotation.z = quat[2]
+                    msg.transform.rotation.w = quat[3]
+                    msg.header.stamp = now
+                    return msg
+                except (tf.LookupException, tf.ExtrapolationException, tf.ConnectivityException) as e:
+                    pass
+        except tf2_ros.TransformException:
+            pass
+
+        while not self.tf2_buffer.can_transform(target_frame=parent, source_frame=child, time=time, timeout=spin_delay):
+            if rospy.is_shutdown():
+                raise KeyboardInterrupt("ROS has shutdown")
+            if verbose:
+                rospy.loginfo("Waiting for TF frames %s and %s", parent, child)
+            else:
+               rospy.logdebug("Waiting for TF frames %s and %s", parent, child)
+        transform = self.tf2_buffer.lookup_transform(target_frame=parent, source_frame=child, time=time)
+        return transform
 
     def send_transform_matrix(self, transform, parent, child, is_static=False, time=None):
         """
