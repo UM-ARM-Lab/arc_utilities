@@ -20,7 +20,7 @@ def tf_sucks():
         return tf.get_transform(parent='a', child='b')
 
     a2b, timeout = catch_timeout(1, _get)
-    return timeout
+    return a2b, timeout
 
 
 def test_multiple_instances():
@@ -31,11 +31,17 @@ def test_multiple_instances():
     tf_2 = ReliableTF()
     tf_2.start_send_transform([0, 2., 1.], [0, 0, 0, 1], parent='world', child='c')
 
-    print(tf_1.get_transform(parent='a', child='b'))
-    print(tf_1.get_transform(parent='a', child='c'))
 
-    # tf_1.close()
-    # tf_2.close()
+def changing_transforms():
+    expected1 = np.array([[1, 0, 0, 0], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1.]])
+    expected2 = np.array([[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1.]])
+    tf = ReliableTF()
+    tf.start_send_transform_matrix(expected1, parent='world', child='a')
+    get1 = tf.get_transform(parent='world', child='a')
+    np.testing.assert_allclose(get1, expected1)
+    tf.start_send_transform_matrix(expected2, parent='world', child='a')
+    get2 = tf.get_transform(parent='world', child='a')
+    np.testing.assert_allclose(get2, expected2)
 
 
 def reliable_tf_rocks():
@@ -59,8 +65,6 @@ def reliable_tf_rocks():
 
     a2b, timeout = catch_timeout(1, _get)
 
-    # tf.close()
-
     return a2b, timeout
 
 
@@ -68,12 +72,13 @@ def reliable_tf_rocks():
 def main():
     # show that tf doesn't work reliably when you just publish one transform
     # tf_sucks()
-    reliable_tf_rocks()
+    # reliable_tf_rocks()
+    changing_transforms()
     # test_multiple_instances()
     # tf = TF2Wrapper()
 
 
-class TestAlgorithms(unittest.TestCase):
+class TestReliableTF(unittest.TestCase):
 
     def test_tf_sucks(self):
         a2b, timeout = tf_sucks()
@@ -86,8 +91,11 @@ class TestAlgorithms(unittest.TestCase):
         np.testing.assert_allclose(a2b, np.array([[1, 0, 0, 0], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1.]]))
         self.assertFalse(timeout)
 
+    def test_changing_transform(self):
+        changing_transforms()
+
 
 if __name__ == '__main__':
-    main()
-    # unittest.main()
-    print("Program ended...")
+    # main()
+    rospy.init_node("test_reliable_tf")
+    unittest.main()
