@@ -16,24 +16,21 @@ def tfkey(*, parent, child):
     return k
 
 
-def send_transform(exit_event, translation, quaternion, parent, child, is_static):
-    tfw = TF2Wrapper()
+def send_transform(exit_event, tfw, translation, quaternion, parent, child, is_static):
     r = Rate(10)
     while not exit_event.is_set():
         tfw.send_transform(translation, quaternion, parent, child, is_static, time=rospy.Time.now())
         r.sleep()
 
 
-def send_transform_matrix(exit_event, transform, parent, child, is_static):
-    tfw = TF2Wrapper()
+def send_transform_matrix(exit_event, tfw, transform, parent, child, is_static):
     r = Rate(10)
     while not exit_event.is_set():
         tfw.send_transform_matrix(transform, parent, child, is_static, time=rospy.Time.now())
         r.sleep()
 
 
-def send_transform_from_pose_msg(exit_event, pose, parent, child, is_static):
-    tfw = TF2Wrapper()
+def send_transform_from_pose_msg(exit_event, tfw, pose, parent, child, is_static):
     r = Rate(10)
     while not exit_event.is_set():
         tfw.send_transform_from_pose_msg(pose, parent, child, is_static, time=rospy.Time.now())
@@ -49,6 +46,7 @@ class ReliableTF(TF2Wrapper):
     def __init__(self):
         super().__init__()
         self.managed_tfs = {}
+        self.shared_tfw = TF2Wrapper()
 
     def __del__(self):
         self.close()
@@ -65,7 +63,7 @@ class ReliableTF(TF2Wrapper):
             thread.join()
 
     def start_send_transform_matrix(self, transform, parent, child, is_static=False):
-        send_transform_partial = partial(send_transform_matrix, transform=transform, parent=parent,
+        send_transform_partial = partial(send_transform_matrix, tfw=self.shared_tfw, transform=transform, parent=parent,
                                          child=child, is_static=is_static)
 
         def _is_close_func(received_transform):
@@ -74,7 +72,7 @@ class ReliableTF(TF2Wrapper):
         self.start_send(parent, child, _is_close_func, send_transform_partial)
 
     def start_send_transform_from_pose_msg(self, pose: Pose, parent, child, is_static=False):
-        send_transform_partial = partial(send_transform_from_pose_msg, pose=pose, parent=parent,
+        send_transform_partial = partial(send_transform_from_pose_msg, tfw=self.shared_tfw, pose=pose, parent=parent,
                                          child=child, is_static=is_static)
 
         def _is_close_func(received_transform):
@@ -83,7 +81,8 @@ class ReliableTF(TF2Wrapper):
         self.start_send(parent, child, _is_close_func, send_transform_partial)
 
     def start_send_transform(self, translation, quaternion, parent, child, is_static=False):
-        send_transform_partial = partial(send_transform, translation=translation, quaternion=quaternion, parent=parent,
+        send_transform_partial = partial(send_transform, tfw=self.shared_tfw, translation=translation,
+                                         quaternion=quaternion, parent=parent,
                                          child=child, is_static=is_static)
 
         def _is_close_func(received):
@@ -96,9 +95,12 @@ class ReliableTF(TF2Wrapper):
         self.start_send(parent, child, _is_close_func, send_transform_partial)
 
     def start_send(self, parent, child, is_close_func, send_transform_partial):
-        exit_event = Event()
-
         k = tfkey(parent=parent, child=child)
+
+        if k in self.managed_tfs:
+            self.stop_send(*k)
+
+        exit_event = Event()
         thread = Thread(target=send_transform_partial, args=(exit_event,))
         thread.start()
 
