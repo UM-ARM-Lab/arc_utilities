@@ -20,7 +20,7 @@ class TF2Wrapper:
                       parent,
                       child,
                       verbose=True,
-                      spin_delay=rospy.Duration(secs=0, nsecs=500 * 1000 * 1000),
+                      spin_delay=rospy.Duration(secs=0, nsecs=100 * 1000 * 1000),
                       time=rospy.Time()):
         """
         Waits for a transform to become available. Blocks until a transform is available or an exception is raised.
@@ -53,7 +53,7 @@ class TF2Wrapper:
                           parent,
                           child,
                           verbose=True,
-                          spin_delay=rospy.Duration(secs=0, nsecs=5 * 1000 * 1000),
+                          spin_delay=rospy.Duration(secs=0, nsecs=100 * 1000 * 1000),
                           time=rospy.Time()):
         while not self.tf_buffer.can_transform(target_frame=parent, source_frame=child,
                                                time=time, timeout=spin_delay):
