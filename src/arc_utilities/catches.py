@@ -2,10 +2,11 @@ import signal
 from typing import Callable, Optional
 
 
-def catch_timeout(seconds: int, func: Callable, *args, **kwargs):
-    def _handle_timeout(signum, frame):
-        raise TimeoutError()
+def _handle_timeout(_, __):
+    raise TimeoutError()
 
+
+def catch_timeout(seconds, func: Callable, *args, **kwargs):
     try:
         signal.signal(signal.SIGALRM, _handle_timeout)
         signal.alarm(seconds)
@@ -19,23 +20,20 @@ def catch_timeout(seconds: int, func: Callable, *args, **kwargs):
         return None, True
 
 
-def retry_on_timeout(t: int, on_timeout: Optional[Callable], f: Callable, *args, **kwargs):
+def retry_on_timeout(seconds, on_timeout: Optional[Callable], gen: Callable, *args, **kwargs):
     """
     For generators
     Args:
-        t: timeout in seconds
-        f: a generator, any function with `yield` or `field from`
+        seconds: timeout in seconds
+        gen: a generator, any function with `yield` or `field from`
         on_timeout: callback used when timeouts happen
-
-    Returns:
-
     """
-    it = f(*args, **kwargs)
+    it = gen(*args, **kwargs)
     while True:
         try:
-            i, timed_out = catch_timeout(t, next, it)
+            i, timed_out = catch_timeout(seconds, next, it)
             if timed_out:
-                it = f(*args, **kwargs)  # reset the generator
+                it = gen(*args, **kwargs)  # reset the generator
                 if on_timeout is not None:
                     on_timeout()
             else:
@@ -44,21 +42,17 @@ def retry_on_timeout(t: int, on_timeout: Optional[Callable], f: Callable, *args,
             return
 
 
-def skip_on_timeout(t: int, on_timeout: Optional[Callable], f: Callable, *args, **kwargs):
+def skip_on_timeout(seconds, gen: Callable, *args, **kwargs):
     """
     For generators
     Args:
-        t: timeout in seconds
-        f: a generator, any function with `yield` or `field from`
-        on_timeout: callback used when timeouts happen
-
-    Returns:
-
+        seconds: timeout in seconds
+        gen: a generator, any function with `yield` or `field from`
     """
-    it = f(*args, **kwargs)
+    it = gen(*args, **kwargs)
     while True:
         try:
-            i, timed_out = catch_timeout(t, next, it)
+            i, timed_out = catch_timeout(seconds, next, it)
             if not timed_out:
                 yield i
         except StopIteration:

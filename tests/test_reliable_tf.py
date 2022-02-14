@@ -25,60 +25,52 @@ def tf_sucks():
 
 def test_multiple_instances():
     tf_1 = ReliableTF()
-    tf_1.start_send_transform([0, 0, 1.], [0, 0, 0, 1.], parent='world', child='a')
-    tf_1.start_send_transform([0, 1., 1.], [0, 0, 0, 1], parent='world', child='b')
+    tf_1.start_send_transform([0, 0, 1.], [0, 0, 0, 1.], parent='world', child='c')
+    tf_1.start_send_transform([0, 1., 1.], [0, 0, 0, 1], parent='world', child='d')
 
     tf_2 = ReliableTF()
-    tf_2.start_send_transform([0, 2., 1.], [0, 0, 0, 1], parent='world', child='c')
+    tf_2.start_send_transform([0, 2., 1.], [0, 0, 0, 1], parent='world', child='e')
 
 
 def changing_transforms():
     expected1 = np.array([[1, 0, 0, 0], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1.]])
     expected2 = np.array([[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1.]])
     tf = ReliableTF()
-    tf.start_send_transform_matrix(expected1, parent='world', child='a')
-    get1 = tf.get_transform(parent='world', child='a')
+    tf.start_send_transform_matrix(expected1, parent='world', child='f')
+    get1 = tf.get_transform(parent='world', child='f')
     np.testing.assert_allclose(get1, expected1)
-    tf.start_send_transform_matrix(expected2, parent='world', child='a')
-    get2 = tf.get_transform(parent='world', child='a')
+    tf.start_send_transform_matrix(expected2, parent='world', child='g')
+    get2 = tf.get_transform(parent='world', child='g')
     np.testing.assert_allclose(get2, expected2)
 
 
 def reliable_tf_rocks():
     tf = ReliableTF()
-    tf.start_send_transform([0, 0, 1.], [0, 0, 0, 1.], parent='world', child='a')
-    tf.start_send_transform([0, 1., 1.], [0, 0, 0, 1], parent='world', child='b')
+    tf.start_send_transform([0, 0, 1.], [0, 0, 0, 1.], parent='world', child='h')
+    tf.start_send_transform([0, 1., 1.], [0, 0, 0, 1], parent='world', child='i')
     pose = Pose()
     pose.position.x = 1
     pose.orientation.z = 1
-    tf.start_send_transform_from_pose_msg(pose, parent='world', child='c')
+    tf.start_send_transform_from_pose_msg(pose, parent='world', child='j')
     transform = np.array([
         [1, 0, 0, 1.],
         [0, 1, 0, 1.],
         [0, 0, 1, 1.],
         [0, 0, 0, 1.],
     ])
-    tf.start_send_transform_matrix(transform, parent='world', child='d')
+    tf.start_send_transform_matrix(transform, parent='world', child='k')
 
     def _get():
-        return tf.get_transform(parent='a', child='b')
+        return tf.get_transform(parent='h', child='i')
 
     a2b, timeout = catch_timeout(1, _get)
 
     return a2b, timeout
 
 
-@ros_init.with_ros("test_reliable_tf")
-def main():
-    # show that tf doesn't work reliably when you just publish one transform
-    # tf_sucks()
-    # reliable_tf_rocks()
-    changing_transforms()
-    # test_multiple_instances()
-    # tf = TF2Wrapper()
-
-
 class TestReliableTF(unittest.TestCase):
+    def setUp(self):
+        rospy.init_node("test_reliable_tf")
 
     def test_tf_sucks(self):
         a2b, timeout = tf_sucks()
@@ -96,6 +88,4 @@ class TestReliableTF(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # main()
-    rospy.init_node("test_reliable_tf")
     unittest.main()
