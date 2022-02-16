@@ -4,7 +4,6 @@
 Useful functions for dealing with paths
 Unless otherwise noted, paths are a list of waypoints. Often it is useful to store these in a numpy array
 """
-import pathlib
 import sys
 from copy import deepcopy
 
@@ -173,11 +172,3 @@ def reverse_trajectory(trajectory: JointTrajectory):
     return reversed_trajectory
 
 
-def rm_tree(path):
-    path = pathlib.Path(path)
-    for child in path.glob('*'):
-        if child.is_file():
-            child.unlink()
-        else:
-            rm_tree(child)
-    path.rmdir()
