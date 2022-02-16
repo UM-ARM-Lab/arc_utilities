@@ -6,12 +6,12 @@ def _handle_timeout(_, __):
     raise TimeoutError()
 
 
-def catch_timeout(seconds, func: Callable, *args, **kwargs):
+def catch_timeout(seconds, func: Callable, *func_args, **func_kwargs):
     try:
         signal.signal(signal.SIGALRM, _handle_timeout)
         signal.alarm(seconds)
         try:
-            result = func(*args, **kwargs)
+            result = func(*func_args, **func_kwargs)
             return result, False
         finally:
             signal.alarm(0)
@@ -20,7 +20,7 @@ def catch_timeout(seconds, func: Callable, *args, **kwargs):
         return None, True
 
 
-def retry_on_timeout(seconds, on_timeout: Optional[Callable], gen: Callable, *args, **kwargs):
+def retry_on_timeout(seconds, on_timeout: Optional[Callable], gen: Callable, *gen_args, **gen_kwargs):
     """
     For generators
     Args:
@@ -28,12 +28,12 @@ def retry_on_timeout(seconds, on_timeout: Optional[Callable], gen: Callable, *ar
         gen: a generator, any function with `yield` or `field from`
         on_timeout: callback used when timeouts happen
     """
-    it = gen(*args, **kwargs)
+    it = gen(*gen_args, **gen_kwargs)
     while True:
         try:
             i, timed_out = catch_timeout(seconds, next, it)
             if timed_out:
-                it = gen(*args, **kwargs)  # reset the generator
+                it = gen(*gen_args, **gen_kwargs)  # reset the generator
                 if on_timeout is not None:
                     on_timeout()
             else:
@@ -42,14 +42,14 @@ def retry_on_timeout(seconds, on_timeout: Optional[Callable], gen: Callable, *ar
             return
 
 
-def skip_on_timeout(seconds, gen: Callable, *args, **kwargs):
+def skip_on_timeout(seconds, gen: Callable, *gen_args, **gen_kwargs):
     """
     For generators
     Args:
         seconds: timeout in seconds
         gen: a generator, any function with `yield` or `field from`
     """
-    it = gen(*args, **kwargs)
+    it = gen(*gen_args, **gen_kwargs)
     while True:
         try:
             i, timed_out = catch_timeout(seconds, next, it)
