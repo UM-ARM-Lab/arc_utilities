@@ -3,8 +3,6 @@ from typing import Optional, Iterable
 
 from colorama import Fore
 
-from arc_utilities.path_utils import rm_tree
-
 
 def mkdir_and_ask(path, parents: bool, yes: Optional[bool] = False):
     if path.exists():
@@ -72,3 +70,13 @@ def count_files_recursive(path):
         else:
             count += 1
     return count
+
+
+def rm_tree(path):
+    path = pathlib.Path(path)
+    for child in path.glob('*'):
+        if child.is_file():
+            child.unlink()
+        else:
+            rm_tree(child)
+    path.rmdir()
