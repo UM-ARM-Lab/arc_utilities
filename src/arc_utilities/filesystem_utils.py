@@ -84,7 +84,7 @@ def rm_tree(path):
 
 def no_overwrite_path(path):
     """
-    Checks if path exist, and if it does tries to change the name to path (n) ensure it does not overwrite anything
+    Checks if path exist, and if it does tries to change the name to ensure it does not overwrite anything
     Args:
         path: the nominal path. This input is NOT modified in-place.
 
