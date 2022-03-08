@@ -97,6 +97,7 @@ def no_overwrite_path(path):
         if not new_path.exists():
             return new_path
 
-        new_path = path.parent / f"{path.name}_v{n}"
+        no_extensions = path.stem.split('.')[0]
+        extensions = ''.join(path.suffixes)
+        new_path = path.parent / f"{no_extensions}_v{n}{extensions}"
         n += 1
-
