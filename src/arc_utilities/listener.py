@@ -3,6 +3,7 @@ from threading import Lock
 
 import rospy
 from arc_utilities.ros_helpers import wait_for
+from message_filters import Cache, Subscriber
 
 
 class Listener:
@@ -47,3 +48,25 @@ class Listener:
 
         with self.lock:
             return deepcopy(self.data)
+
+
+class CacheListener:
+
+    def __init__(self, topic_name, topic_type, cache_size=10):
+        self.topic_name = topic_name
+        self.subscriber = Subscriber(topic_name, topic_type)
+        self.data_cache = Cache(self.subscriber, cache_size)
+
+    def get(self, stamp=None, block_until_data=True):
+        if stamp is None:
+            stamp = rospy.Time.now()
+
+        if block_until_data:
+            while True:
+                data = self.data_cache.getElemAfterTime(stamp)
+                if data is None:
+                    rospy.sleep(0.1)
+                else:
+                    return data
+
+        return self.data_cache.getElemAfterTime(stamp)

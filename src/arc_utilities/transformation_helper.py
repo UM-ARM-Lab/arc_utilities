@@ -415,6 +415,11 @@ def PoseFromDH(d, a, theta, alpha):
     return PoseFromMatrix(tfmatrix)
 
 
+def ChangeTransformFrame(zero_T, zero_T_one):
+    one_T_zero = InvertTransform(zero_T_one)
+    return ComposeTransforms(ComposeTransforms(one_T_zero, zero_T), zero_T_one)
+
+
 def spherical_to_vector3(r_phi_theta):
     """
     @param r_phi_theta: list-like object [r, phi, theta]
