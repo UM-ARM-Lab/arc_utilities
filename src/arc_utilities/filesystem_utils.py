@@ -80,3 +80,24 @@ def rm_tree(path):
         else:
             rm_tree(child)
     path.rmdir()
+
+
+def no_overwrite_path(path):
+    """
+    Checks if path exist, and if it does tries to change the name to ensure it does not overwrite anything
+    Args:
+        path: the nominal path. This input is NOT modified in-place.
+
+    Returns: the fixed path which is guaranteed not to exist
+
+    """
+    new_path = path
+    n = 1
+    while True:
+        if not new_path.exists():
+            return new_path
+
+        no_extensions = path.stem.split('.')[0]
+        extensions = ''.join(path.suffixes)
+        new_path = path.parent / f"{no_extensions}_v{n}{extensions}"
+        n += 1
