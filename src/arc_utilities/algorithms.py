@@ -1,4 +1,5 @@
 import collections.abc
+import itertools
 from typing import List, Dict, Optional
 
 
@@ -38,3 +39,23 @@ def zip_repeat_shorter(*args):
     zipped = zip(*[repeat_last(x) for x in args])
     for i in range(longest_len):
         yield next(zipped)
+
+
+def chunked_iterable(iterable, size):
+    """
+
+    Args:
+        iterable: an iterable to split into chunks. could be a list, tuple, or generator
+        size: the size of the chunks. If the iterable cannot be evenly split, the final elements will be dropped.
+
+    Returns: a generator of lists
+
+    """
+    it = iter(iterable)
+    while True:
+        chunk = list(itertools.islice(it, size))
+        if not chunk:
+            break
+        if len(chunk) != size:
+            break
+        yield chunk
