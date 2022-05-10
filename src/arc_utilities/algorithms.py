@@ -59,3 +59,20 @@ def chunked_iterable(iterable, size):
         if len(chunk) != size:
             break
         yield chunk
+
+
+def reversed_chunked(seq, n: int):
+    """
+    Args:
+        seq: some indexable sequence
+        n: the size of the chunks
+
+    Returns: A list of chunks, each chunk is of size n, if the seq is not divisible by n,
+        then elements at the START of seq are discarded.
+
+    """
+    chunks = []
+    for end in range(len(seq), n - 1, -n):
+        start = end - n
+        chunks.insert(0, seq[start:end])
+    return chunks
