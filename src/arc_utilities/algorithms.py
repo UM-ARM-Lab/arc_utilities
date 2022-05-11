@@ -41,7 +41,7 @@ def zip_repeat_shorter(*args):
         yield next(zipped)
 
 
-def chunked_iterable(iterable, size):
+def chunked_drop_last(iterable, size):
     """
 
     Args:

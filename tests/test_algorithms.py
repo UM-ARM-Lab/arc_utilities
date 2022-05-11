@@ -1,7 +1,7 @@
 import unittest
 
 from arc_utilities.algorithms import is_list_unique, nested_dict_update, repeat_last, zip_repeat_shorter, \
-    chunked_iterable, reversed_chunked
+    chunked_drop_last, reversed_chunked
 
 
 class TestAlgorithms(unittest.TestCase):
@@ -70,10 +70,10 @@ class TestAlgorithms(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(i)
 
-    def test_chunked_iterable(self):
-        self.assertEqual(list(chunked_iterable(range(10), 5)), [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]])
-        self.assertEqual(list(chunked_iterable(range(5), 5)), [[0, 1, 2, 3, 4]])
-        self.assertEqual(list(chunked_iterable(range(6), 5)), [[0, 1, 2, 3, 4]])
+    def test_chunked_drop_last(self):
+        self.assertEqual(list(chunked_drop_last(range(10), 5)), [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]])
+        self.assertEqual(list(chunked_drop_last(range(5), 5)), [[0, 1, 2, 3, 4]])
+        self.assertEqual(list(chunked_drop_last(range(6), 5)), [[0, 1, 2, 3, 4]])
 
     def test_reversed_chunked(self):
         self.assertEqual(reversed_chunked(list(range(10)), 5), [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]])
