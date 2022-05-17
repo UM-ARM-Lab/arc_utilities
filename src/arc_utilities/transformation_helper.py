@@ -152,7 +152,7 @@ def ComposeMatrices(matrix1, matrix2):
 
 
 def InvertMatrix(old_matrix):
-    return np.np.linalg.inv(old_matrix)
+    return np.linalg.inv(old_matrix)
 
 
 def ComposeQuaternions(q1, q2):
