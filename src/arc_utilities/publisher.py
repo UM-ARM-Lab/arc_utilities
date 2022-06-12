@@ -71,12 +71,14 @@ class AsyncTFPublisher(object):
 
 class AsyncPublisher(object):
 
-    def __init__(self, topic, msg_type, queue_size=10):
+    def __init__(self, topic, msg_type, queue_size=10, hz=10.0):
         self.topic = topic
         self.msg_type = msg_type
         self.queue_size = queue_size
         self.msg = None
         self.done = False
+        self.hz = hz
+        self.timestep = 1.0 / self.hz
 
         self.publisher = rospy.Publisher(self.topic, self.msg_type, queue_size=self.queue_size)
         self.lock = Lock()
@@ -103,4 +105,4 @@ class AsyncPublisher(object):
                 if self.done:
                     return
             # Sleep outside of lock.
-            rospy.sleep(0.1)
+            rospy.sleep(self.timestep)
