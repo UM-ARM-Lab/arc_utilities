@@ -1,8 +1,16 @@
 import unittest
 
 import numpy as np
+import tf.transformations as tf
+from arc_utilities.transformation_helper import vector3_to_spherical, spherical_to_vector3, ChangeTransformFrame, \
+    BuildMatrix
+import arc_utilities.transformation_helper as tf_helper
 
-from arc_utilities.transformation_helper import vector3_to_spherical, spherical_to_vector3
+
+def get_random_transform():
+    trans = np.random.random(3)
+    rot = tf.random_quaternion()
+    return trans, rot
 
 
 class TestTransformationHelper(unittest.TestCase):
@@ -44,6 +52,23 @@ class TestTransformationHelper(unittest.TestCase):
             r_phi_theta = vector3_to_spherical(xyz)
             xyz_out = spherical_to_vector3(r_phi_theta)
             np.testing.assert_allclose(xyz, xyz_out, rtol=1)
+
+    def test_change_transform_frame(self):
+        np.random.seed(42)
+        for _ in range(100):
+            tf_0_A = BuildMatrix(*get_random_transform())
+            tf_0_T_1 = BuildMatrix(*get_random_transform())
+            tf_1_T_0 = np.linalg.inv(tf_0_T_1)
+            tf_0_P_2 = BuildMatrix(*get_random_transform())
+            tf_1_P_2 = tf_1_T_0 @ tf_0_P_2
+
+            tf_0_P_3 = tf_0_A @ tf_0_P_2
+
+            tf_1_A = tf_helper.TransformToMatrix(ChangeTransformFrame(tf_helper.TransformFromMatrix(tf_0_A),
+                                                                      tf_helper.TransformFromMatrix(tf_0_T_1)))
+            tf_1_P_3 = tf_1_A @ tf_1_P_2
+
+            self.assertTrue(np.allclose(tf_0_P_3, tf_0_T_1 @ tf_1_P_3))
 
 
 if __name__ == '__main__':
