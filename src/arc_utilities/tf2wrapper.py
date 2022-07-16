@@ -10,11 +10,18 @@ import tf2_geometry_msgs
 
 
 class TF2Wrapper:
-    def __init__(self):
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+    def __init__(self, buffer=None, listener=None):
+        if buffer is None:
+            self.tf_buffer = tf2_ros.Buffer()
+        else:
+            self.tf_buffer = buffer
+        if listener is None:
+            self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+        else:
+            self.tf_listener = listener
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
-        self.tf_static_broadcasters = []
+        self.static_tf_broadcaster = tf2_ros.StaticTransformBroadcaster()
+        self.static_tfs = []
 
     def get_transform(self,
                       parent,
@@ -95,8 +102,8 @@ class TF2Wrapper:
         t.transform.rotation = pose.orientation
 
         if is_static:
-            self.tf_static_broadcasters.append(tf2_ros.StaticTransformBroadcaster())
-            self.tf_static_broadcasters[-1].sendTransform(t)
+            self.static_tfs.append(t)
+            self.static_tf_broadcaster.sendTransform(self.static_tfs)  # send all at once.
         else:
             self.tf_broadcaster.sendTransform(t)
 
@@ -129,8 +136,8 @@ class TF2Wrapper:
         t.transform.rotation.w = quaternion[3]
 
         if is_static:
-            self.tf_static_broadcasters.append(tf2_ros.StaticTransformBroadcaster())
-            self.tf_static_broadcasters[-1].sendTransform(t)
+            self.static_tfs.append(t)
+            self.static_tf_broadcaster.sendTransform(self.static_tfs) # send all at once.
         else:
             self.tf_broadcaster.sendTransform(t)
 
