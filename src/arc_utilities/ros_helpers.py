@@ -48,12 +48,12 @@ def joy_to_xbox(joy, xpad=True):
         x.back, x.start, x.power, \
         x.stick_button_left, x.stick_button_right, \
         x.DL, x.DR, x.DU, x.DD = joy.buttons
-        x.LH, x.LV, x.RH, x.RV, x.RT, x.LT, x.DH, x.DV = joy.axes
+        x.LH, x.LV, x.LT, x.RH, x.RV, x.RT, x.DH, x.DV = joy.axes
     else:
         x.A, x.B, x.X, x.Y, x.LB, x.RB, \
         x.back, x.start, x.power, \
         x.stick_button_left, x.stick_button_right = joy.buttons
-        x.LH, x.LV, x.RH, x.RV, x.RT, x.LT, x.DH, x.DV = joy.axes
+        x.LH, x.LV, x.LT, x.RH, x.RV, x.RT, x.DH, x.DV = joy.axes
     return x
 
 
