@@ -6,7 +6,7 @@ from arc_utilities.ros_helpers import wait_for
 
 
 class Listener:
-    def __init__(self, topic_name, topic_type, wait_for_data=False, callback=None):
+    def __init__(self, topic_name, topic_type, wait_for_data=False, callback=None, queue_size=None):
         """
         Listener is a wrapper around a subscriber where the callback simply records the latest msg.
 
@@ -25,7 +25,7 @@ class Listener:
         self.lock = Lock()
 
         self.topic_name = topic_name
-        self.subscriber = rospy.Subscriber(topic_name, topic_type, self.callback)
+        self.subscriber = rospy.Subscriber(topic_name, topic_type, self.callback, queue_size=queue_size)
         self.custom_callback = callback
         self.get(wait_for_data)
 
