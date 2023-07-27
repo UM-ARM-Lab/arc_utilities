@@ -1,6 +1,8 @@
 #include "arc_utilities/first_order_deformation.h"
 
 #include <Eigen/Core>
+#include <unordered_map>
+#include <map>
 #include <queue>
 
 using namespace arc_utilities;
@@ -32,7 +34,7 @@ static std::vector<ConfigType> GetNeighbours(const ConfigType& config, const ssi
   return neighbours;
 }
 
-bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const ssize_t cols,
+std::vector<ConfigType> FirstOrderDeformation::GetFirstOrderDeformation(const ssize_t rows, const ssize_t cols,
                                                        const ValidityCheckFnType& validity_check_fn) {
   struct BestFirstSearchComparator {
    public:
@@ -46,7 +48,7 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
   assert(rows > 0 && cols > 0);
   typedef Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> ArrayXb;
 
-  // Setup the strucutres needed to keep track of the search
+  // Setup the structures needed to keep track of the search
   std::priority_queue<ConfigAndDistType, std::vector<ConfigAndDistType>, BestFirstSearchComparator> frontier;
   ArrayXb explored = ArrayXb::Constant(rows, cols, false);
 
@@ -54,6 +56,7 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
   const ConfigType start(0, 0), goal(rows - 1, cols - 1);
   const double start_heuristic_distance = ConfigTypeDistance(start, goal);
   frontier.push(ConfigAndDistType(start, start_heuristic_distance));
+  std::map<ConfigType, ConfigType> parents;
 
   // Perform the best first search
   bool path_found = false;
@@ -79,10 +82,23 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
           // We only need the heuristic distance as we are doing a best first search
           const double neighbour_heuristic_distance = ConfigTypeDistance(neighbour, goal);
           frontier.push(ConfigAndDistType(neighbour, neighbour_heuristic_distance));
+          parents[neighbour] = current_config;
         }
       }
     }
   }
 
-  return path_found;
+  // recover the actual path
+  std::vector<ConfigType> indices_path;
+  if (path_found) {
+    ConfigType current = goal;
+    while (current != start) {
+      indices_path.push_back(current);
+      current = parents[current];
+    }
+    indices_path.push_back(start);
+    std::reverse(indices_path.begin(), indices_path.end());
+  }
+
+  return indices_path;
 }
