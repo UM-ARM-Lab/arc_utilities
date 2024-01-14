@@ -3,8 +3,7 @@ import time
 import unittest
 
 import rosnode
-import rospy
-from arc_utilities import ros_init
+from arm_utilities import ros_init
 
 
 class TestRosInit(unittest.TestCase):
@@ -16,7 +15,7 @@ class TestRosInit(unittest.TestCase):
         self.assertNotIn("/" + name, names)
 
         ros_init.rospy_and_cpp_init(name)
-        rospy.sleep(1)
+        time.sleep(1)
 
         names = rosnode.get_node_names()
         self.assertIn("/" + name, names)
@@ -24,7 +23,7 @@ class TestRosInit(unittest.TestCase):
 
         ros_init.shutdown()
 
-        rospy.sleep(1)
+        time.sleep(1)
         # this will still exist, shutdown only shut's down the internal C++ node
         # WRONG --> self.assertNotIn("/" + name, rosnode.get_node_names())
         self.assertNotIn("/cpp_" + name, rosnode.get_node_names())

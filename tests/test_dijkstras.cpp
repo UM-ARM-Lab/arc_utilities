@@ -1,82 +1,80 @@
-
-#include <gtest/gtest.h>
-
 #include <arc_utilities/dijkstras.hpp>
-#include <arc_utilities/eigen_helpers.hpp>
+#include <arc_utilities/pretty_print.hpp>
+#include <iostream>
 
-#define DIFF 0.0000001
+int main(int argc, char* argv[]) {
+  (void)argc;
+  (void)argv;
 
-using namespace arc_dijkstras;
-using namespace arc_utilities;
-using namespace EigenHelpers;
-typedef Graph<std::vector<double>> GraphD;
+  std::cout << "Creating graph with nodes indices:\n\n";
+  std::cout << "  2 | 5 | 8\n"
+            << "  --+---+--\n"
+            << "  1 | 4 | 7\n"
+            << "  --+---+--\n"
+            << "  0 | 3 | 6\n\n";
 
-void addEdge(GraphD &g, int64_t n1, int64_t n2) {
-  double d = Distance(g.getNode(n1).getValue(), g.getNode(n2).getValue());
-  g.addEdgesBetweenNodes(n1, n2, d);
-}
+  arc_dijkstras::Graph<Eigen::Vector2d> graph(9);
+  for (double x = -1; x <= 1; x += 1) {
+    for (double y = -1; y <= 1; y += 1) {
+      graph.addNode(Eigen::Vector2d(x, y));
+    }
+  }
 
-double DistanceHeuristic(std::vector<double> q1, std::vector<double> q2) { return Distance(q1, q2); }
+  // Y-direction edges
+  graph.addEdgeBetweenNodes(0, 1, 1.0);
+  graph.addEdgesBetweenNodes(1, 2, 1.0);
+  graph.addEdgesBetweenNodes(3, 4, 1.0);
+  graph.addEdgesBetweenNodes(4, 5, 1.0);
+  graph.addEdgesBetweenNodes(6, 7, 1.0);
+  graph.addEdgesBetweenNodes(7, 8, 1.0);
 
-TEST(DijkstrasTestSuite, AStarSimple) {
-  GraphD g;
+  // X-direction edges
+  graph.addEdgesBetweenNodes(0, 3, 1.0);
+  graph.addEdgesBetweenNodes(3, 6, 1.0);
+  graph.addEdgesBetweenNodes(1, 4, 1.0);
+  graph.addEdgesBetweenNodes(4, 7, 1.0);
+  graph.addEdgesBetweenNodes(2, 5, 1.0);
+  graph.addEdgesBetweenNodes(5, 8, 1.0);
 
-  int64_t start = g.addNode(std::vector<double>{0, 0});
-  int64_t goal = g.addNode(std::vector<double>{0, 1});
-  addEdge(g, start, goal);
-  ASSERT_EQ(g.getEdge(start, goal).getWeight(), 1.0) << "No edge added from start to goal";
+  assert(graph.checkGraphLinkage());
 
-  int64_t n1 = g.addNode(std::vector<double>{0.5, 0.5});
-  addEdge(g, start, n1);
-  addEdge(g, goal, n1);
+  auto dijkstras_result_4connected =
+      arc_dijkstras::SimpleDijkstrasAlgorithm<Eigen::Vector2d,
+                                              std::allocator<Eigen::Vector2d>>::PerformDijkstrasAlgorithm(graph, 0);
 
-  int64_t n2 = g.addNode(std::vector<double>{-0.5, 0.5});
-  addEdge(g, start, n2);
-  addEdge(g, goal, n2);
-  addEdge(g, n1, n2);
+  std::cout << "4-connected edges\n"
+            << "Node index            : 0, 1, 2, 3, 4, 5, 6, 7, 8\n";
+  std::cout << "Previous graph indices: " << PrettyPrint::PrettyPrint(dijkstras_result_4connected.second.first)
+            << std::endl;
+  std::cout << "Distance              : " << PrettyPrint::PrettyPrint(dijkstras_result_4connected.second.second)
+            << std::endl;
 
-  int64_t n3 = g.addNode(std::vector<double>{10, 10});
-  addEdge(g, start, n3);
-  addEdge(g, goal, n3);
-  addEdge(g, n1, n3);
-  addEdge(g, n2, n3);
+  // Diagonal edges
+  graph.addEdgesBetweenNodes(0, 4, std::sqrt(2));
+  graph.addEdgesBetweenNodes(1, 5, std::sqrt(2));
+  graph.addEdgesBetweenNodes(3, 7, std::sqrt(2));
+  graph.addEdgesBetweenNodes(4, 8, std::sqrt(2));
 
-  auto result = SimpleGraphAstar<std::vector<double>>::PerformAstar(g, start, goal, &DistanceHeuristic, true);
-  EXPECT_EQ(result.second, 1.0) << "AStar did not find optimal path cost of 1.0";
-  auto path = result.first;
-  ASSERT_EQ(result.first.size(), (size_t)2) << "AStar did not find optimal path of length 2";
-  EXPECT_EQ(result.first.front(), start) << "AStar's path does not begin at start node";
-  EXPECT_EQ(result.first.back(), goal) << "AStar's path does not end at goal node";
-}
+  graph.addEdgesBetweenNodes(1, 3, std::sqrt(2));
+  graph.addEdgesBetweenNodes(2, 4, std::sqrt(2));
+  graph.addEdgesBetweenNodes(4, 6, std::sqrt(2));
+  graph.addEdgesBetweenNodes(5, 7, std::sqrt(2));
 
-TEST(DijkstrasTestSuite, AStarNoSolution) {
-  GraphD g;
+  assert(graph.checkGraphLinkage());
+  auto dijkstras_result_8connected =
+      arc_dijkstras::SimpleDijkstrasAlgorithm<Eigen::Vector2d,
+                                              std::allocator<Eigen::Vector2d>>::PerformDijkstrasAlgorithm(graph, 0);
 
-  int64_t start = g.addNode(std::vector<double>{0, 0});
-  int64_t goal = g.addNode(std::vector<double>{0, 1});
+  std::cout << "\n8-connected edges\n"
+            << "Node index            : 0, 1, 2, 3, 4, 5, 6, 7, 8\n";
+  std::cout << "Previous graph indices: " << PrettyPrint::PrettyPrint(dijkstras_result_8connected.second.first)
+            << std::endl;
+  std::cout << "Distance              : " << PrettyPrint::PrettyPrint(dijkstras_result_8connected.second.second)
+            << std::endl;
 
-  int64_t n1 = g.addNode(std::vector<double>{0.5, 0.5});
-  addEdge(g, start, n1);
+  std::cout << "\nSerialization test... ";
 
-  int64_t n2 = g.addNode(std::vector<double>{-0.5, 0.5});
-  addEdge(g, start, n2);
-  addEdge(g, n1, n2);
+  std::cout << "passed" << std::endl;
 
-  int64_t n3 = g.addNode(std::vector<double>{10, 10});
-  addEdge(g, start, n3);
-  addEdge(g, n1, n3);
-  addEdge(g, n2, n3);
-
-  auto result = SimpleGraphAstar<std::vector<double>>::PerformAstar(g, start, goal, &DistanceHeuristic, true);
-  EXPECT_GE(result.second, std::numeric_limits<double>::max()) << "AStar did not return cost=INF when no path exists";
-  auto path = result.first;
-  ASSERT_EQ(result.first.size(), (size_t)0) << "AStar returned a path when non exists";
-}
-
-// Run all the tests that were declared with TEST()
-int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc, argv);
-  // ros::init(argc, argv, "tester");
-  // ros::NodeHandle nh;
-  return RUN_ALL_TESTS();
+  return 0;
 }
