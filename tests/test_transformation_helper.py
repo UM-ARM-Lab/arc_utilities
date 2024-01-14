@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from arc_utilities.transformation_helper import vector3_to_spherical, spherical_to_vector3
+from arm_utilities.transformation_helper import vector3_to_spherical, spherical_to_vector3
 
 
 class TestTransformationHelper(unittest.TestCase):

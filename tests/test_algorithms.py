@@ -1,6 +1,6 @@
 import unittest
 
-from arc_utilities.algorithms import is_list_unique, nested_dict_update, repeat_last, zip_repeat_shorter, \
+from arm_utilities.algorithms import is_list_unique, nested_dict_update, repeat_last, zip_repeat_shorter, \
     chunked_drop_last, reversed_chunked
 
 

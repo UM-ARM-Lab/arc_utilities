@@ -2,11 +2,11 @@ import unittest
 
 import numpy as np
 
-import rospy
-from arc_utilities import ros_init
-from arc_utilities.catches import catch_timeout
-from arc_utilities.reliable_tf import ReliableTF
-from arc_utilities.tf2wrapper import TF2Wrapper
+import rclpy
+from arm_utilities import ros_init
+from arm_utilities.catches import catch_timeout
+from arm_utilities.reliable_tf import ReliableTF
+from arm_utilities.tf2wrapper import TF2Wrapper
 from geometry_msgs.msg import Pose
 
 
@@ -70,7 +70,7 @@ def reliable_tf_rocks():
 
 class TestReliableTF(unittest.TestCase):
     def setUp(self):
-        rospy.init_node("test_reliable_tf")
+        rclpy.init_node("test_reliable_tf")
 
     def test_tf_sucks(self):
         a2b, timeout = tf_sucks()

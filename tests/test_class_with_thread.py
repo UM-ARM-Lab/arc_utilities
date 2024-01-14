@@ -1,7 +1,7 @@
 from threading import Thread, Event
 from time import sleep
 
-from arc_utilities import ros_init
+from arm_utilities import ros_init
 
 
 def target(exit_event):

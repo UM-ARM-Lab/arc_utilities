@@ -1,16 +1,16 @@
 from types import TracebackType
 from typing import Callable
 
-import roscpp_initializer
+import rclcpp_initializer
 
-import rospy
+import rclpy
 
 
-def rospy_and_cpp_init(name):
+def rclpy_and_cpp_init(name):
     """
     Use this function any time you want to call into C++ ROS code.
     The C++ node will be named "cpp_" + name
-    You can use this in place of the moveit roscpp_initializer
+    You can use this in place of the moveit rlccpp_initializer
 
     Args:
         name: the name of the python node, and the C++ node will be named "cpp_" + name
@@ -18,20 +18,20 @@ def rospy_and_cpp_init(name):
     Returns:
 
     """
-    roscpp_initializer.init_node("cpp_" + name, [], disable_signals=True)
-    rospy.init_node(name)
+    rclcpp_initializer.init_node("cpp_" + name, [], disable_signals=True)
+    rclpy.init_node(name)
 
 
 def shutdown():
     """ ensures the C++ node handle is shut down cleanly. It's good to call this a the end of any program
-      where you called rospy_and_cpp_init """
-    rospy.signal_shutdown('ros_init shutdown')
-    roscpp_initializer.shutdown()
+      where you called rclpy_and_cpp_init """
+    rclpy.signal_shutdown('ros_init shutdown')
+    rclcpp_initializer.shutdown()
 
 
 class RosContext:
     def __init__(self, name):
-        rospy_and_cpp_init(name)
+        rclpy_and_cpp_init(name)
 
     def __enter__(self):
         pass

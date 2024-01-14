@@ -1,6 +1,6 @@
 import unittest
 
-from arc_utilities.conditional_try import conditional_try
+from arm_utilities.conditional_try import conditional_try
 
 
 def _raises(s):

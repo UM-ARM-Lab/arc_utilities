@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 import unittest
 
-import rospy
-from arc_utilities.ros_helpers import try_to_connect
+import rclpy
+from arm_utilities.ros_helpers import try_to_connect
 from std_msgs.msg import Empty
 
 
@@ -13,16 +13,16 @@ def cb(msg):
 class TestCase(unittest.TestCase):
 
     def test_try_connect(self):
-        rospy.init_node("testing")
+        rclpy.init_node("testing")
         topic_name = "/testing"
-        pub = rospy.Publisher(topic_name, Empty, queue_size=10)
-        sub = rospy.Subscriber(topic_name, Empty, callback=cb)
+        pub = rclpy.Publisher(topic_name, Empty, queue_size=10)
+        sub = rclpy.Subscriber(topic_name, Empty, callback=cb)
         try_to_connect(pub)
         self.assertEqual(pub.get_num_connections(), 1)
 
     def test_try_connect_fail(self):
         topic_name = "/testing_fail"
-        pub = rospy.Publisher(topic_name, Empty, queue_size=10)
+        pub = rclpy.Publisher(topic_name, Empty, queue_size=10)
         try_to_connect(pub)
         self.assertEqual(pub.get_num_connections(), 0)
 

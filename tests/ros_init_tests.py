@@ -14,7 +14,7 @@ class TestRosInit(unittest.TestCase):
         names = rosnode.get_node_names()
         self.assertNotIn("/" + name, names)
 
-        ros_init.rospy_and_cpp_init(name)
+        ros_init.rclpy_and_cpp_init(name)
         time.sleep(1)
 
         names = rosnode.get_node_names()

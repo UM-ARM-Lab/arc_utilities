@@ -2,7 +2,7 @@ import unittest
 
 import matplotlib.pyplot as plt
 import numpy as np
-from arc_utilities.trajectory_planning import get_linear_trajectory, get_quadratic_trajectory, get_cubic_trajectory
+from arm_utilities.trajectory_planning import get_linear_trajectory, get_quadratic_trajectory, get_cubic_trajectory
 
 
 class TestTrajectoryPlanning(unittest.TestCase):

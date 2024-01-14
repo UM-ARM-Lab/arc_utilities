@@ -3,10 +3,10 @@
 import unittest
 import numpy as np
 
-import rospy
-from arc_utilities import path_utils as pu
+import rclpy
+from arm_utilities import path_utils as pu
 
-from arc_utilities.path_utils import reverse_trajectory
+from arm_utilities.path_utils import reverse_trajectory
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
@@ -131,10 +131,10 @@ class TestPathUtils(unittest.TestCase):
 
     def test_reverse(self):
         traj = JointTrajectory()
-        traj.points.append(JointTrajectoryPoint(positions=[0.1], time_from_start=rospy.Duration(0)))
-        traj.points.append(JointTrajectoryPoint(positions=[0.2], time_from_start=rospy.Duration(0.1)))
-        traj.points.append(JointTrajectoryPoint(positions=[0.4], time_from_start=rospy.Duration(0.3)))
-        traj.points.append(JointTrajectoryPoint(positions=[0.5], time_from_start=rospy.Duration(0.4)))
+        traj.points.append(JointTrajectoryPoint(positions=[0.1], time_from_start=rclpy.Duration(0)))
+        traj.points.append(JointTrajectoryPoint(positions=[0.2], time_from_start=rclpy.Duration(0.1)))
+        traj.points.append(JointTrajectoryPoint(positions=[0.4], time_from_start=rclpy.Duration(0.3)))
+        traj.points.append(JointTrajectoryPoint(positions=[0.5], time_from_start=rclpy.Duration(0.4)))
         rev_traj = reverse_trajectory(traj)
         self.assertEqual(rev_traj.points[0].time_from_start.to_sec(), 0)
         self.assertEqual(rev_traj.points[1].time_from_start.to_sec(), 0.1)

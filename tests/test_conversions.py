@@ -1,6 +1,6 @@
 import unittest
 
-from arc_utilities.conversions import parse_file_size
+from arm_utilities.conversions import parse_file_size
 
 
 class TestConversions(unittest.TestCase):
