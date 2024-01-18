@@ -1,12 +1,12 @@
 from copy import deepcopy
+from rclpy.node import Node
 from threading import Lock
 
-import rospy
-from arc_utilities.ros_helpers import wait_for
+from arm_utilities.ros_helpers import wait_for
 
 
 class Listener:
-    def __init__(self, topic_name, topic_type, wait_for_data=False, callback=None, queue_size=None):
+    def __init__(self, node: Node, topic_name, topic_type, wait_for_data=False, callback=None, qos=10):
         """
         Listener is a wrapper around a subscriber where the callback simply records the latest msg.
 
@@ -15,17 +15,18 @@ class Listener:
         Listener does not check timestamps of message headers
 
         Parameters:
-            topic_name (str):      name of topic to subscribe to
-            topic_type (msg_type): type of message received on topic
-            wait_for_data (bool):  block constructor until a message has been received
-            callback (function taking msg_type): optional callback to be called on the data as we receive it
+            node:
+            topic_name:      name of topic to subscribe to
+            topic_type: type of message received on topic
+            wait_for_data:  block constructor until a message has been received
+            callback: optional callback to be called on the data as we receive it
         """
 
         self.data = None
         self.lock = Lock()
 
         self.topic_name = topic_name
-        self.subscriber = rospy.Subscriber(topic_name, topic_type, self.callback, queue_size=queue_size)
+        self.subscriber = node.create_subscription(topic_type, topic_name, self.callback, qos)
         self.custom_callback = callback
         self.get(wait_for_data)
 
