@@ -49,7 +49,10 @@ install(
         RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
 )
 
-install(DIRECTORY include)
+install(
+        DIRECTORY include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}          # include
+)
 
 ament_python_install_package(${PROJECT_NAME})
 
