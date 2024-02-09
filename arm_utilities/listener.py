@@ -6,7 +6,7 @@ from arm_utilities.ros_helpers import wait_for
 
 
 class Listener:
-    def __init__(self, node: Node, topic_name, topic_type, wait_for_data=False, callback=None, qos=10):
+    def __init__(self, node: Node, topic_type, topic_name, wait_for_data=False, callback=None, qos=10):
         """
         Listener is a wrapper around a subscriber where the callback simply records the latest msg.
 
@@ -16,8 +16,8 @@ class Listener:
 
         Parameters:
             node:
-            topic_name:      name of topic to subscribe to
             topic_type: type of message received on topic
+            topic_name:      name of topic to subscribe to
             wait_for_data:  block constructor until a message has been received
             callback: optional callback to be called on the data as we receive it
         """

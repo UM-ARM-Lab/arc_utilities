@@ -22,7 +22,7 @@ class Xbox():
 
         """
         self.xpad = xpad
-        self.xbox_listener = Listener(joystick_topic, Joy)
+        self.xbox_listener = Listener(Joy, joystick_topic)
 
     def get_buttons_state(self):
         """
