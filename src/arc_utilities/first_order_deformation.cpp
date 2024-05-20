@@ -73,7 +73,7 @@ bool FirstOrderDeformation::CheckFirstOrderDeformation(const ssize_t rows, const
 
       // Expand the node to find all neighbours, adding them to the frontier if we have not already explored them
       const auto neighbours = GetNeighbours(current_config, rows, cols, validity_check_fn);
-      for (const auto neighbour : neighbours) {
+      for (const auto &neighbour : neighbours) {
         // Check if we've already explored this neighbour to avoid re-adding it to the frontier
         if (explored(neighbour.first, neighbour.second) == false) {
           // We only need the heuristic distance as we are doing a best first search

@@ -2,6 +2,8 @@
 #define FIRST_ORDER_DEFORMATION_H
 
 #include <functional>
+#include <vector>
+#include <sys/types.h>
 
 namespace arc_utilities {
 namespace FirstOrderDeformation {
