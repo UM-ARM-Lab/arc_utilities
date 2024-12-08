@@ -12,3 +12,5 @@ tags
 *.idea
 cmake-build-*
 .test
+
+*.egg-info

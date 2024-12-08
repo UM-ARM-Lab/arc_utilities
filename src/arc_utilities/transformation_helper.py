@@ -77,7 +77,7 @@ from geometry_msgs.msg import Point, Quaternion, Transform, Pose
 # geometry_msgs/Pose new_pose = PoseFromDH(float d, float a, float theta, float alpha)
 #
 ####################################################################################################
-from tf.transformations import quaternion_from_matrix, quaternion_matrix
+from tf.transformations import quaternion_from_matrix, quaternion_matrix, euler_matrix
 
 '''High-level functions'''
 
@@ -294,7 +294,11 @@ def PoseFromComponents(translation, quaternion):
 def ComponentsFromPose(old_pose):
     translation = [old_pose.position.x, old_pose.position.y, old_pose.position.z]
     quaternion = [old_pose.orientation.x, old_pose.orientation.y, old_pose.orientation.z, old_pose.orientation.w]
-    return [translation, quaternion]
+    return [np.array(translation), np.array(quaternion)]
+
+
+def ArrayFromPose(old_pose):
+    return np.concatenate(ComponentsFromPose(old_pose))
 
 
 def TransformFromComponents(translation, quaternion):
@@ -360,8 +364,18 @@ def BuildRawMatrix(rm, tv):
 
 def ExtractFromMatrix(old_matrix):
     quaternion = quaternion_from_matrix(old_matrix)
-    translation = [old_matrix[0][3], old_matrix[1][3], old_matrix[2][3]]
+    translation = np.array([old_matrix[0][3], old_matrix[1][3], old_matrix[2][3]])
     return [translation, quaternion]
+
+
+def ExtractArrayFromMatrix(matrix):
+    quaternion = quaternion_from_matrix(matrix)
+    translation = np.array([matrix[0][3], matrix[1][3], matrix[2][3]])
+    return np.concatenate([translation, quaternion])
+
+
+def BuildMatrixArray(pose):
+    return BuildMatrix(pose[:3], pose[3:])
 
 
 def BuildMatrix(translation, quaternion):
@@ -369,6 +383,12 @@ def BuildMatrix(translation, quaternion):
     tfmatrix[0][3] = translation[0]
     tfmatrix[1][3] = translation[1]
     tfmatrix[2][3] = translation[2]
+    return tfmatrix
+
+
+def BuildMatrixEuler(translation, euler, axes="sxyz"):
+    tfmatrix = euler_matrix(euler[0], euler[1], euler[3], axes)
+    tfmatrix[:3, 3] = translation
     return tfmatrix
 
 

@@ -26,8 +26,8 @@ class Listener:
         self.lock = Lock()
 
         self.topic_name = topic_name
-        self.subscriber = rospy.Subscriber(topic_name, topic_type, self.callback)
         self.custom_callback = callback
+        self.subscriber = rospy.Subscriber(topic_name, topic_type, self.callback)
         self.get(wait_for_data)
 
     def callback(self, msg):
@@ -62,11 +62,13 @@ class CacheListener:
             stamp = rospy.Time.now()
 
         if block_until_data:
-            while True:
+            for _ in range(100):
                 data = self.data_cache.getElemAfterTime(stamp)
                 if data is None:
                     rospy.sleep(0.1)
                 else:
                     return data
+            print(f"Couldn't find item at {self.topic_name} for given timestep.")
+            return None
 
         return self.data_cache.getElemAfterTime(stamp)
