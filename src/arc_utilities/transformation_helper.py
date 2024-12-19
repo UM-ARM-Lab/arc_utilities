@@ -255,6 +255,10 @@ def PointFromVector(vector):
     return new_point
 
 
+def PoseToArray(old_pose):
+    return np.concatenate(ComponentsFromPose(old_pose))
+
+
 def PoseFromTransform(old_transform):
     posed = Pose()
     posed.position.x = old_transform.translation.x
